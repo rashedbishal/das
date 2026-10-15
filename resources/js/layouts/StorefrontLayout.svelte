@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
+    import ContactWidgets from '@/components/ContactWidgets.svelte';
     import Footer from '@/components/storefront/Footer.svelte';
     import Header from '@/components/storefront/Header.svelte';
 
@@ -27,4 +28,5 @@
         {@render children?.()}
     </main>
     <Footer />
+    <ContactWidgets />
 </div>
