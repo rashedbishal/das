@@ -12,6 +12,21 @@
     } = $props();
 </script>
 
-<AppLayout {breadcrumbs}>
-    {@render children?.()}
-</AppLayout>
+<svelte:head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin="anonymous"
+    />
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+    />
+</svelte:head>
+
+<div class="dashboard-theme contents">
+    <AppLayout {breadcrumbs}>
+        {@render children?.()}
+    </AppLayout>
+</div>

@@ -1,0 +1,52 @@
+/* Storefront palette for the signed-in app. Set on :root (not a wrapper) so portalled menus and sheets pick it up too. */
+:root:has(.dashboard-theme) {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.267 0.026 181);
+    --card: var(--background);
+    --card-foreground: var(--foreground);
+    --popover: var(--background);
+    --popover-foreground: var(--foreground);
+    --primary: oklch(0.502 0.096 180);
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.976 0.005 180);
+    --secondary-foreground: var(--foreground);
+    --muted: oklch(0.964 0.006 180);
+    --muted-foreground: oklch(0.52 0.021 175);
+    --accent: oklch(0.974 0.021 177);
+    --accent-foreground: oklch(0.29 0.052 182);
+    --border: oklch(0.919 0.012 176);
+    --input: var(--border);
+    --ring: var(--primary);
+    --radius: 6px;
+    --sidebar: oklch(0.985 0.004 180);
+    --sidebar-background: var(--sidebar);
+    --sidebar-foreground: oklch(0.35 0.03 181);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: oklch(0.955 0.018 178);
+    --sidebar-accent-foreground: oklch(0.29 0.052 182);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--primary);
+}
+
+:root.dark:has(.dashboard-theme) {
+    --background: oklch(0.18 0.012 185);
+    --foreground: oklch(0.96 0.012 178);
+    --primary: oklch(0.72 0.11 180);
+    --primary-foreground: oklch(0.2 0.03 182);
+    --secondary: oklch(0.25 0.015 182);
+    --muted: oklch(0.25 0.015 182);
+    --muted-foreground: oklch(0.7 0.02 178);
+    --accent: oklch(0.27 0.03 180);
+    --accent-foreground: var(--foreground);
+    --border: oklch(0.3 0.018 182);
+    --sidebar: oklch(0.21 0.03 183);
+    --sidebar-foreground: oklch(0.92 0.012 178);
+    --sidebar-accent: oklch(0.28 0.035 182);
+    --sidebar-accent-foreground: var(--foreground);
+    --sidebar-border: oklch(0.29 0.025 182);
+}
+
+:root:has(.dashboard-theme) body {
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+}
