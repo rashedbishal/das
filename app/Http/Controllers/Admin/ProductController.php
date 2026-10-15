@@ -8,11 +8,11 @@ use App\Http\Requests\Admin\Product\UpdateProductRequest;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Subcategory;
 use App\Models\Tag;
 use App\Services\ProductService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,13 +25,13 @@ class ProductController extends Controller
         $this->authorize('viewAny', Product::class);
 
         $products = $this->products->paginate(
-            $request->only(['search', 'status', 'brand', 'category', 'stock_status', 'sort', 'per_page']),
+            $request->only(['search', 'status', 'brand', 'category', 'subcategory', 'stock_status', 'sort', 'per_page']),
             includeAllStatuses: true,
         );
 
         return Inertia::render('admin/products/Index', [
             'products' => $products,
-            'filters' => $request->only(['search', 'status', 'brand', 'category', 'stock_status', 'sort']),
+            'filters' => $request->only(['search', 'status', 'brand', 'category', 'subcategory', 'stock_status', 'sort']),
         ]);
     }
 
@@ -41,7 +41,8 @@ class ProductController extends Controller
 
         return Inertia::render('admin/products/Form', [
             'brands' => Brand::query()->active()->orderBy('name')->get(['id', 'name']),
-            'categories' => $this->subcategoryOptions(),
+            'categories' => Category::query()->active()->orderBy('name')->get(['id', 'name']),
+            'subcategories' => Subcategory::query()->active()->orderBy('name')->get(['id', 'name', 'category_id']),
             'tags' => Tag::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
@@ -59,12 +60,13 @@ class ProductController extends Controller
     {
         $this->authorize('manage', $product);
 
-        $product->load(['brand', 'categories', 'tags', 'media', 'specifications', 'relatedProducts']);
+        $product->load(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'relatedProducts']);
 
         return Inertia::render('admin/products/Form', [
             'product' => $product,
             'brands' => Brand::query()->active()->orderBy('name')->get(['id', 'name']),
-            'categories' => $this->subcategoryOptions(),
+            'categories' => Category::query()->active()->orderBy('name')->get(['id', 'name']),
+            'subcategories' => Subcategory::query()->active()->orderBy('name')->get(['id', 'name', 'category_id']),
             'tags' => Tag::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
@@ -87,27 +89,5 @@ class ProductController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Product deleted.']);
 
         return to_route('admin.products.index');
-    }
-
-    /**
-     * Products can only be assigned to subcategories, so the picker only ever offers those,
-     * labelled with their parent so admins can tell them apart.
-     *
-     * @return Collection<int, array{id: int, name: string}>
-     */
-    private function subcategoryOptions(): Collection
-    {
-        return Category::query()
-            ->active()
-            ->whereNotNull('parent_id')
-            ->with('parent:id,name')
-            ->orderBy('name')
-            ->get(['id', 'name', 'parent_id'])
-            ->map(fn (Category $category) => [
-                'id' => $category->id,
-                'name' => $category->parent !== null
-                    ? "{$category->parent->name} \u{203A} {$category->name}"
-                    : $category->name,
-            ]);
     }
 }

@@ -20,7 +20,7 @@ class ProductController extends Controller
         $this->authorize('viewAny', Product::class);
 
         $products = $this->products->paginate(
-            $request->only(['search', 'status', 'brand', 'category', 'stock_status', 'sort', 'per_page']),
+            $request->only(['search', 'status', 'brand', 'category', 'subcategory', 'stock_status', 'sort', 'per_page']),
             includeAllStatuses: true,
         );
 
@@ -40,7 +40,7 @@ class ProductController extends Controller
     {
         $this->authorize('manage', $product);
 
-        $product->load(['brand', 'categories', 'tags', 'media', 'specifications', 'relatedProducts']);
+        $product->load(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'relatedProducts']);
 
         return response()->json(['data' => new ProductResource($product)]);
     }

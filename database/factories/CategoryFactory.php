@@ -19,7 +19,6 @@ class CategoryFactory extends Factory
         $name = implode(' ', (array) fake()->unique()->words(2));
 
         return [
-            'parent_id' => null,
             'name' => ucfirst($name),
             'slug' => Str::slug($name),
             'description' => fake()->sentence(),
@@ -27,13 +26,6 @@ class CategoryFactory extends Factory
             'is_active' => true,
             'sort_order' => fake()->numberBetween(0, 100),
         ];
-    }
-
-    public function child(Category $parent): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'parent_id' => $parent->id,
-        ]);
     }
 
     public function inactive(): static

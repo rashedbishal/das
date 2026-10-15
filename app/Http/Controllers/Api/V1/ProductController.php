@@ -18,7 +18,7 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         $products = $this->products->paginate($request->only([
-            'search', 'category', 'brand', 'min_price', 'max_price', 'stock_status', 'sort', 'per_page',
+            'search', 'category', 'subcategory', 'brand', 'min_price', 'max_price', 'stock_status', 'sort', 'per_page',
         ]));
 
         return response()->json(ProductCardResource::collection($products)->response()->getData(true));
@@ -28,7 +28,7 @@ class ProductController extends Controller
     {
         abort_unless(Gate::allows('view', $product), 404);
 
-        $product->load(['brand', 'categories', 'tags', 'media', 'specifications', 'relatedProducts.brand', 'relatedProducts.media']);
+        $product->load(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'relatedProducts.brand', 'relatedProducts.media']);
 
         return response()->json(['data' => new ProductResource($product)]);
     }

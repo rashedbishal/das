@@ -4,7 +4,6 @@ namespace App\Http\Requests\Admin\Category;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateCategoryRequest extends FormRequest
 {
@@ -21,7 +20,6 @@ class UpdateCategoryRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255'],
-            'parent_id' => ['nullable', 'integer', Rule::exists('categories', 'id')],
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'string', 'max:2048'],
             'is_active' => ['boolean'],

@@ -9,7 +9,7 @@
         name: string;
         slug: string;
         image: string | null;
-        children: Category[];
+        subcategories: { id: number }[];
     };
 
     let { categories }: { categories: Category[] } = $props();
@@ -40,9 +40,9 @@
                 class="rounded-lg border p-4 hover:shadow-md"
             >
                 <h2 class="font-medium">{category.name}</h2>
-                {#if category.children.length}
+                {#if category.subcategories.length}
                     <p class="mt-1 text-xs text-muted-foreground">
-                        {category.children.length} subcategories
+                        {category.subcategories.length} subcategories
                     </p>
                 {/if}
             </Link>

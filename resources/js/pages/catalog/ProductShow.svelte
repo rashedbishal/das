@@ -10,7 +10,8 @@
         model_number: string | null;
         status: string;
         brand: { name: string; slug: string } | null;
-        categories: { name: string; slug: string }[];
+        category: { name: string; slug: string } | null;
+        subcategory: { name: string; slug: string } | null;
         tags: string[];
         short_description: string | null;
         full_description: string | null;
@@ -78,9 +79,12 @@
                 <Badge variant={detail.stock_status === 'in_stock' ? 'default' : 'secondary'}>
                     {detail.stock_status.replace('_', ' ')}
                 </Badge>
-                {#each detail.categories as category (category.slug)}
-                    <Badge variant="outline">{category.name}</Badge>
-                {/each}
+                {#if detail.category}
+                    <Badge variant="outline">{detail.category.name}</Badge>
+                {/if}
+                {#if detail.subcategory}
+                    <Badge variant="outline">{detail.subcategory.name}</Badge>
+                {/if}
             </div>
 
             <p class="mt-4 text-2xl font-bold">

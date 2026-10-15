@@ -7,15 +7,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
- * @property int|null $parent_id
  * @property string $name
  * @property string $slug
  * @property string|null $description
@@ -26,7 +23,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  */
-#[Fillable(['parent_id', 'name', 'slug', 'description', 'image', 'is_active', 'sort_order'])]
+#[Fillable(['name', 'slug', 'description', 'image', 'is_active', 'sort_order'])]
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
@@ -43,27 +40,19 @@ class Category extends Model
     }
 
     /**
-     * @return BelongsTo<Category, $this>
+     * @return HasMany<Subcategory, $this>
      */
-    public function parent(): BelongsTo
+    public function subcategories(): HasMany
     {
-        return $this->belongsTo(Category::class, 'parent_id');
+        return $this->hasMany(Subcategory::class);
     }
 
     /**
-     * @return HasMany<Category, $this>
+     * @return HasMany<Product, $this>
      */
-    public function children(): HasMany
+    public function products(): HasMany
     {
-        return $this->hasMany(Category::class, 'parent_id');
-    }
-
-    /**
-     * @return BelongsToMany<Product, $this>
-     */
-    public function products(): BelongsToMany
-    {
-        return $this->belongsToMany(Product::class, 'product_category');
+        return $this->hasMany(Product::class);
     }
 
     /**

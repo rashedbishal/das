@@ -20,6 +20,8 @@ use Illuminate\Support\Carbon;
  * @property string $sku
  * @property string|null $model_number
  * @property int|null $brand_id
+ * @property int $category_id
+ * @property int $subcategory_id
  * @property string|null $short_description
  * @property string|null $full_description
  * @property array<int, string>|null $highlights
@@ -42,7 +44,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $deleted_at
  */
 #[Fillable([
-    'name', 'slug', 'sku', 'model_number', 'brand_id', 'short_description', 'full_description',
+    'name', 'slug', 'sku', 'model_number', 'brand_id', 'category_id', 'subcategory_id',
+    'short_description', 'full_description',
     'highlights', 'status', 'is_featured', 'regular_price', 'sale_price', 'currency',
     'stock_quantity', 'stock_status', 'seo_title', 'seo_description', 'seo_keywords',
     'canonical_url', 'created_by', 'updated_by', 'published_at',
@@ -75,11 +78,19 @@ class Product extends Model
     }
 
     /**
-     * @return BelongsToMany<Category, $this>
+     * @return BelongsTo<Category, $this>
      */
-    public function categories(): BelongsToMany
+    public function category(): BelongsTo
     {
-        return $this->belongsToMany(Category::class, 'product_category');
+        return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * @return BelongsTo<Subcategory, $this>
+     */
+    public function subcategory(): BelongsTo
+    {
+        return $this->belongsTo(Subcategory::class);
     }
 
     /**

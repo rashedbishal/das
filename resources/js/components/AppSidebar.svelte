@@ -42,7 +42,7 @@
         ...(isAdmin
             ? [
                   { title: 'Products', href: '/admin/products', icon: Package },
-                  { title: 'Categories', href: '/admin/categories', icon: Tags },
+                  { title: 'Category Management', href: '/admin/categories', icon: Tags },
                   { title: 'Brands', href: '/admin/brands', icon: Tags },
                   { title: 'Tags', href: '/admin/tags', icon: Tags },
                   { title: 'Users & Roles', href: '/admin/users', icon: Users },

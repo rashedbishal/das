@@ -3,6 +3,7 @@
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Subcategory;
 
 test('guests can browse active categories but not inactive ones', function () {
     Category::factory()->create(['name' => 'Visible', 'is_active' => true]);
@@ -20,31 +21,41 @@ test('an inactive category detail page is not found', function () {
     $this->get(route('categories.show', $category))->assertNotFound();
 });
 
-test('a subcategory page lists only published products in that subcategory', function () {
-    $subcategory = Category::factory()->child(Category::factory()->create())->create();
-    $published = Product::factory()->published()->create();
-    $published->categories()->attach($subcategory);
-    $draft = Product::factory()->create(['status' => 'draft']);
-    $draft->categories()->attach($subcategory);
+test('a category page lists its active subcategories', function () {
+    $category = Category::factory()->create();
+    $visible = Subcategory::factory()->for($category)->create();
+    Subcategory::factory()->for($category)->inactive()->create();
 
-    $response = $this->get(route('categories.show', $subcategory));
+    $response = $this->get(route('categories.show', $category));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->has('subcategories', 1)
+        ->where('subcategories.0.id', $visible->id));
+});
+
+test('a subcategory page lists only published products in that subcategory', function () {
+    $subcategory = Subcategory::factory()->create();
+    $published = Product::factory()->published()->create([
+        'category_id' => $subcategory->category_id,
+        'subcategory_id' => $subcategory->id,
+    ]);
+    Product::factory()->create([
+        'status' => 'draft',
+        'category_id' => $subcategory->category_id,
+        'subcategory_id' => $subcategory->id,
+    ]);
+
+    $response = $this->get(route('subcategories.show', $subcategory));
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page->where('products.total', 1));
 });
 
-test('a top-level category page lists its active subcategories instead of products', function () {
-    $topLevel = Category::factory()->create();
-    $visibleChild = Category::factory()->child($topLevel)->create();
-    Category::factory()->child($topLevel)->inactive()->create();
+test('an inactive subcategory detail page is not found', function () {
+    $subcategory = Subcategory::factory()->inactive()->create();
 
-    $response = $this->get(route('categories.show', $topLevel));
-
-    $response->assertOk();
-    $response->assertInertia(fn ($page) => $page
-        ->missing('products')
-        ->has('subcategories', 1)
-        ->where('subcategories.0.id', $visibleChild->id));
+    $this->get(route('subcategories.show', $subcategory))->assertNotFound();
 });
 
 test('guests can browse active brands', function () {

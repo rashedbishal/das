@@ -3,7 +3,9 @@
 namespace Database\Factories;
 
 use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
+use App\Models\Subcategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -19,6 +21,7 @@ class ProductFactory extends Factory
     {
         $name = implode(' ', (array) fake()->unique()->words(3));
         $regularPrice = fake()->randomFloat(2, 500, 50000);
+        $category = Category::factory()->create();
 
         return [
             'name' => ucfirst($name),
@@ -26,6 +29,8 @@ class ProductFactory extends Factory
             'sku' => strtoupper(fake()->unique()->bothify('SKU-####-???')),
             'model_number' => strtoupper(fake()->bothify('MDL-###')),
             'brand_id' => Brand::factory(),
+            'category_id' => $category->id,
+            'subcategory_id' => Subcategory::factory()->for($category)->create()->id,
             'short_description' => fake()->sentence(),
             'full_description' => fake()->paragraphs(3, true),
             'highlights' => fake()->sentences(3),

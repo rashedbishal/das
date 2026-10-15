@@ -31,10 +31,14 @@ class ProductResource extends JsonResource
                 'name' => $this->brand->name,
                 'slug' => $this->brand->slug,
             ] : null),
-            'categories' => $this->whenLoaded('categories', fn () => $this->categories->map(fn ($category) => [
-                'name' => $category->name,
-                'slug' => $category->slug,
-            ])),
+            'category' => $this->whenLoaded('category', fn () => $this->category ? [
+                'name' => $this->category->name,
+                'slug' => $this->category->slug,
+            ] : null),
+            'subcategory' => $this->whenLoaded('subcategory', fn () => $this->subcategory ? [
+                'name' => $this->subcategory->name,
+                'slug' => $this->subcategory->slug,
+            ] : null),
             'tags' => $this->whenLoaded('tags', fn () => $this->tags->pluck('name')),
             'short_description' => $this->short_description,
             'full_description' => $this->full_description,

@@ -22,7 +22,7 @@ class ProductService
      */
     public function paginate(array $filters, bool $includeAllStatuses = false): LengthAwarePaginator
     {
-        $query = Product::query()->with(['brand', 'categories', 'tags', 'media']);
+        $query = Product::query()->with(['brand', 'category', 'subcategory', 'tags', 'media']);
 
         if ($includeAllStatuses) {
             if (! empty($filters['status'])) {
@@ -43,7 +43,12 @@ class ProductService
 
         if (! empty($filters['category'])) {
             $category = $filters['category'];
-            $query->whereHas('categories', fn ($inner) => $inner->where('categories.slug', $category));
+            $query->whereHas('category', fn ($inner) => $inner->where('slug', $category));
+        }
+
+        if (! empty($filters['subcategory'])) {
+            $subcategory = $filters['subcategory'];
+            $query->whereHas('subcategory', fn ($inner) => $inner->where('slug', $subcategory));
         }
 
         if (! empty($filters['brand'])) {
@@ -94,7 +99,7 @@ class ProductService
 
         return DB::transaction(function () use ($actor, $data) {
             $product = Product::query()->create([
-                ...Arr::except($data, ['category_ids', 'tag_ids', 'related_product_ids', 'specifications']),
+                ...Arr::except($data, ['tag_ids', 'related_product_ids', 'specifications']),
                 'created_by' => $actor->id,
                 'updated_by' => $actor->id,
                 'published_at' => ($data['status'] ?? null) === 'published' ? now() : null,
@@ -104,7 +109,7 @@ class ProductService
 
             $this->activity->log('product.created', $product, "Created product {$product->name}");
 
-            return $product->fresh(['brand', 'categories', 'tags', 'media', 'specifications']);
+            return $product->fresh(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications']);
         });
     }
 
@@ -123,7 +128,7 @@ class ProductService
             $becomingPublished = ($data['status'] ?? null) === 'published' && $product->status !== 'published';
 
             $fillData = [
-                ...Arr::except($data, ['category_ids', 'tag_ids', 'related_product_ids', 'specifications']),
+                ...Arr::except($data, ['tag_ids', 'related_product_ids', 'specifications']),
                 'updated_by' => $actor->id,
             ];
 
@@ -138,7 +143,7 @@ class ProductService
 
             $this->activity->log('product.updated', $product, "Updated product {$product->name}");
 
-            return $product->fresh(['brand', 'categories', 'tags', 'media', 'specifications']);
+            return $product->fresh(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications']);
         });
     }
 
@@ -154,10 +159,6 @@ class ProductService
      */
     private function syncRelations(Product $product, array $data): void
     {
-        if (array_key_exists('category_ids', $data)) {
-            $product->categories()->sync($data['category_ids'] ?? []);
-        }
-
         if (array_key_exists('tag_ids', $data)) {
             $product->tags()->sync($data['tag_ids'] ?? []);
         }

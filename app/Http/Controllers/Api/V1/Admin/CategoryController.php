@@ -18,7 +18,7 @@ class CategoryController extends Controller
         $this->authorize('viewAny', Category::class);
 
         return response()->json([
-            'data' => Category::query()->with('parent')->withCount(['children', 'products'])->orderBy('sort_order')->orderBy('name')->get(),
+            'data' => Category::query()->withCount(['subcategories', 'products'])->orderBy('sort_order')->orderBy('name')->get(),
         ]);
     }
 

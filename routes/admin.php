@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\HomepageSectionController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductMediaController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\UserManagementController;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +14,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('categories', CategoryController::class)
         ->only(['index', 'store', 'update', 'destroy']);
+
+    Route::resource('subcategories', SubcategoryController::class)
+        ->only(['store', 'update', 'destroy']);
 
     Route::resource('brands', BrandController::class)
         ->only(['index', 'store', 'update', 'destroy']);

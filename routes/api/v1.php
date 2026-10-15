@@ -8,12 +8,14 @@ use App\Http\Controllers\Api\V1\Admin\ProductController as AdminProductControlle
 use App\Http\Controllers\Api\V1\Admin\ProductMediaController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\SettingsController as AdminSettingsController;
+use App\Http\Controllers\Api\V1\Admin\SubcategoryController as AdminSubcategoryController;
 use App\Http\Controllers\Api\V1\Admin\TagController as AdminTagController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BrandController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\HomepageController;
 use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Api\V1\SubcategoryController;
 use App\Http\Controllers\Api\V1\TagController;
 use App\Http\Controllers\PublicSettingsController;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +34,8 @@ Route::get('products/{product:slug}', [ProductController::class, 'show'])->middl
 Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::get('categories/{category:slug}', [CategoryController::class, 'show'])->name('categories.show');
 
+Route::get('subcategories/{subcategory:slug}', [SubcategoryController::class, 'show'])->name('subcategories.show');
+
 Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
 Route::get('brands/{brand:slug}', [BrandController::class, 'show'])->name('brands.show');
 
@@ -46,6 +50,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->name('admin.')->g
     Route::delete('products/{product}/media/{media}', [ProductMediaController::class, 'destroy'])->name('products.media.destroy');
 
     Route::apiResource('categories', AdminCategoryController::class)->except(['show']);
+    Route::apiResource('subcategories', AdminSubcategoryController::class)->except(['show']);
     Route::apiResource('brands', AdminBrandController::class)->except(['show']);
     Route::apiResource('tags', AdminTagController::class)->except(['show']);
 

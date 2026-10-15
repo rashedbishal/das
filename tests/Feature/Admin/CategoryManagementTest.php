@@ -2,6 +2,7 @@
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Subcategory;
 use App\Models\User;
 
 test('an admin with categories.manage can create a category', function () {
@@ -36,80 +37,35 @@ test('creating a category requires a name', function () {
     $response->assertSessionHasErrors('name');
 });
 
-test('an admin with categories.manage can create a subcategory under a top-level category', function () {
-    $admin = adminUser(['categories.manage', 'categories.view']);
-    $parent = Category::factory()->create();
+test('an admin with categories.manage can update a category', function () {
+    $admin = adminUser(['categories.manage']);
+    $category = Category::factory()->create(['name' => 'Old Name']);
 
-    $response = $this->actingAs($admin)->post(route('admin.categories.store'), [
-        'name' => 'Electric Handpieces',
-        'parent_id' => $parent->id,
+    $response = $this->actingAs($admin)->put(route('admin.categories.update', $category), [
+        'name' => 'New Name',
         'is_active' => true,
-        'sort_order' => 0,
     ]);
 
     $response->assertRedirect(route('admin.categories.index'));
-    expect(Category::query()->where('slug', 'electric-handpieces')->first()?->parent_id)->toBe($parent->id);
-});
-
-test('creating a category rejects a parent that is itself a subcategory', function () {
-    $admin = adminUser(['categories.manage']);
-    $topLevel = Category::factory()->create();
-    $subcategory = Category::factory()->child($topLevel)->create();
-
-    $response = $this->actingAs($admin)->post(route('admin.categories.store'), [
-        'name' => 'Too Deep',
-        'parent_id' => $subcategory->id,
-    ]);
-
-    $response->assertSessionHasErrors('parent_id');
-    expect(Category::query()->where('name', 'Too Deep')->exists())->toBeFalse();
-});
-
-test('updating a category rejects a parent that is itself a subcategory', function () {
-    $admin = adminUser(['categories.manage']);
-    $topLevel = Category::factory()->create();
-    $subcategory = Category::factory()->child($topLevel)->create();
-    $other = Category::factory()->create();
-
-    $response = $this->actingAs($admin)->put(route('admin.categories.update', $other), [
-        'name' => $other->name,
-        'parent_id' => $subcategory->id,
-    ]);
-
-    $response->assertSessionHasErrors('parent_id');
-    expect($other->fresh()->parent_id)->toBeNull();
-});
-
-test('a category with subcategories cannot itself become a subcategory', function () {
-    $admin = adminUser(['categories.manage']);
-    $parent = Category::factory()->create();
-    Category::factory()->child($parent)->create();
-    $otherTopLevel = Category::factory()->create();
-
-    $response = $this->actingAs($admin)->put(route('admin.categories.update', $parent), [
-        'name' => $parent->name,
-        'parent_id' => $otherTopLevel->id,
-    ]);
-
-    $response->assertSessionHasErrors('parent_id');
-    expect($parent->fresh()->parent_id)->toBeNull();
+    expect($category->fresh()->name)->toBe('New Name');
 });
 
 test('a category cannot be deleted while it still has subcategories', function () {
     $admin = adminUser(['categories.manage']);
-    $parent = Category::factory()->create();
-    Category::factory()->child($parent)->create();
+    $category = Category::factory()->create();
+    Subcategory::factory()->for($category)->create();
 
-    $response = $this->actingAs($admin)->delete(route('admin.categories.destroy', $parent));
+    $response = $this->actingAs($admin)->delete(route('admin.categories.destroy', $category));
 
     $response->assertSessionHasErrors('category');
-    expect(Category::query()->whereKey($parent->id)->exists())->toBeTrue();
+    expect(Category::query()->whereKey($category->id)->exists())->toBeTrue();
 });
 
 test('a category cannot be deleted while products are assigned to it', function () {
     $admin = adminUser(['categories.manage']);
-    $category = Category::factory()->child(Category::factory()->create())->create();
-    $category->products()->attach(Product::factory()->create());
+    $category = Category::factory()->create();
+    $subcategory = Subcategory::factory()->for($category)->create();
+    Product::factory()->create(['category_id' => $category->id, 'subcategory_id' => $subcategory->id]);
 
     $response = $this->actingAs($admin)->delete(route('admin.categories.destroy', $category));
 

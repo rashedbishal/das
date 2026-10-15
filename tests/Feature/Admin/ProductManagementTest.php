@@ -3,12 +3,14 @@
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Subcategory;
 use App\Models\Tag;
 
 test('an admin with products.create can create a product with relations and specifications', function () {
     $admin = adminUser(['products.create', 'products.view']);
     $brand = Brand::factory()->create();
-    $category = Category::factory()->child(Category::factory()->create())->create();
+    $category = Category::factory()->create();
+    $subcategory = Subcategory::factory()->for($category)->create();
     $tag = Tag::factory()->create();
 
     $response = $this->actingAs($admin)->post(route('admin.products.store'), [
@@ -19,7 +21,8 @@ test('an admin with products.create can create a product with relations and spec
         'regular_price' => 1000,
         'stock_quantity' => 10,
         'stock_status' => 'in_stock',
-        'category_ids' => [$category->id],
+        'category_id' => $category->id,
+        'subcategory_id' => $subcategory->id,
         'tag_ids' => [$tag->id],
         'specifications' => [
             ['name' => 'Weight', 'value' => '80kg'],
@@ -29,27 +32,47 @@ test('an admin with products.create can create a product with relations and spec
     $response->assertRedirect();
     $product = Product::query()->where('sku', 'SKU-0001')->firstOrFail();
     expect($product->created_by)->toBe($admin->id)
-        ->and($product->categories->pluck('id'))->toContain($category->id)
+        ->and($product->category_id)->toBe($category->id)
+        ->and($product->subcategory_id)->toBe($subcategory->id)
         ->and($product->tags->pluck('id'))->toContain($tag->id)
         ->and($product->specifications)->toHaveCount(1);
 });
 
-test('creating a product rejects a category that is not a subcategory', function () {
+test('creating a product requires a category and subcategory', function () {
     $admin = adminUser(['products.create']);
-    $topLevelCategory = Category::factory()->create();
 
     $response = $this->actingAs($admin)->post(route('admin.products.store'), [
         'name' => 'Dental Chair X2',
-        'sku' => 'SKU-TOPLEVEL',
+        'sku' => 'SKU-NOCAT',
         'regular_price' => 1000,
         'stock_quantity' => 10,
         'status' => 'draft',
         'stock_status' => 'in_stock',
-        'category_ids' => [$topLevelCategory->id],
     ]);
 
-    $response->assertSessionHasErrors('category_ids.0');
-    expect(Product::query()->where('sku', 'SKU-TOPLEVEL')->exists())->toBeFalse();
+    $response->assertSessionHasErrors(['category_id', 'subcategory_id']);
+    expect(Product::query()->where('sku', 'SKU-NOCAT')->exists())->toBeFalse();
+});
+
+test('creating a product rejects a subcategory that does not belong to the selected category', function () {
+    $admin = adminUser(['products.create']);
+    $category = Category::factory()->create();
+    $otherCategory = Category::factory()->create();
+    $subcategoryOfOtherCategory = Subcategory::factory()->for($otherCategory)->create();
+
+    $response = $this->actingAs($admin)->post(route('admin.products.store'), [
+        'name' => 'Dental Chair X3',
+        'sku' => 'SKU-MISMATCH',
+        'regular_price' => 1000,
+        'stock_quantity' => 10,
+        'status' => 'draft',
+        'stock_status' => 'in_stock',
+        'category_id' => $category->id,
+        'subcategory_id' => $subcategoryOfOtherCategory->id,
+    ]);
+
+    $response->assertSessionHasErrors('subcategory_id');
+    expect(Product::query()->where('sku', 'SKU-MISMATCH')->exists())->toBeFalse();
 });
 
 test('an admin without products.create cannot create a product', function () {
@@ -110,6 +133,8 @@ test('publishing a draft product for the first time stamps published_at', functi
         'stock_quantity' => $product->stock_quantity,
         'stock_status' => $product->stock_status,
         'status' => 'published',
+        'category_id' => $product->category_id,
+        'subcategory_id' => $product->subcategory_id,
     ]);
 
     $response->assertRedirect();

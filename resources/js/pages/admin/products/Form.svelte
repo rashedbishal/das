@@ -17,7 +17,8 @@
     import { store, update } from '@/routes/admin/products';
     import { store as storeMedia, destroy as destroyMedia } from '@/routes/admin/products/media';
 
-    type Option = { id: number; name: string; parent_id?: number | null };
+    type Option = { id: number; name: string };
+    type SubcategoryOption = { id: number; name: string; category_id: number };
     type MediaItem = {
         id: number;
         type: string;
@@ -46,7 +47,8 @@
         seo_description: string | null;
         seo_keywords: string | null;
         canonical_url: string | null;
-        categories: { id: number }[];
+        category_id: number;
+        subcategory_id: number;
         tags: { id: number }[];
         media: MediaItem[];
     };
@@ -55,17 +57,30 @@
         product,
         brands,
         categories,
+        subcategories,
         tags,
     }: {
         product?: ProductDetail;
         brands: Option[];
         categories: Option[];
+        subcategories: SubcategoryOption[];
         tags: Option[];
     } = $props();
 
     const isEdit = Boolean(product);
-    const selectedCategoryIds = new Set(product?.categories.map((c) => c.id) ?? []);
     const selectedTagIds = new Set(product?.tags.map((t) => t.id) ?? []);
+
+    let selectedCategoryId = $state<number | ''>(product?.category_id ?? '');
+    let selectedSubcategoryId = $state<number | ''>(product?.subcategory_id ?? '');
+    const availableSubcategories = $derived(
+        subcategories.filter((subcategory) => subcategory.category_id === selectedCategoryId),
+    );
+
+    $effect(() => {
+        if (!availableSubcategories.some((subcategory) => subcategory.id === selectedSubcategoryId)) {
+            selectedSubcategoryId = '';
+        }
+    });
 
     let uploadType = $state<'image' | 'video'>('image');
     let uploadSource = $state<'upload' | 'url'>('upload');
@@ -235,17 +250,41 @@
                 Featured product
             </label>
 
-            <fieldset class="grid gap-2">
-                <legend class="mb-1 text-sm font-medium">Categories</legend>
-                <div class="grid max-h-48 grid-cols-2 gap-1 overflow-y-auto rounded-md border p-3 text-sm">
-                    {#each categories as category (category.id)}
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" name="category_ids[]" value={category.id} checked={selectedCategoryIds.has(category.id)} />
-                            {category.name}
-                        </label>
-                    {/each}
+            <div class="grid grid-cols-2 gap-4">
+                <div class="grid gap-2">
+                    <Label for="category_id">Category</Label>
+                    <select
+                        id="category_id"
+                        name="category_id"
+                        required
+                        bind:value={selectedCategoryId}
+                        class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                    >
+                        <option value="" disabled>Select a category</option>
+                        {#each categories as category (category.id)}
+                            <option value={category.id}>{category.name}</option>
+                        {/each}
+                    </select>
+                    <InputError message={errors.category_id} />
                 </div>
-            </fieldset>
+                <div class="grid gap-2">
+                    <Label for="subcategory_id">Subcategory</Label>
+                    <select
+                        id="subcategory_id"
+                        name="subcategory_id"
+                        required
+                        disabled={!selectedCategoryId}
+                        bind:value={selectedSubcategoryId}
+                        class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                    >
+                        <option value="" disabled>Select a subcategory</option>
+                        {#each availableSubcategories as subcategory (subcategory.id)}
+                            <option value={subcategory.id}>{subcategory.name}</option>
+                        {/each}
+                    </select>
+                    <InputError message={errors.subcategory_id} />
+                </div>
+            </div>
 
             <fieldset class="grid gap-2">
                 <legend class="mb-1 text-sm font-medium">Tags</legend>

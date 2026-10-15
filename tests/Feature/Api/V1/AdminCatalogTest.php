@@ -4,10 +4,13 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductMedia;
+use App\Models\Subcategory;
 use App\Models\Tag;
 
 test('an admin can create a product through the api', function () {
     $admin = adminUser(['products.create']);
+    $category = Category::factory()->create();
+    $subcategory = Subcategory::factory()->for($category)->create();
 
     $response = $this->actingAs($admin)->postJson(route('api.v1.admin.products.store'), [
         'name' => 'API Dental Chair',
@@ -16,6 +19,8 @@ test('an admin can create a product through the api', function () {
         'stock_quantity' => 5,
         'status' => 'draft',
         'stock_status' => 'in_stock',
+        'category_id' => $category->id,
+        'subcategory_id' => $subcategory->id,
     ]);
 
     $response->assertCreated()->assertJsonPath('data.sku', 'API-SKU-1');
