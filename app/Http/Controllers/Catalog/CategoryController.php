@@ -33,6 +33,17 @@ class CategoryController extends Controller
     {
         abort_unless($category->is_active, 404);
 
+        if ($category->parent_id === null) {
+            $category->load(['children' => fn ($query) => $query->active()->orderBy('sort_order')->orderBy('name')]);
+
+            return Inertia::render('catalog/CategoryShow', [
+                'category' => $category,
+                'subcategories' => $category->children,
+            ]);
+        }
+
+        $category->load('parent');
+
         $products = $this->products->paginate(['category' => $category->slug]);
         $products->through(fn (Product $product) => (new ProductCardResource($product))->toArray($request));
 

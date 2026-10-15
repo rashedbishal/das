@@ -12,6 +12,7 @@ use App\Models\Tag;
 use App\Services\ProductService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -40,7 +41,7 @@ class ProductController extends Controller
 
         return Inertia::render('admin/products/Form', [
             'brands' => Brand::query()->active()->orderBy('name')->get(['id', 'name']),
-            'categories' => Category::query()->active()->orderBy('name')->get(['id', 'name', 'parent_id']),
+            'categories' => $this->subcategoryOptions(),
             'tags' => Tag::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
@@ -63,7 +64,7 @@ class ProductController extends Controller
         return Inertia::render('admin/products/Form', [
             'product' => $product,
             'brands' => Brand::query()->active()->orderBy('name')->get(['id', 'name']),
-            'categories' => Category::query()->active()->orderBy('name')->get(['id', 'name', 'parent_id']),
+            'categories' => $this->subcategoryOptions(),
             'tags' => Tag::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
@@ -86,5 +87,27 @@ class ProductController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Product deleted.']);
 
         return to_route('admin.products.index');
+    }
+
+    /**
+     * Products can only be assigned to subcategories, so the picker only ever offers those,
+     * labelled with their parent so admins can tell them apart.
+     *
+     * @return Collection<int, array{id: int, name: string}>
+     */
+    private function subcategoryOptions(): Collection
+    {
+        return Category::query()
+            ->active()
+            ->whereNotNull('parent_id')
+            ->with('parent:id,name')
+            ->orderBy('name')
+            ->get(['id', 'name', 'parent_id'])
+            ->map(fn (Category $category) => [
+                'id' => $category->id,
+                'name' => $category->parent !== null
+                    ? "{$category->parent->name} \u{203A} {$category->name}"
+                    : $category->name,
+            ]);
     }
 }

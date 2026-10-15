@@ -8,7 +8,7 @@ use App\Models\Tag;
 test('an admin with products.create can create a product with relations and specifications', function () {
     $admin = adminUser(['products.create', 'products.view']);
     $brand = Brand::factory()->create();
-    $category = Category::factory()->create();
+    $category = Category::factory()->child(Category::factory()->create())->create();
     $tag = Tag::factory()->create();
 
     $response = $this->actingAs($admin)->post(route('admin.products.store'), [
@@ -32,6 +32,24 @@ test('an admin with products.create can create a product with relations and spec
         ->and($product->categories->pluck('id'))->toContain($category->id)
         ->and($product->tags->pluck('id'))->toContain($tag->id)
         ->and($product->specifications)->toHaveCount(1);
+});
+
+test('creating a product rejects a category that is not a subcategory', function () {
+    $admin = adminUser(['products.create']);
+    $topLevelCategory = Category::factory()->create();
+
+    $response = $this->actingAs($admin)->post(route('admin.products.store'), [
+        'name' => 'Dental Chair X2',
+        'sku' => 'SKU-TOPLEVEL',
+        'regular_price' => 1000,
+        'stock_quantity' => 10,
+        'status' => 'draft',
+        'stock_status' => 'in_stock',
+        'category_ids' => [$topLevelCategory->id],
+    ]);
+
+    $response->assertSessionHasErrors('category_ids.0');
+    expect(Product::query()->where('sku', 'SKU-TOPLEVEL')->exists())->toBeFalse();
 });
 
 test('an admin without products.create cannot create a product', function () {

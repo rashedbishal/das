@@ -42,7 +42,7 @@ class UpdateProductRequest extends FormRequest
             'seo_keywords' => ['nullable', 'string', 'max:255'],
             'canonical_url' => ['nullable', 'url', 'max:2048'],
             'category_ids' => ['nullable', 'array'],
-            'category_ids.*' => ['integer', 'exists:categories,id'],
+            'category_ids.*' => ['integer', Rule::exists('categories', 'id')->whereNotNull('parent_id')],
             'tag_ids' => ['nullable', 'array'],
             'tag_ids.*' => ['integer', 'exists:tags,id'],
             'related_product_ids' => ['nullable', 'array'],

@@ -13,6 +13,10 @@ class CategoryService
      */
     public function create(array $data): Category
     {
+        if (! empty($data['parent_id'])) {
+            $this->assertValidParent($data['parent_id']);
+        }
+
         $data['slug'] = ! empty($data['slug'])
             ? SlugGenerator::unique('categories', $data['slug'])
             : SlugGenerator::unique('categories', $data['name']);
@@ -27,6 +31,14 @@ class CategoryService
     {
         if (array_key_exists('parent_id', $data) && $data['parent_id'] === $category->id) {
             throw ValidationException::withMessages(['parent_id' => 'A category cannot be its own parent.']);
+        }
+
+        if (array_key_exists('parent_id', $data) && $data['parent_id'] !== null) {
+            if ($category->children()->exists()) {
+                throw ValidationException::withMessages(['parent_id' => 'This category has subcategories and cannot become a subcategory itself.']);
+            }
+
+            $this->assertValidParent($data['parent_id']);
         }
 
         $data['slug'] = ! empty($data['slug'])
@@ -49,5 +61,14 @@ class CategoryService
         }
 
         $category->delete();
+    }
+
+    private function assertValidParent(int $parentId): void
+    {
+        $parent = Category::query()->find($parentId);
+
+        if ($parent !== null && $parent->parent_id !== null) {
+            throw ValidationException::withMessages(['parent_id' => 'Categories can only be nested two levels deep (category then subcategory).']);
+        }
     }
 }

@@ -20,12 +20,15 @@
         id: number;
         name: string;
         parent_id: number | null;
+        parent: { id: number; name: string } | null;
         is_active: boolean;
         children_count: number;
         products_count: number;
     };
 
     let { categories }: { categories: CategoryRow[] } = $props();
+
+    const topLevelCategories = $derived(categories.filter((category) => category.parent_id === null));
 
     function removeCategory(id: number) {
         if (confirm('Delete this category?')) {
@@ -44,6 +47,7 @@
                 <thead class="bg-muted/50 text-left">
                     <tr>
                         <th class="p-2">Name</th>
+                        <th class="p-2">Parent</th>
                         <th class="p-2">Active</th>
                         <th class="p-2">Subcategories</th>
                         <th class="p-2">Products</th>
@@ -53,7 +57,13 @@
                 <tbody>
                     {#each categories as category (category.id)}
                         <tr class="border-t">
-                            <td class="p-2">{category.name}</td>
+                            <td class="p-2">
+                                {#if category.parent}
+                                    <span class="text-muted-foreground">&rtrif;</span>
+                                {/if}
+                                {category.name}
+                            </td>
+                            <td class="p-2 text-muted-foreground">{category.parent?.name ?? '—'}</td>
                             <td class="p-2">
                                 <Badge variant={category.is_active ? 'default' : 'secondary'}>
                                     {category.is_active ? 'Active' : 'Inactive'}
@@ -68,7 +78,7 @@
                             </td>
                         </tr>
                     {:else}
-                        <tr><td class="p-4 text-muted-foreground" colspan="5">No categories yet.</td></tr>
+                        <tr><td class="p-4 text-muted-foreground" colspan="6">No categories yet.</td></tr>
                     {/each}
                 </tbody>
             </table>
@@ -92,11 +102,15 @@
                         name="parent_id"
                         class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
                     >
-                        <option value="">None</option>
-                        {#each categories as category (category.id)}
+                        <option value="">None — this is a top-level category</option>
+                        {#each topLevelCategories as category (category.id)}
                             <option value={category.id}>{category.name}</option>
                         {/each}
                     </select>
+                    <p class="text-xs text-muted-foreground">
+                        Leave blank to create a top-level category, or pick one to create a subcategory under it.
+                        Categories can only be nested two levels deep.
+                    </p>
                     <InputError message={errors.parent_id} />
                 </div>
 
