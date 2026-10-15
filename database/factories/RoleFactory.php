@@ -1,0 +1,36 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\Role;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
+
+/**
+ * @extends Factory<Role>
+ */
+class RoleFactory extends Factory
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        $name = fake()->unique()->jobTitle();
+
+        return [
+            'name' => $name,
+            'slug' => Str::slug($name),
+            'is_system' => false,
+        ];
+    }
+
+    public function motherAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name' => 'Mother Admin',
+            'slug' => Role::MOTHER_ADMIN,
+            'is_system' => true,
+        ]);
+    }
+}

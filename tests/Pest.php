@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Permission;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -47,4 +50,25 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * @param  array<int, string>  $permissionSlugs
+ */
+function adminUser(array $permissionSlugs = []): User
+{
+    $role = Role::factory()->create();
+
+    if ($permissionSlugs !== []) {
+        $permissions = collect($permissionSlugs)->map(
+            fn (string $slug) => Permission::query()->firstOrCreate(
+                ['slug' => $slug],
+                ['name' => $slug, 'group' => explode('.', $slug)[0]],
+            ),
+        );
+
+        $role->permissions()->sync($permissions->pluck('id'));
+    }
+
+    return User::factory()->admin($role)->create();
 }

@@ -1,0 +1,124 @@
+<?php
+
+use App\Models\Permission;
+use App\Models\Role;
+use App\Models\User;
+
+test('an admin with admins.manage can create another admin through the api', function () {
+    $permission = Permission::factory()->create(['slug' => 'products.view', 'group' => 'products']);
+    $actorRole = Role::factory()->create();
+    $actorRole->permissions()->attach([
+        $permission->id,
+        Permission::factory()->create(['slug' => 'admins.manage', 'group' => 'admins'])->id,
+    ]);
+    $actor = User::factory()->admin($actorRole)->create();
+
+    $targetRole = Role::factory()->create();
+    $targetRole->permissions()->attach($permission);
+
+    $response = $this->actingAs($actor)->postJson(route('api.v1.admin.admins.store'), [
+        'name' => 'New Admin',
+        'email' => 'new-admin@example.com',
+        'password' => 'secret-password',
+        'role_id' => $targetRole->id,
+    ]);
+
+    $response->assertCreated()->assertJsonPath('data.email', 'new-admin@example.com');
+});
+
+test('an admin cannot create another admin with a role granting permissions they lack', function () {
+    $actorRole = Role::factory()->create();
+    $actorRole->permissions()->attach(Permission::factory()->create(['slug' => 'admins.manage', 'group' => 'admins']));
+    $actor = User::factory()->admin($actorRole)->create();
+
+    $targetRole = Role::factory()->create();
+    $targetRole->permissions()->attach(Permission::factory()->create(['slug' => 'settings.manage', 'group' => 'settings']));
+
+    $response = $this->actingAs($actor)->postJson(route('api.v1.admin.admins.store'), [
+        'name' => 'New Admin',
+        'email' => 'new-admin@example.com',
+        'password' => 'secret-password',
+        'role_id' => $targetRole->id,
+    ]);
+
+    $response->assertForbidden();
+});
+
+test('the mother admin cannot be deactivated through the api', function () {
+    $motherAdmin = User::factory()->motherAdmin()->create();
+    $otherAdmin = adminUser(['admins.manage']);
+
+    $response = $this->actingAs($otherAdmin)->postJson(route('api.v1.admin.admins.deactivate', $motherAdmin));
+
+    $response->assertForbidden();
+    expect($motherAdmin->fresh()->is_active)->toBeTrue();
+});
+
+test('an admin with roles.manage can create a role through the api', function () {
+    Permission::factory()->create(['slug' => 'products.view', 'group' => 'products']);
+    $admin = adminUser(['roles.manage', 'products.view']);
+
+    $response = $this->actingAs($admin)->postJson(route('api.v1.admin.roles.store'), [
+        'name' => 'API Role',
+        'permissions' => ['products.view'],
+    ]);
+
+    $response->assertCreated()->assertJsonPath('data.name', 'API Role');
+});
+
+test('a customer manager can deactivate a customer through the api', function () {
+    $admin = adminUser(['customers.manage']);
+    $customer = User::factory()->create();
+
+    $response = $this->actingAs($admin)->postJson(route('api.v1.admin.customers.deactivate', $customer));
+
+    $response->assertOk();
+    expect($customer->fresh()->is_active)->toBeFalse();
+});
+
+test('a guest receives a 401 from the admin roles api', function () {
+    $this->getJson(route('api.v1.admin.roles.index'))->assertUnauthorized();
+});
+
+test('the mother admin can transfer ownership to another admin with the correct password', function () {
+    Role::factory()->create(['slug' => 'read-only-admin']);
+    $motherAdmin = User::factory()->motherAdmin()->create(['password' => 'current-password']);
+    $motherRoleId = $motherAdmin->role_id;
+    $successor = User::factory()->admin(Role::factory()->create())->create();
+
+    $response = $this->actingAs($motherAdmin)->postJson(
+        route('api.v1.admin.admins.transfer-mother-admin', $successor),
+        ['password' => 'current-password'],
+    );
+
+    $response->assertOk()->assertJsonPath('data.role_id', $motherRoleId);
+    expect($successor->fresh()->isMotherAdmin())->toBeTrue()
+        ->and($motherAdmin->fresh()->isMotherAdmin())->toBeFalse();
+});
+
+test('transferring mother admin ownership rejects an incorrect password', function () {
+    $motherAdmin = User::factory()->motherAdmin()->create(['password' => 'current-password']);
+    $successor = User::factory()->admin(Role::factory()->create())->create();
+
+    $response = $this->actingAs($motherAdmin)->postJson(
+        route('api.v1.admin.admins.transfer-mother-admin', $successor),
+        ['password' => 'wrong-password'],
+    );
+
+    $response->assertUnprocessable()->assertJsonValidationErrors('password');
+    expect($motherAdmin->fresh()->isMotherAdmin())->toBeTrue();
+});
+
+test('a non mother admin cannot transfer mother admin ownership', function () {
+    $motherAdmin = User::factory()->motherAdmin()->create();
+    $otherAdmin = adminUser(['admins.manage']);
+    $successor = User::factory()->admin(Role::factory()->create())->create();
+
+    $response = $this->actingAs($otherAdmin)->postJson(
+        route('api.v1.admin.admins.transfer-mother-admin', $successor),
+        ['password' => 'password'],
+    );
+
+    $response->assertForbidden();
+    expect($motherAdmin->fresh()->isMotherAdmin())->toBeTrue();
+});

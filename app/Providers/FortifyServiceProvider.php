@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Services\AuthenticationService;
+use App\Services\SettingsService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -41,6 +43,11 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+
+        Fortify::authenticateUsing(fn (Request $request) => app(AuthenticationService::class)->resolveUser(
+            (string) $request->input(Fortify::username()),
+            (string) $request->input('password'),
+        ));
     }
 
     /**
@@ -51,6 +58,7 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/Login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
             'status' => $request->session()->get('status'),
+            'loginMode' => app(SettingsService::class)->loginMode(),
         ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/ResetPassword', [
@@ -69,6 +77,8 @@ class FortifyServiceProvider extends ServiceProvider
 
         Fortify::registerView(fn () => Inertia::render('auth/Register', [
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            'loginMode' => app(SettingsService::class)->loginMode(),
+            'registrationEnabled' => app(SettingsService::class)->registrationEnabled(),
         ]));
 
         Fortify::confirmPasswordView(fn () => Inertia::render('auth/ConfirmPassword'));

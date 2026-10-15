@@ -1,4 +1,4 @@
-import type { Auth } from '@/types/auth';
+import type { Auth, ContactWidgets } from '@/types/auth';
 
 // Extend ImportMeta interface for Vite...
 declare module 'vite/client' {
@@ -22,6 +22,12 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            contactWidgets: ContactWidgets;
+            siteSettings: {
+                name: string;
+                logo: string | null;
+                currency: string;
+            };
             [key: string]: unknown;
         };
     }

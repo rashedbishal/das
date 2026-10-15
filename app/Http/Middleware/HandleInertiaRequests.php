@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,6 +36,8 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $settings = app(SettingsService::class);
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -42,6 +45,15 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'contactWidgets' => [
+                'whatsapp' => $settings->whatsappWidget(),
+                'messenger' => $settings->messengerWidget(),
+            ],
+            'siteSettings' => [
+                'name' => $settings->get('general', 'site_name', config('app.name')),
+                'logo' => $settings->get('general', 'logo'),
+                'currency' => $settings->get('general', 'currency', 'BDT'),
+            ],
         ];
     }
 }

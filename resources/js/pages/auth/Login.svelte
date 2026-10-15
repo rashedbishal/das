@@ -23,10 +23,27 @@
     let {
         status = '',
         canResetPassword,
+        loginMode = 'both',
     }: {
         status?: string;
         canResetPassword: boolean;
+        loginMode?: 'email' | 'phone' | 'both';
     } = $props();
+
+    const identifierLabel = $derived(
+        loginMode === 'email'
+            ? 'Email address'
+            : loginMode === 'phone'
+              ? 'Phone number'
+              : 'Email or phone number',
+    );
+    const identifierPlaceholder = $derived(
+        loginMode === 'email'
+            ? 'email@example.com'
+            : loginMode === 'phone'
+              ? '01XXXXXXXXX'
+              : 'email@example.com or 01XXXXXXXXX',
+    );
 </script>
 
 <AppHead title="Log in" />
@@ -46,14 +63,14 @@
     {#snippet children({ errors, processing })}
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">{identifierLabel}</Label>
                 <Input
                     id="email"
-                    type="email"
+                    type="text"
                     name="email"
                     required
-                    autocomplete="email"
-                    placeholder="email@example.com"
+                    autocomplete="username"
+                    placeholder={identifierPlaceholder}
                 />
                 <InputError message={errors.email} />
             </div>

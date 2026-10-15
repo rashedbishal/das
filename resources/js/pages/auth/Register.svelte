@@ -18,11 +18,27 @@
     import { login } from '@/routes';
     import { store } from '@/routes/register';
 
-    let { passwordRules }: { passwordRules: string } = $props();
+    let {
+        passwordRules,
+        loginMode = 'both',
+        registrationEnabled = true,
+    }: {
+        passwordRules: string;
+        loginMode?: 'email' | 'phone' | 'both';
+        registrationEnabled?: boolean;
+    } = $props();
+
+    const showEmail = $derived(loginMode === 'email' || loginMode === 'both');
+    const showPhone = $derived(loginMode === 'phone' || loginMode === 'both');
 </script>
 
 <AppHead title="Register" />
 
+{#if !registrationEnabled}
+    <p class="text-center text-sm text-muted-foreground">
+        Registration is currently disabled. Please contact us directly.
+    </p>
+{:else}
 <Form
     {...store.form()}
     resetOnSuccess={['password', 'password_confirmation']}
@@ -43,18 +59,35 @@
                 <InputError message={errors.name} />
             </div>
 
-            <div class="grid gap-2">
-                <Label for="email">Email address</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    required
-                    autocomplete="email"
-                    name="email"
-                    placeholder="email@example.com"
-                />
-                <InputError message={errors.email} />
-            </div>
+            {#if showEmail}
+                <div class="grid gap-2">
+                    <Label for="email">Email address</Label>
+                    <Input
+                        id="email"
+                        type="email"
+                        required={loginMode === 'email'}
+                        autocomplete="email"
+                        name="email"
+                        placeholder="email@example.com"
+                    />
+                    <InputError message={errors.email} />
+                </div>
+            {/if}
+
+            {#if showPhone}
+                <div class="grid gap-2">
+                    <Label for="phone">Phone number</Label>
+                    <Input
+                        id="phone"
+                        type="text"
+                        required={loginMode === 'phone'}
+                        autocomplete="tel"
+                        name="phone"
+                        placeholder="01XXXXXXXXX"
+                    />
+                    <InputError message={errors.phone} />
+                </div>
+            {/if}
 
             <div class="grid gap-2">
                 <Label for="password">Password</Label>
@@ -101,3 +134,4 @@
         </div>
     {/snippet}
 </Form>
+{/if}
