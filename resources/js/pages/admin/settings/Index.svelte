@@ -15,14 +15,14 @@
 
     let {
         general,
-        auth,
+        authSettings,
         whatsapp,
         messenger,
         catalog,
         seo,
     }: {
         general: { site_name?: string; contact_email?: string; contact_phone?: string; address?: string; currency?: string; timezone?: string };
-        auth: { login_mode?: string; registration_enabled?: boolean };
+        authSettings: { login_mode?: string; registration_enabled?: boolean };
         whatsapp: { enabled?: boolean; phone?: string; message?: string };
         messenger: { enabled?: boolean; page_url?: string };
         catalog: { page_size?: number; featured_limit?: number };
@@ -86,13 +86,13 @@
                         class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
                     >
                         {#each ['email', 'phone', 'both'] as value}
-                            <option {value} selected={(auth.login_mode ?? 'both') === value}>{value}</option>
+                            <option {value} selected={(authSettings.login_mode ?? 'both') === value}>{value}</option>
                         {/each}
                     </select>
                     <InputError message={errors.login_mode} />
                 </div>
                 <label class="flex items-center gap-2 text-sm">
-                    <input type="checkbox" name="registration_enabled" value="1" checked={auth.registration_enabled ?? true} />
+                    <input type="checkbox" name="registration_enabled" value="1" checked={authSettings.registration_enabled ?? true} />
                     Allow new customer registration
                 </label>
                 <Button type="submit" disabled={processing}>Save authentication settings</Button>

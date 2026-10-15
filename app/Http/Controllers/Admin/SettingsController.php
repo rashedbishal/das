@@ -24,7 +24,7 @@ class SettingsController extends Controller
 
         return Inertia::render('admin/settings/Index', [
             'general' => $this->settings->group('general'),
-            'auth' => $this->settings->group('auth'),
+            'authSettings' => $this->settings->group('auth'),
             'whatsapp' => $this->settings->group('whatsapp'),
             'messenger' => $this->settings->group('messenger'),
             'catalog' => $this->settings->group('catalog'),

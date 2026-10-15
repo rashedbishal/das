@@ -1,15 +1,13 @@
 <script lang="ts">
-    import { Link, page } from '@inertiajs/svelte';
-    import BookOpen from '@lucide/svelte/icons/book-open';
-    import FolderGit2 from '@lucide/svelte/icons/folder-git-2';
+    import { Link, page, router } from '@inertiajs/svelte';
     import LayoutGrid from '@lucide/svelte/icons/layout-grid';
     import Package from '@lucide/svelte/icons/package';
     import Settings from '@lucide/svelte/icons/settings';
     import Tags from '@lucide/svelte/icons/tags';
     import Users from '@lucide/svelte/icons/users';
     import type { Snippet } from 'svelte';
+    import { onMount } from 'svelte';
     import AppLogo from '@/components/AppLogo.svelte';
-    import NavFooter from '@/components/NavFooter.svelte';
     import NavMain from '@/components/NavMain.svelte';
     import NavUser from '@/components/NavUser.svelte';
     import {
@@ -20,6 +18,7 @@
         SidebarMenu,
         SidebarMenuButton,
         SidebarMenuItem,
+        useSidebar,
     } from '@/components/ui/sidebar';
     import { toUrl } from '@/lib/utils';
     import { dashboard } from '@/routes';
@@ -30,6 +29,10 @@
     }: {
         children?: Snippet;
     } = $props();
+
+    const { setOpenMobile } = useSidebar();
+
+    onMount(() => router.on('start', () => setOpenMobile(false)));
 
     const isAdmin = $derived(page.props.auth.user?.user_type === 'admin');
 
@@ -50,19 +53,6 @@
               ]
             : []),
     ]);
-
-    const footerNavItems: NavItem[] = [
-        {
-            title: 'Repository',
-            href: 'https://github.com/laravel/svelte-starter-kit',
-            icon: FolderGit2,
-        },
-        {
-            title: 'Documentation',
-            href: 'https://laravel.com/docs/starter-kits#svelte',
-            icon: BookOpen,
-        },
-    ];
 </script>
 
 <Sidebar collapsible="icon" variant="inset">
@@ -89,7 +79,6 @@
     </SidebarContent>
 
     <SidebarFooter>
-        <NavFooter items={footerNavItems} />
         <NavUser />
     </SidebarFooter>
 </Sidebar>

@@ -13,6 +13,7 @@ use App\Models\Tag;
 use App\Services\ProductService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,6 +33,7 @@ class ProductController extends Controller
         return Inertia::render('admin/products/Index', [
             'products' => $products,
             'filters' => $request->only(['search', 'status', 'brand', 'category', 'subcategory', 'stock_status', 'sort']),
+            ...$this->formOptions(),
         ]);
     }
 
@@ -39,12 +41,7 @@ class ProductController extends Controller
     {
         $this->authorize('create', Product::class);
 
-        return Inertia::render('admin/products/Form', [
-            'brands' => Brand::query()->active()->orderBy('name')->get(['id', 'name']),
-            'categories' => Category::query()->active()->orderBy('name')->get(['id', 'name']),
-            'subcategories' => Subcategory::query()->active()->orderBy('name')->get(['id', 'name', 'category_id']),
-            'tags' => Tag::query()->orderBy('name')->get(['id', 'name']),
-        ]);
+        return Inertia::render('admin/products/Form', $this->formOptions());
     }
 
     public function store(StoreProductRequest $request): RedirectResponse
@@ -64,10 +61,7 @@ class ProductController extends Controller
 
         return Inertia::render('admin/products/Form', [
             'product' => $product,
-            'brands' => Brand::query()->active()->orderBy('name')->get(['id', 'name']),
-            'categories' => Category::query()->active()->orderBy('name')->get(['id', 'name']),
-            'subcategories' => Subcategory::query()->active()->orderBy('name')->get(['id', 'name', 'category_id']),
-            'tags' => Tag::query()->orderBy('name')->get(['id', 'name']),
+            ...$this->formOptions(),
         ]);
     }
 
@@ -77,7 +71,7 @@ class ProductController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Product updated.']);
 
-        return to_route('admin.products.edit', $product);
+        return back();
     }
 
     public function destroy(Product $product): RedirectResponse
@@ -89,5 +83,18 @@ class ProductController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Product deleted.']);
 
         return to_route('admin.products.index');
+    }
+
+    /**
+     * @return array{brands: Collection<int, Brand>, categories: Collection<int, Category>, subcategories: Collection<int, Subcategory>, tags: Collection<int, Tag>}
+     */
+    private function formOptions(): array
+    {
+        return [
+            'brands' => Brand::query()->active()->orderBy('name')->get(['id', 'name']),
+            'categories' => Category::query()->active()->orderBy('name')->get(['id', 'name']),
+            'subcategories' => Subcategory::query()->active()->orderBy('name')->get(['id', 'name', 'category_id']),
+            'tags' => Tag::query()->orderBy('name')->get(['id', 'name']),
+        ];
     }
 }

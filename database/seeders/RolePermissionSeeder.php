@@ -53,7 +53,7 @@ class RolePermissionSeeder extends Seeder
             foreach ($slugs as $slug) {
                 Permission::query()->updateOrCreate(
                     ['slug' => $slug],
-                    ['name' => $slug, 'group' => $group],
+                    ['name' => $this->humanize($slug), 'group' => $group],
                 );
             }
         }
@@ -74,5 +74,18 @@ class RolePermissionSeeder extends Seeder
                 Permission::query()->whereIn('slug', $permissionSlugs)->pluck('id'),
             );
         }
+    }
+
+    /**
+     * Turn a "resource.action" permission slug into a human-readable label,
+     * e.g. "products.create" -> "Create Products", "activity_logs.view" -> "View Activity Logs".
+     */
+    private function humanize(string $slug): string
+    {
+        [$resource, $action] = explode('.', $slug, 2);
+
+        $resourceLabel = $resource === 'seo' ? 'SEO' : ucwords(str_replace('_', ' ', $resource));
+
+        return ucfirst($action).' '.$resourceLabel;
     }
 }

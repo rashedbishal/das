@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
     import { getContext } from 'svelte';
+    import X from '@lucide/svelte/icons/x';
     import { cn } from '@/lib/utils';
     import { DIALOG_CONTEXT, type DialogContext } from './context';
 
@@ -27,6 +28,14 @@
             role="dialog"
             aria-modal="true"
         >
+            <button
+                type="button"
+                class="absolute top-4 right-4 rounded-sm text-muted-foreground opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Close"
+                onclick={close}
+            >
+                <X class="size-4" />
+            </button>
             {@render children?.()}
         </div>
     </div>
