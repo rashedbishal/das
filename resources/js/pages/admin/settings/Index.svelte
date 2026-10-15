@@ -26,7 +26,7 @@
         tracking,
     }: {
         general: { site_name?: string; contact_email?: string; contact_phone?: string; address?: string; currency?: string; timezone?: string };
-        authSettings: { login_mode?: string; registration_enabled?: boolean };
+        authSettings: { login_mode?: string; registration_enabled?: boolean; require_email_verification?: boolean };
         whatsapp: { enabled?: boolean; phone?: string; message?: string };
         messenger: { enabled?: boolean; page_url?: string };
         catalog: { page_size?: number; featured_limit?: number };
@@ -130,8 +130,19 @@
                             <InputError message={errors.login_mode} />
                         </div>
                         <label class="flex items-center gap-2 text-sm">
+                            <input type="hidden" name="registration_enabled" value="0" />
                             <input type="checkbox" name="registration_enabled" value="1" checked={authSettings.registration_enabled ?? true} />
                             Allow new customer registration
+                        </label>
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="hidden" name="require_email_verification" value="0" />
+                            <input
+                                type="checkbox"
+                                name="require_email_verification"
+                                value="1"
+                                checked={authSettings.require_email_verification ?? true}
+                            />
+                            Require customers to verify their email before signing in
                         </label>
                         <Button type="submit" disabled={processing}>Save authentication settings</Button>
                     {/snippet}
@@ -148,6 +159,7 @@
                 <Form {...SettingsController.updateWhatsapp.form()} class="space-y-4">
                     {#snippet children({ errors, processing })}
                         <label class="flex items-center gap-2 text-sm">
+                            <input type="hidden" name="enabled" value="0" />
                             <input type="checkbox" name="enabled" value="1" checked={whatsapp.enabled ?? false} />
                             Enabled
                         </label>
@@ -175,6 +187,7 @@
                 <Form {...SettingsController.updateMessenger.form()} class="space-y-4">
                     {#snippet children({ errors, processing })}
                         <label class="flex items-center gap-2 text-sm">
+                            <input type="hidden" name="enabled" value="0" />
                             <input type="checkbox" name="enabled" value="1" checked={messenger.enabled ?? false} />
                             Enabled
                         </label>

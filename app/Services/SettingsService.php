@@ -60,6 +60,11 @@ class SettingsService
         return (bool) $this->get('auth', 'registration_enabled', true);
     }
 
+    public function emailVerificationRequired(): bool
+    {
+        return (bool) $this->get('auth', 'require_email_verification', true);
+    }
+
     /**
      * @return array{enabled: bool, phone: string|null, message: string|null}
      */

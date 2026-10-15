@@ -47,6 +47,7 @@ class CreateNewUser implements CreatesNewUsers
             'phone' => $input['phone'] ?? null,
             'password' => $input['password'],
             'user_type' => 'customer',
+            'email_verified_at' => $this->settings->emailVerificationRequired() ? null : now(),
         ]);
     }
 
