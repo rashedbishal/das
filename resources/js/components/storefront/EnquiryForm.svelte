@@ -1,13 +1,20 @@
 <script lang="ts">
+    import { page } from '@inertiajs/svelte';
     import ArrowRight from '@lucide/svelte/icons/arrow-right';
     import MessageSquare from '@lucide/svelte/icons/message-square';
     import Phone from '@lucide/svelte/icons/phone';
-    import { business, products } from '@/data/catalogue';
+    import { fetchProducts, type ProductCard } from '@/data/catalogue';
+    import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
     import Button from './Button.svelte';
 
     let { product = '' }: { product?: string } = $props();
 
     let submitted = $state(false);
+    let products = $state<ProductCard[]>([]);
+
+    fetchProducts({}, 1, 100).then((result) => (products = result.items));
+
+    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
 </script>
 
 {#if submitted}
@@ -21,13 +28,13 @@
         <div class="mt-5 flex flex-col gap-3 text-sm">
             <a
                 class="flex items-center gap-2 text-primary"
-                href="tel:{business.telephone}"
+                href="tel:{phone.tel}"
             >
                 <Phone class="size-4" />
-                {business.phone}
+                {phone.display}
             </a>
-            <a class="text-primary" href="mailto:{business.email}">
-                {business.email}
+            <a class="text-primary" href="mailto:{FALLBACK_CONTACT.email}">
+                {FALLBACK_CONTACT.email}
             </a>
         </div>
         <Button variant="outline" class="mt-6" onclick={() => (submitted = false)}>

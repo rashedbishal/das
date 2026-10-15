@@ -5,14 +5,39 @@
     import Breadcrumb from '@/components/storefront/Breadcrumb.svelte';
     import ContactBanner from '@/components/storefront/ContactBanner.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
-    import { brands, products } from '@/data/catalogue';
+    import {
+        brands,
+        countProducts,
+        fetchProducts,
+        loadBrands,
+        type ProductCard,
+    } from '@/data/catalogue';
     import { catalogue } from '@/routes';
 
+    loadBrands();
+
     let q = $state('');
+    let counts = $state<Record<string, number>>({});
+    let previews = $state<Record<string, ProductCard[]>>({});
+
+    $effect(() => {
+        for (const b of $brands) {
+            if (!(b.slug in counts)) {
+                countProducts({ brand: b.slug }).then((total) => {
+                    counts = { ...counts, [b.slug]: total };
+                });
+                fetchProducts({ brand: b.slug }, 1, 3).then((result) => {
+                    previews = { ...previews, [b.slug]: result.items };
+                });
+            }
+        }
+    });
 
     const found = $derived(
-        brands.filter((b) =>
-            `${b.name} ${b.tagline}`.toLowerCase().includes(q.toLowerCase()),
+        $brands.filter((b) =>
+            `${b.name} ${b.description ?? ''}`
+                .toLowerCase()
+                .includes(q.toLowerCase()),
         ),
     );
 </script>
@@ -45,18 +70,17 @@
     </div>
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {#each found as b (b.id)}
-            {@const brandProducts = products.filter((p) => p.brand === b.id)}
             <Link
-                href={catalogue.url({ query: { brand: b.id } })}
+                href={catalogue.url({ query: { brand: b.slug } })}
                 class="group overflow-hidden rounded-md border"
             >
                 <div class="flex h-40 items-center justify-center bg-secondary">
                     <span class="brand-word group-hover:text-primary">{b.name}</span>
                 </div>
                 <div class="p-6">
-                    <h2 class="text-lg">{b.tagline}</h2>
+                    <h2 class="text-lg">{b.description ?? b.name}</h2>
                     <div class="mt-5 flex gap-2">
-                        {#each brandProducts.slice(0, 3) as p (p.id)}
+                        {#each previews[b.slug] ?? [] as p (p.id)}
                             <img
                                 src={p.image}
                                 alt={p.name}
@@ -70,7 +94,7 @@
                     <div
                         class="mt-6 flex items-center justify-between text-xs text-primary"
                     >
-                        Explore {brandProducts.length} products
+                        Explore {counts[b.slug] ?? 0} products
                         <ArrowUpRight class="size-4" />
                     </div>
                 </div>

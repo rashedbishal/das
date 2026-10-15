@@ -4,8 +4,22 @@
     import Breadcrumb from '@/components/storefront/Breadcrumb.svelte';
     import ContactBanner from '@/components/storefront/ContactBanner.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
-    import { categories, products } from '@/data/catalogue';
+    import { categories, countProducts, loadCategories } from '@/data/catalogue';
     import { show } from '@/routes/categories';
+
+    loadCategories();
+
+    let counts = $state<Record<string, number>>({});
+
+    $effect(() => {
+        for (const c of $categories) {
+            if (!(c.slug in counts)) {
+                countProducts({ category: c.slug }).then((total) => {
+                    counts = { ...counts, [c.slug]: total };
+                });
+            }
+        }
+    });
 </script>
 
 <PageMeta
@@ -22,9 +36,9 @@
         practice together.
     </p>
     <div class="grid gap-6 md:grid-cols-2">
-        {#each categories as c, i (c.id)}
+        {#each $categories as c, i (c.id)}
             <Link
-                href={show.url(c.id)}
+                href={show.url(c.slug)}
                 class="group grid min-h-60 grid-cols-[1.1fr_1fr] overflow-hidden rounded-md border"
             >
                 <div class="flex flex-col items-start p-6 lg:p-8">
@@ -38,7 +52,7 @@
                     <span
                         class="mt-auto flex items-center gap-2 pt-5 text-[11px] text-primary"
                     >
-                        {products.filter((p) => p.category === c.id).length} products
+                        {counts[c.slug] ?? 0} products
                         <ArrowUpRight class="size-4" />
                     </span>
                 </div>

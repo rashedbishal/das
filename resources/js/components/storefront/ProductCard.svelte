@@ -1,18 +1,18 @@
 <script lang="ts">
-    import { Link } from '@inertiajs/svelte';
+    import { Link, page } from '@inertiajs/svelte';
     import ArrowRight from '@lucide/svelte/icons/arrow-right';
     import Phone from '@lucide/svelte/icons/phone';
-    import { brands, business, categories } from '@/data/catalogue';
-    import type { Product } from '@/data/catalogue';
+    import { formatPrice } from '@/data/catalogue';
+    import type { ProductCard as ProductCardType } from '@/data/catalogue';
+    import { resolvePhone } from '@/lib/contact';
     import { show } from '@/routes/products';
 
-    let { product: p }: { product: Product } = $props();
+    let { product: p }: { product: ProductCardType } = $props();
 
-    const brand = $derived(brands.find((b) => b.id === p.brand));
-    const categoryName = $derived(
-        categories.find((c) => c.id === p.category)?.name?.split(' & ')[0],
-    );
     const href = $derived(show.url(p.slug));
+    const priceLabel = $derived(formatPrice(p));
+    const hasPrice = $derived(p.salePrice !== null || p.regularPrice !== null);
+    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
 </script>
 
 <article class="product-card">
@@ -29,9 +29,8 @@
     <div class="product-body">
         <div class="flex items-center gap-2 text-[9px] text-muted-foreground">
             <span class="font-semibold tracking-[1px] text-primary uppercase"
-                >{brand?.name}</span
+                >{p.brand?.name}</span
             >
-            <span class="truncate">/ {categoryName}</span>
         </div>
         <Link {href}>
             <h3 class="product-title">{p.name}</h3>
@@ -41,8 +40,8 @@
             class="mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-4"
         >
             <div>
-                <div class="product-price">{p.priceLabel}</div>
-                {#if p.price}
+                <div class="product-price">{priceLabel}</div>
+                {#if hasPrice}
                     <span class="text-[8px] text-muted-foreground"
                         >Illustrative price</span
                     >
@@ -57,7 +56,7 @@
             </Link>
         </div>
         <a
-            href="tel:{business.telephone}"
+            href="tel:{phone.tel}"
             class="mt-3 inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary"
         >
             <Phone class="size-3" />

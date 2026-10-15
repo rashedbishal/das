@@ -1,10 +1,12 @@
 <script lang="ts">
-    import { Link } from '@inertiajs/svelte';
+    import { Link, page } from '@inertiajs/svelte';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import Phone from '@lucide/svelte/icons/phone';
-    import { business } from '@/data/catalogue';
+    import { resolvePhone } from '@/lib/contact';
     import { contact } from '@/routes';
     import { buttonClass } from './button';
+
+    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
 </script>
 
 <section class="border-t border-primary/10 bg-accent">
@@ -24,7 +26,7 @@
         </div>
         <div class="flex flex-wrap gap-3">
             <a
-                href="tel:{business.telephone}"
+                href="tel:{phone.tel}"
                 class={buttonClass({ class: 'h-11 px-5 text-[11px] shadow-none' })}
             >
                 <Phone class="size-3.5" />

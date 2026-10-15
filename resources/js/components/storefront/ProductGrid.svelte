@@ -1,9 +1,11 @@
 <script lang="ts">
-    import type { Product } from '@/data/catalogue';
+    import type { ProductCard as ProductCardType } from '@/data/catalogue';
     import ProductCard from './ProductCard.svelte';
 
-    let { items, class: className = '' }: { items: Product[]; class?: string } =
-        $props();
+    let {
+        items,
+        class: className = '',
+    }: { items: ProductCardType[]; class?: string } = $props();
 </script>
 
 <div
