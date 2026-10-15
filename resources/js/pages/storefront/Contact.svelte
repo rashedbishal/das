@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { page } from '@inertiajs/svelte';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import Clock from '@lucide/svelte/icons/clock';
     import Mail from '@lucide/svelte/icons/mail';
@@ -7,24 +8,26 @@
     import Breadcrumb from '@/components/storefront/Breadcrumb.svelte';
     import EnquiryForm from '@/components/storefront/EnquiryForm.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
-    import { business } from '@/data/catalogue';
+    import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
 
-    const details = [
+    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
+
+    const details = $derived([
         {
             icon: Phone,
             label: 'Call our sales team',
-            value: business.phone,
-            href: `tel:${business.telephone}`,
+            value: phone.display,
+            href: `tel:${phone.tel}`,
         },
         {
             icon: Mail,
             label: 'Email us',
-            value: business.email,
-            href: `mailto:${business.email}`,
+            value: FALLBACK_CONTACT.email,
+            href: `mailto:${FALLBACK_CONTACT.email}`,
         },
-        { icon: MapPin, label: 'Visit us', value: business.address },
-        { icon: Clock, label: 'Business hours', value: business.hours },
-    ];
+        { icon: MapPin, label: 'Visit us', value: FALLBACK_CONTACT.address },
+        { icon: Clock, label: 'Business hours', value: FALLBACK_CONTACT.hours },
+    ]);
 </script>
 
 <PageMeta

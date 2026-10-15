@@ -7,17 +7,23 @@
     import {
         brands,
         categories,
-        filterProducts,
+        countProducts,
+        fetchProducts,
         filterQuery,
+        loadBrands,
+        loadCategories,
         parseFilters,
-        products,
+        stockLabel,
+        type CatalogueFilters,
+        type ProductCard as ProductCardType,
     } from '@/data/catalogue';
-    import type { CatalogueFilters } from '@/data/catalogue';
     import Button from './Button.svelte';
     import Drawer from './Drawer.svelte';
     import ProductCard from './ProductCard.svelte';
 
     type FilterKey = keyof CatalogueFilters;
+
+    const stockStatuses = ['in_stock', 'out_of_stock', 'backorder'];
 
     let {
         urlFor,
@@ -27,18 +33,62 @@
         fixedCategory?: string;
     } = $props();
 
+    loadCategories();
+    loadBrands();
+
     let filters = $state<CatalogueFilters>(parseFilters(page.url));
     let writtenUrl = page.url;
     let mobile = $state(false);
-    let limit = $state(12);
+    let items = $state<ProductCardType[]>([]);
+    let total = $state(0);
+    let currentPage = $state(1);
+    let lastPage = $state(1);
+    let loading = $state(false);
+    let categoryCounts = $state<Record<string, number>>({});
 
     $effect(() => {
         if (page.url !== writtenUrl) {
             writtenUrl = page.url;
             filters = parseFilters(page.url);
-            limit = 12;
         }
     });
+
+    $effect(() => {
+        const activeFilters = { ...filters, category: fixedCategory ?? filters.category };
+
+        loading = true;
+
+        fetchProducts(activeFilters, 1).then((result) => {
+            items = result.items;
+            total = result.total;
+            currentPage = result.page;
+            lastPage = result.lastPage;
+            loading = false;
+        });
+    });
+
+    $effect(() => {
+        for (const c of $categories) {
+            if (!(c.slug in categoryCounts)) {
+                countProducts({ category: c.slug }).then((count) => {
+                    categoryCounts = { ...categoryCounts, [c.slug]: count };
+                });
+            }
+        }
+    });
+
+    function loadMore() {
+        const activeFilters = { ...filters, category: fixedCategory ?? filters.category };
+
+        loading = true;
+
+        fetchProducts(activeFilters, currentPage + 1).then((result) => {
+            items = [...items, ...result.items];
+            currentPage = result.page;
+            lastPage = result.lastPage;
+            loading = false;
+        });
+    }
 
     function onChange(value: CatalogueFilters) {
         filters = value;
@@ -51,18 +101,12 @@
     }
 
     function update(key: FilterKey, value: string | number | undefined) {
-        limit = 12;
         onChange({ ...filters, [key]: value || undefined });
     }
 
     function clear() {
-        limit = 12;
         onChange({ q: filters.q, sort: filters.sort });
     }
-
-    const items = $derived(
-        filterProducts({ ...filters, category: fixedCategory ?? filters.category }),
-    );
 
     const active = $derived(
         Object.entries(filters).filter(
@@ -70,16 +114,14 @@
         ) as [FilterKey, string | number][],
     );
 
-    const unique = (values: string[]) => [...new Set(values)];
-
     const filterGroups = $derived([
         ...(!fixedCategory
             ? [
                   {
                       key: 'category' as FilterKey,
                       name: 'Category',
-                      options: categories.map((c) => ({
-                          value: c.id,
+                      options: $categories.map((c) => ({
+                          value: c.slug,
                           label: c.name,
                       })),
                   },
@@ -88,37 +130,33 @@
         {
             key: 'brand' as FilterKey,
             name: 'Brand',
-            options: brands.map((b) => ({ value: b.id, label: b.name })),
+            options: $brands.map((b) => ({ value: b.slug, label: b.name })),
         },
         {
-            key: 'availability' as FilterKey,
-            name: 'Availability · demo',
-            options: unique(products.map((p) => p.availability)).map((s) => ({
+            key: 'stockStatus' as FilterKey,
+            name: 'Availability',
+            options: stockStatuses.map((s) => ({
                 value: s,
-                label: s,
-            })),
-        },
-        {
-            key: 'type' as FilterKey,
-            name: 'Product type',
-            options: unique(products.map((p) => p.type)).map((s) => ({
-                value: s,
-                label: s,
+                label: stockLabel(s),
             })),
         },
     ]);
 
     function chipLabel(key: FilterKey, value: string | number) {
         if (key === 'category') {
-            return categories.find((c) => c.id === value)?.name;
+            return $categories.find((c) => c.slug === value)?.name;
         }
 
         if (key === 'brand') {
-            return brands.find((b) => b.id === value)?.name;
+            return $brands.find((b) => b.slug === value)?.name;
+        }
+
+        if (key === 'stockStatus') {
+            return stockLabel(String(value));
         }
 
         if (key === 'maxPrice') {
-            return `Up to £${value}`;
+            return `Up to ${value}`;
         }
 
         return value;
@@ -156,8 +194,7 @@
                             <span>{o.label}</span>
                             {#if group.key === 'category'}
                                 <span class="ml-auto text-muted-foreground">
-                                    {products.filter((p) => p.category === o.value)
-                                        .length}
+                                    {categoryCounts[o.value] ?? 0}
                                 </span>
                             {/if}
                         </label>
@@ -169,7 +206,7 @@
             <legend class="filter-title float-left w-full">Illustrative price</legend>
             <div class="clear-both">
                 <label for={priceId} class="text-[11px] text-muted-foreground">
-                    Maximum price (GBP)
+                    Maximum price
                 </label>
                 <select
                     id={priceId}
@@ -184,11 +221,11 @@
                         )}
                 >
                     <option value="">Any price</option>
-                    <option value="100">Up to £100</option>
-                    <option value="300">Up to £300</option>
-                    <option value="500">Up to £500</option>
-                    <option value="1000">Up to £1,000</option>
-                    <option value="3000">Up to £3,000</option>
+                    <option value="100">Up to 100</option>
+                    <option value="300">Up to 300</option>
+                    <option value="500">Up to 500</option>
+                    <option value="1000">Up to 1,000</option>
+                    <option value="3000">Up to 3,000</option>
                 </select>
                 <p class="mt-3 text-[10px] leading-5 text-muted-foreground">
                     Price filters exclude products with pricing available on
@@ -257,7 +294,7 @@
         <div class="min-w-0">
             <div class="mb-5 flex min-h-7 flex-wrap items-center gap-3">
                 <p class="mr-auto text-[11px] text-muted-foreground">
-                    Showing {Math.min(items.length, limit)} of {items.length} products
+                    Showing {items.length} of {total} products
                 </p>
                 {#each active as [key, value] (key)}
                     <Button
@@ -273,23 +310,24 @@
             </div>
             {#if items.length}
                 <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-5">
-                    {#each items.slice(0, limit) as p (p.id)}
+                    {#each items as p (p.id)}
                         <ProductCard product={p} />
                     {/each}
                 </div>
-                {#if items.length > limit}
+                {#if currentPage < lastPage}
                     <div class="mt-9 text-center">
                         <Button
                             variant="outline"
                             class="h-11 px-7"
-                            onclick={() => (limit += 12)}
+                            disabled={loading}
+                            onclick={loadMore}
                         >
                             Explore more equipment
                             <ArrowRight />
                         </Button>
                     </div>
                 {/if}
-            {:else}
+            {:else if !loading}
                 <div class="empty-state">
                     <Search class="mx-auto mb-5 size-8 text-primary" />
                     <h2 class="text-xl">No equipment found.</h2>
@@ -300,7 +338,6 @@
                         variant="outline"
                         onclick={() => {
                             onChange({});
-                            limit = 12;
                         }}
                     >
                         Reset search and filters
@@ -331,7 +368,7 @@
     </p>
     {@render filterPanel('max-price-mobile')}
     <Button class="mt-6 w-full" onclick={() => (mobile = false)}>
-        Show {items.length} products
+        Show {total} products
         <ArrowRight />
     </Button>
 </Drawer>

@@ -5,12 +5,16 @@
     import ContactBanner from '@/components/storefront/ContactBanner.svelte';
     import MissingPage from '@/components/storefront/MissingPage.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
-    import { categories, pathSegment } from '@/data/catalogue';
+    import { categories, loadCategories, pathSegment } from '@/data/catalogue';
     import { catalogue } from '@/routes';
     import { index as categoriesIndex, show } from '@/routes/categories';
 
+    let loaded = $state(false);
+
+    loadCategories().then(() => (loaded = true));
+
     const category = $derived(
-        categories.find((c) => c.id === pathSegment(page.url, 1)),
+        $categories.find((c) => c.slug === pathSegment(page.url, 1)),
     );
 </script>
 
@@ -39,14 +43,7 @@
                     clinical workflow.
                 </p>
                 <div class="mt-7 flex flex-wrap gap-4 text-[10px] text-primary">
-                    <Link
-                        href={catalogue.url({
-                            query: { category: c.id, type: 'Clinical system' },
-                        })}
-                    >
-                        Clinical systems
-                    </Link>
-                    <Link href={catalogue.url({ query: { category: c.id } })}>
+                    <Link href={catalogue.url({ query: { category: c.slug } })}>
                         View all in this category →
                     </Link>
                 </div>
@@ -59,10 +56,10 @@
                 alt={c.name}
             />
         </div>
-        {#key c.id}
+        {#key c.slug}
             <CatalogueView
-                fixedCategory={c.id}
-                urlFor={(query) => show.url(c.id, { query })}
+                fixedCategory={c.slug}
+                urlFor={(query) => show.url(c.slug, { query })}
             />
         {/key}
     </section>

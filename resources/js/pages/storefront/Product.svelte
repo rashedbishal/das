@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Link, page } from '@inertiajs/svelte';
+    import { Link, page, router } from '@inertiajs/svelte';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import Check from '@lucide/svelte/icons/check';
     import Info from '@lucide/svelte/icons/info';
@@ -16,32 +16,49 @@
     import QuoteDialog from '@/components/storefront/QuoteDialog.svelte';
     import SectionHeading from '@/components/storefront/SectionHeading.svelte';
     import {
-        brands,
-        business,
-        categories,
+        fetchProduct,
+        formatPrice,
         pathSegment,
-        products,
+        stockLabel,
+        type ProductDetail,
     } from '@/data/catalogue';
-    import { catalogue } from '@/routes';
+    import { resolvePhone } from '@/lib/contact';
+    import { catalogue, login } from '@/routes';
     import { show as categoryShow } from '@/routes/categories';
 
-    const product = $derived(
-        products.find((p) => p.slug === pathSegment(page.url, 1)),
-    );
+    const slug = $derived(pathSegment(page.url, 1));
+    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
 
+    let product = $state<ProductDetail | null>(null);
+    let loading = $state(true);
     let zoom = $state(false);
+
+    $effect(() => {
+        if (!page.props.auth.user) {
+            router.visit(login.url());
+
+            return;
+        }
+
+        loading = true;
+        product = null;
+
+        fetchProduct(slug).then((result) => {
+            product = result;
+            loading = false;
+        });
+    });
 </script>
 
 {#if product}
     {@const p = product}
-    {@const category = categories.find((c) => c.id === p.category)}
-    <PageMeta title={p.name} description={p.shortDescription} />
+    <PageMeta title={p.name} description={p.shortDescription ?? p.name} />
 
     <section class="container-wide pt-9 pb-16">
         <Breadcrumb
             items={[
                 { label: 'Equipment', href: catalogue.url() },
-                { label: category?.name ?? 'Equipment' },
+                { label: p.category?.name ?? 'Equipment' },
                 { label: p.name },
             ]}
         />
@@ -90,22 +107,24 @@
             </div>
             <div class="lg:pt-4">
                 <div class="eyebrow mb-4">
-                    {brands.find((b) => b.id === p.brand)?.name}
+                    {p.brand?.name}
                 </div>
                 <h1 class="text-[31px] leading-tight font-semibold lg:text-[38px]">
                     {p.name}
                 </h1>
-                <Link
-                    href={categoryShow.url(p.category)}
-                    class="mt-4 inline-flex items-center gap-2 text-xs text-primary"
-                >
-                    {category?.name}
-                    <ArrowUpRight class="size-3" />
-                </Link>
+                {#if p.category}
+                    <Link
+                        href={categoryShow.url(p.category.slug)}
+                        class="mt-4 inline-flex items-center gap-2 text-xs text-primary"
+                    >
+                        {p.category.name}
+                        <ArrowUpRight class="size-3" />
+                    </Link>
+                {/if}
                 <div class="mt-5 flex gap-4 text-[10px] text-muted-foreground">
                     <span>Model: {p.sku}</span>
                     <span>•</span>
-                    <span>{p.availability}</span>
+                    <span>{stockLabel(p.stockStatus)}</span>
                 </div>
                 <p
                     class="mt-3 border-y py-6 text-sm leading-7 text-muted-foreground"
@@ -115,16 +134,18 @@
                 </p>
                 <div class="mt-6">
                     <div class="text-[27px] font-semibold">
-                        {p.price ? p.priceLabel : 'Contact for Price'}
+                        {p.regularPrice !== null || p.salePrice !== null
+                            ? formatPrice(p)
+                            : 'Contact for Price'}
                     </div>
                     <span class="text-[10px] text-muted-foreground">
-                        {p.price
-                            ? 'Illustrative price in GBP. Not an offer for sale.'
+                        {p.regularPrice !== null || p.salePrice !== null
+                            ? 'Illustrative price. Not an offer for sale.'
                             : 'Let’s discuss the configuration that suits your practice.'}
                     </span>
                 </div>
                 <ul class="my-7 space-y-3">
-                    {#each p.features as f (f)}
+                    {#each p.highlights as f (f)}
                         <li class="flex items-center gap-3 text-xs">
                             <Check class="size-4 text-primary" />
                             {f}
@@ -133,7 +154,7 @@
                 </ul>
                 <div class="flex flex-wrap gap-3">
                     <a
-                        href="tel:{business.telephone}"
+                        href="tel:{phone.tel}"
                         class={buttonClass({ class: 'h-12 px-7 shadow-none' })}
                     >
                         <Phone />
@@ -161,9 +182,9 @@
             <div>
                 <p class="eyebrow mb-3">Considered in every detail</p>
                 <h2 class="text-2xl">Product overview</h2>
-                <p class="section-intro text-sm leading-8">{p.description}</p>
+                <p class="section-intro text-sm leading-8">{p.fullDescription}</p>
                 <h3 class="mt-8 mb-5 text-lg">Key features</h3>
-                {#each p.features as f (f)}
+                {#each p.highlights as f (f)}
                     <div class="flex gap-3 border-b py-3 text-sm">
                         <Check class="size-4 text-primary" />
                         {f}
@@ -177,10 +198,10 @@
                     with the supplier.
                 </p>
                 <dl>
-                    {#each Object.entries(p.specifications) as [key, value] (key)}
+                    {#each p.specifications as spec (spec.name)}
                         <div class="spec-row">
-                            <dt class="text-muted-foreground">{key}</dt>
-                            <dd>{value}</dd>
+                            <dt class="text-muted-foreground">{spec.name}</dt>
+                            <dd>{spec.value}</dd>
                         </div>
                     {/each}
                 </dl>
@@ -195,9 +216,7 @@
                 title="Explore Related Equipment"
                 href={catalogue.url()}
             />
-            <ProductGrid
-                items={products.filter((x) => p.relatedProducts.includes(x.slug))}
-            />
+            <ProductGrid items={p.relatedProducts} />
         </div>
     </section>
 
@@ -215,6 +234,6 @@
             class="h-[65dvh] w-full bg-photo object-contain"
         />
     </Modal>
-{:else}
+{:else if !loading}
     <MissingPage />
 {/if}

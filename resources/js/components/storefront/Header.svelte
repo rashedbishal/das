@@ -1,12 +1,19 @@
 <script lang="ts">
-    import { Link, router } from '@inertiajs/svelte';
+    import { Link, page, router } from '@inertiajs/svelte';
     import ArrowRight from '@lucide/svelte/icons/arrow-right';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import ChevronDown from '@lucide/svelte/icons/chevron-down';
     import Menu from '@lucide/svelte/icons/menu';
     import Phone from '@lucide/svelte/icons/phone';
     import Search from '@lucide/svelte/icons/search';
-    import { business, categories, filterQuery, products } from '@/data/catalogue';
+    import {
+        categories,
+        fetchProducts,
+        filterQuery,
+        loadCategories,
+        type ProductCard,
+    } from '@/data/catalogue';
+    import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
     import { currentUrlState } from '@/lib/currentUrl.svelte';
     import { about, brands, catalogue, contact, home } from '@/routes';
     import { index as categoriesIndex } from '@/routes/categories';
@@ -16,6 +23,10 @@
     import Drawer from './Drawer.svelte';
     import Modal from './Modal.svelte';
     import Wordmark from './Wordmark.svelte';
+
+    loadCategories();
+
+    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
 
     const links = [
         ['Home', home.url()],
@@ -32,18 +43,21 @@
     let searchOpen = $state(false);
     let q = $state('');
     let mega = $state(false);
+    let matches = $state<ProductCard[]>([]);
 
-    const matches = $derived(
-        q.trim()
-            ? products
-                  .filter((p) =>
-                      `${p.name} ${p.brand}`
-                          .toLowerCase()
-                          .includes(q.toLowerCase()),
-                  )
-                  .slice(0, 4)
-            : [],
-    );
+    $effect(() => {
+        const term = q.trim();
+
+        if (!term) {
+            matches = [];
+
+            return;
+        }
+
+        fetchProducts({ q: term }, 1, 4).then((result) => {
+            matches = result.items;
+        });
+    });
 
     function goToCatalogue(term: string) {
         searchOpen = false;
@@ -60,7 +74,7 @@
             Professional Dental Equipment <span class="mx-2 opacity-40">|</span>
             Expert Product Assistance
         </span>
-        <a href="mailto:{business.email}" class="hidden opacity-80 sm:block">
+        <a href="mailto:{FALLBACK_CONTACT.email}" class="hidden opacity-80 sm:block">
             Let’s find the right equipment <ArrowUpRight
                 class="ml-1 inline size-3"
             />
@@ -116,7 +130,7 @@
             </Button>
             <div class="hidden h-6 border-l md:block"></div>
             <a
-                href="tel:{business.telephone}"
+                href="tel:{phone.tel}"
                 class={buttonClass({
                     class: 'hidden h-10 px-5 text-[11px] shadow-none md:inline-flex',
                 })}
@@ -139,9 +153,9 @@
     {#if mega}
         <div class="absolute inset-x-0 border-b bg-background shadow-lg">
             <div class="container-wide grid grid-cols-4 gap-5 py-7">
-                {#each categories as c (c.id)}
+                {#each $categories as c (c.id)}
                     <Link
-                        href={catalogue.url({ query: { category: c.id } })}
+                        href={catalogue.url({ query: { category: c.slug } })}
                         onclick={() => (mega = false)}
                         class="flex items-center gap-3 hover:text-primary"
                     >
@@ -178,7 +192,7 @@
         {/each}
     </nav>
     <a
-        href="tel:{business.telephone}"
+        href="tel:{phone.tel}"
         class={buttonClass({ class: 'mt-8 w-full' })}
     >
         <Phone />

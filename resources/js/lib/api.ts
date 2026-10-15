@@ -1,4 +1,8 @@
 function getCookie(name: string): string | null {
+    if (typeof document === 'undefined') {
+        return null;
+    }
+
     const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
     return match ? decodeURIComponent(match[1]) : null;
 }
@@ -22,6 +26,13 @@ export async function apiFetch<T = unknown>(
     url: string,
     options: RequestInit = {},
 ): Promise<T | null> {
+    if (typeof window === 'undefined') {
+        // Server-side render: there is no browser session/cookie to send,
+        // and relative URLs have no base. Skip the request — the client
+        // re-fetches after hydration.
+        return null;
+    }
+
     const token = getCookie('XSRF-TOKEN');
 
     const response = await fetch(url, {

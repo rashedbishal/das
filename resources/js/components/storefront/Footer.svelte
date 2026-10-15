@@ -1,10 +1,15 @@
 <script lang="ts">
-    import { Link } from '@inertiajs/svelte';
+    import { Link, page } from '@inertiajs/svelte';
     import Phone from '@lucide/svelte/icons/phone';
     import Plus from '@lucide/svelte/icons/plus';
-    import { business, categories } from '@/data/catalogue';
+    import { categories, loadCategories } from '@/data/catalogue';
+    import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
     import { about, brands, catalogue, contact, home } from '@/routes';
     import Wordmark from './Wordmark.svelte';
+
+    loadCategories();
+
+    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
 </script>
 
 <footer class="footer">
@@ -30,8 +35,8 @@
             <div>
                 <h3 class="footer-heading">Explore equipment</h3>
                 <div class="footer-links">
-                    {#each categories.slice(0, 5) as c (c.id)}
-                        <Link href={catalogue.url({ query: { category: c.id } })}>
+                    {#each $categories.slice(0, 5) as c (c.id)}
+                        <Link href={catalogue.url({ query: { category: c.slug } })}>
                             {c.name}
                         </Link>
                     {/each}
@@ -51,14 +56,14 @@
                 <h3 class="footer-heading">Let’s talk equipment</h3>
                 <div class="footer-links">
                     <a
-                        href="tel:{business.telephone}"
+                        href="tel:{phone.tel}"
                         class="flex items-center gap-2"
                     >
                         <Phone class="size-3.5" />
-                        {business.phone}
+                        {phone.display}
                     </a>
-                    <a href="mailto:{business.email}">{business.email}</a>
-                    <span class="leading-6 opacity-65">{business.hours}</span>
+                    <a href="mailto:{FALLBACK_CONTACT.email}">{FALLBACK_CONTACT.email}</a>
+                    <span class="leading-6 opacity-65">{FALLBACK_CONTACT.hours}</span>
                     <span class="text-[10px] opacity-50">
                         Placeholder contact details · demo only
                     </span>
@@ -70,7 +75,7 @@
         >
             <span>
                 © {new Date().getFullYear()}
-                {business.name}. All rights reserved.
+                {page.props.siteSettings.name}. All rights reserved.
             </span>
             <span
                 >Frontend demonstration · Illustrative products, brands and

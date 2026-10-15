@@ -17,9 +17,20 @@
     import ProductGrid from '@/components/storefront/ProductGrid.svelte';
     import SectionHeading from '@/components/storefront/SectionHeading.svelte';
     import TrustStrip from '@/components/storefront/TrustStrip.svelte';
-    import { brands, products } from '@/data/catalogue';
+    import {
+        brands,
+        fetchFeaturedProducts,
+        loadBrands,
+        type ProductCard,
+    } from '@/data/catalogue';
     import { brands as brandsRoute, catalogue, contact } from '@/routes';
     import { index as categoriesIndex } from '@/routes/categories';
+
+    loadBrands();
+
+    let featuredProducts = $state<ProductCard[]>([]);
+
+    fetchFeaturedProducts().then((items) => (featuredProducts = items));
 
     const reasons = [
         {
@@ -132,7 +143,7 @@
             description="Explore carefully selected equipment for modern dental practices."
             href={catalogue.url()}
         />
-        <ProductGrid items={products.filter((p) => p.featured).slice(0, 8)} />
+        <ProductGrid items={featuredProducts.slice(0, 8)} />
         <div class="mt-9 text-center">
             <Link
                 href={catalogue.url()}
@@ -200,9 +211,9 @@
         </Link>
     </div>
     <div class="grid grid-cols-3 items-center gap-x-4 gap-y-7 md:grid-cols-6">
-        {#each brands as b (b.id)}
+        {#each $brands as b (b.id)}
             <Link
-                href={catalogue.url({ query: { brand: b.id } })}
+                href={catalogue.url({ query: { brand: b.slug } })}
                 class="brand-word text-center"
             >
                 {b.name}

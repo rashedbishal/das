@@ -1,10 +1,10 @@
 <script lang="ts">
-    import { business } from '@/data/catalogue';
+    import { page } from '@inertiajs/svelte';
 
     let { title, description }: { title: string; description: string } =
         $props();
 
-    const fullTitle = $derived(`${title} | ${business.name}`);
+    const fullTitle = $derived(`${title} | ${page.props.siteSettings.name}`);
 </script>
 
 <svelte:head>

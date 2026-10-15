@@ -1,6 +1,6 @@
 <script lang="ts">
+    import { page } from '@inertiajs/svelte';
     import Plus from '@lucide/svelte/icons/plus';
-    import { business } from '@/data/catalogue';
 </script>
 
 <span
@@ -15,6 +15,6 @@
             strokeWidth={3}
         />
     </span>
-    {business.name}
+    {page.props.siteSettings.name}
     <span class="text-[27px] leading-none text-primary">.</span>
 </span>
