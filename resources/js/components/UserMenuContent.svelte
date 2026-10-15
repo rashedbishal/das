@@ -1,17 +1,14 @@
 <script lang="ts">
     import { Link, router } from '@inertiajs/svelte';
     import LogOut from '@lucide/svelte/icons/log-out';
-    import Settings from '@lucide/svelte/icons/settings';
+    import AppearanceTabs from '@/components/AppearanceTabs.svelte';
     import {
-        DropdownMenuGroup,
         DropdownMenuItem,
         DropdownMenuLabel,
         DropdownMenuSeparator,
     } from '@/components/ui/dropdown-menu';
     import UserInfo from '@/components/UserInfo.svelte';
-    import { toUrl } from '@/lib/utils';
     import { logout } from '@/routes';
-    import { edit } from '@/routes/profile';
     import type { User } from '@/types';
 
     let {
@@ -34,21 +31,10 @@
     </div>
 </DropdownMenuLabel>
 <DropdownMenuSeparator />
-<DropdownMenuGroup>
-    <DropdownMenuItem asChild>
-        {#snippet children(props)}
-            <Link
-                class={props.class}
-                href={toUrl(edit())}
-                prefetch
-                onclick={props.onClick}
-            >
-                <Settings class="mr-2 h-4 w-4" />
-                Settings
-            </Link>
-        {/snippet}
-    </DropdownMenuItem>
-</DropdownMenuGroup>
+<div class="flex items-center justify-between gap-2 px-1 py-1.5">
+    <span class="text-sm text-muted-foreground">Appearance</span>
+    <AppearanceTabs compact />
+</div>
 <DropdownMenuSeparator />
 <DropdownMenuItem asChild>
     {#snippet children(props)}

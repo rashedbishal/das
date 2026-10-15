@@ -1,7 +1,6 @@
 import { createInertiaApp } from '@inertiajs/svelte';
 import AppLayout from '@/layouts/AppLayout.svelte';
 import AuthLayout from '@/layouts/AuthLayout.svelte';
-import SettingsLayout from '@/layouts/settings/Layout.svelte';
 import StorefrontLayout from '@/layouts/StorefrontLayout.svelte';
 import { initializeFlashToast } from '@/lib/flash-toast';
 import { initializeTheme } from '@/lib/theme.svelte';
@@ -16,8 +15,6 @@ void createInertiaApp({
                 return StorefrontLayout;
             case name.startsWith('auth/'):
                 return AuthLayout;
-            case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
             default:
                 return AppLayout;
         }

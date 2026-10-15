@@ -20,8 +20,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::get('contact-widgets', [PublicSettingsController::class, 'widgets'])->name('contact-widgets');
 
-require __DIR__.'/settings.php';
-
 // Prefixed so the real catalog doesn't collide with the storefront demo's /products and /categories URLs.
 Route::prefix('catalog')->name('catalog.')->group(function () {
     Route::get('/', HomeController::class)->name('home');

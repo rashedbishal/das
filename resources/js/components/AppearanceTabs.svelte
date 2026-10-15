@@ -6,6 +6,8 @@
     import { themeState } from '@/lib/theme.svelte';
     import type { Appearance } from '@/types';
 
+    let { compact = false }: { compact?: boolean } = $props();
+
     const { appearance, updateAppearance } = themeState();
 
     type IconComponent =
@@ -29,13 +31,18 @@
     {#each tabs as { value, Icon, label } (value)}
         <button
             onclick={() => handleAppearanceChange(value)}
-            class="flex items-center rounded-md px-3.5 py-1.5 transition-colors {appearance.value ===
-            value
+            title={label}
+            aria-label={label}
+            class="flex items-center rounded-md transition-colors {compact
+                ? 'p-1.5'
+                : 'px-3.5 py-1.5'} {appearance.value === value
                 ? 'bg-white shadow-xs dark:bg-neutral-700 dark:text-neutral-100'
                 : 'text-neutral-500 hover:bg-neutral-200/60 hover:text-black dark:text-neutral-400 dark:hover:bg-neutral-700/60'}"
         >
-            <Icon class="-ml-1 h-4 w-4" />
-            <span class="ml-1.5 text-sm">{label}</span>
+            <Icon class="h-4 w-4 {compact ? '' : '-ml-1'}" />
+            {#if !compact}
+                <span class="ml-1.5 text-sm">{label}</span>
+            {/if}
         </button>
     {/each}
 </div>
