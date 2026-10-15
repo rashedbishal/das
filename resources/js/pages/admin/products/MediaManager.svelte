@@ -55,7 +55,7 @@
 <section class="space-y-4">
     <h2 class="text-lg font-semibold">Media</h2>
 
-    <div class="grid grid-cols-3 gap-3 sm:grid-cols-4">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {#each media as item (item.id)}
             <div class="relative rounded-md border p-2 text-xs">
                 {#if item.type === 'image' && item.url}
@@ -66,19 +66,21 @@
                     </div>
                 {/if}
                 {#if item.is_main}<span class="font-medium">Main</span>{/if}
-                <button
+                <Button
                     type="button"
-                    class="mt-1 flex w-full items-center justify-center gap-1 text-red-600 hover:underline"
+                    variant="ghost"
+                    size="sm"
+                    class="mt-1 w-full text-destructive hover:text-destructive"
                     onclick={() => removeMedia(item.id)}
                 >
                     <Trash2 class="size-3" /> Remove
-                </button>
+                </Button>
             </div>
         {/each}
     </div>
 
     <form onsubmit={submitMedia} class="grid gap-3 rounded-md border p-4 text-sm">
-        <div class="flex gap-4">
+        <div class="flex flex-wrap gap-x-4 gap-y-2">
             <label class="flex items-center gap-1">
                 <input type="radio" bind:group={uploadSource} value="upload" /> Upload file
             </label>
@@ -87,7 +89,7 @@
             </label>
         </div>
 
-        <div class="flex gap-4">
+        <div class="flex flex-wrap gap-x-4 gap-y-2">
             <label class="flex items-center gap-1">
                 <input type="radio" bind:group={uploadType} value="image" /> Image
             </label>
@@ -97,7 +99,7 @@
         </div>
 
         {#if uploadSource === 'upload'}
-            <input type="file" bind:files={uploadFile} accept={uploadType === 'image' ? 'image/*' : 'video/*'} />
+            <input class="min-w-0 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-medium" type="file" bind:files={uploadFile} accept={uploadType === 'image' ? 'image/*' : 'video/*'} />
         {:else}
             <Input placeholder="https://..." bind:value={uploadUrl} />
         {/if}

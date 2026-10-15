@@ -8,6 +8,7 @@
     import { Form } from '@inertiajs/svelte';
     import SettingsController from '@/actions/App/Http/Controllers/Admin/SettingsController';
     import AppHead from '@/components/AppHead.svelte';
+    import FormSelect from '@/components/dashboard/FormSelect.svelte';
     import InputError from '@/components/InputError.svelte';
     import { Button } from '@/components/ui/button';
     import { Input } from '@/components/ui/input';
@@ -32,7 +33,7 @@
 
 <AppHead title="Settings" />
 
-<div class="mx-auto max-w-2xl space-y-10 p-4">
+<div class="mx-auto w-full max-w-2xl space-y-10 p-4">
     <h1 class="text-xl font-semibold">Settings</h1>
 
     <section>
@@ -57,7 +58,7 @@
                     <Label for="address">Address</Label>
                     <Input id="address" name="address" value={general.address ?? ''} />
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid gap-4 sm:grid-cols-2">
                     <div class="grid gap-2">
                         <Label for="currency">Currency</Label>
                         <Input id="currency" name="currency" required value={general.currency ?? 'BDT'} />
@@ -80,15 +81,16 @@
             {#snippet children({ errors, processing })}
                 <div class="grid gap-2">
                     <Label for="login_mode">Login mode</Label>
-                    <select
+                    <FormSelect
                         id="login_mode"
                         name="login_mode"
-                        class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                    >
-                        {#each ['email', 'phone', 'both'] as value}
-                            <option {value} selected={(authSettings.login_mode ?? 'both') === value}>{value}</option>
-                        {/each}
-                    </select>
+                        value={authSettings.login_mode ?? 'both'}
+                        options={[
+                            { value: 'email', label: 'Email only' },
+                            { value: 'phone', label: 'Phone only' },
+                            { value: 'both', label: 'Email or phone' },
+                        ]}
+                    />
                     <InputError message={errors.login_mode} />
                 </div>
                 <label class="flex items-center gap-2 text-sm">
@@ -144,7 +146,7 @@
         <h2 class="mb-4 text-lg font-semibold">Catalog &amp; SEO</h2>
         <Form {...SettingsController.updateCatalogSeo.form()} class="space-y-4">
             {#snippet children({ errors, processing })}
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid gap-4 sm:grid-cols-2">
                     <div class="grid gap-2">
                         <Label for="page_size">Products per page</Label>
                         <Input id="page_size" name="page_size" type="number" required value={catalog.page_size ?? 24} />

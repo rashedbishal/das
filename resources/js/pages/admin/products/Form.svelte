@@ -75,7 +75,7 @@
 
 <AppHead title={isEdit ? 'Edit product' : 'New product'} />
 
-<div class="mx-auto max-w-3xl space-y-8 p-4">
+<div class="mx-auto w-full max-w-3xl space-y-8 p-4">
     <h1 class="text-xl font-semibold">{isEdit ? 'Edit product' : 'New product'}</h1>
 
     <Form

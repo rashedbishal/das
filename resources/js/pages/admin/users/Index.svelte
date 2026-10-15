@@ -7,6 +7,8 @@
 <script lang="ts">
     import AppHead from '@/components/AppHead.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
+    import FormSelect from '@/components/dashboard/FormSelect.svelte';
+    import ResponsiveTable from '@/components/dashboard/ResponsiveTable.svelte';
     import { Badge } from '@/components/ui/badge';
     import { Button } from '@/components/ui/button';
     import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
@@ -169,11 +171,11 @@
 
 <AppHead title="Users & Roles" />
 
-<div class="p-4">
-    <div class="mb-6 flex gap-2 border-b">
+<div class="w-full p-4">
+    <div class="mb-6 flex gap-2 overflow-x-auto border-b">
         {#each [['admins', 'Admins'], ['roles', 'Roles'], ['customers', 'Customers']] as [value, label] (value)}
             <button
-                class="border-b-2 px-3 py-2 text-sm {tab === value ? 'border-primary font-medium' : 'border-transparent text-muted-foreground'}"
+                class="shrink-0 border-b-2 px-3 py-2 text-sm {tab === value ? 'border-primary font-medium' : 'border-transparent text-muted-foreground'}"
                 onclick={() => (tab = value as typeof tab)}
             >
                 {label}
@@ -186,97 +188,70 @@
     {/if}
 
     {#if tab === 'admins'}
-        <div class="mb-4 flex items-center justify-between">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-xl font-semibold">Admins</h1>
             <Button onclick={() => (createAdminOpen = true)}>Create admin</Button>
         </div>
 
-        <Input bind:value={adminSearch} placeholder="Search admins..." class="mb-4 max-w-sm" />
+        <Input bind:value={adminSearch} placeholder="Search admins..." class="mb-4 sm:max-w-sm" />
 
-        <div class="hidden overflow-x-auto rounded-lg border md:block">
-            <table class="w-full text-sm">
-                <thead class="bg-muted/50 text-left">
-                    <tr>
-                        <th class="p-2">Name</th>
-                        <th class="p-2">Email</th>
-                        <th class="p-2">Role</th>
-                        <th class="p-2">Status</th>
-                        <th class="p-2"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each filteredAdmins as admin (admin.id)}
-                        <tr class="border-t">
-                            <td class="p-2">{admin.name}</td>
-                            <td class="p-2">{admin.email}</td>
-                            <td class="p-2">{admin.role?.name ?? '—'}</td>
-                            <td class="p-2">
-                                <Badge variant={admin.is_active ? 'default' : 'secondary'}>
-                                    {admin.is_active ? 'Active' : 'Inactive'}
-                                </Badge>
-                            </td>
-                            <td class="p-2 text-right">
-                                {#if !admin.role?.is_system}
-                                    <button class="text-primary underline" onclick={() => toggleAdminActive(admin)}>
-                                        {admin.is_active ? 'Deactivate' : 'Reactivate'}
-                                    </button>
-                                {/if}
-                            </td>
-                        </tr>
-                    {:else}
-                        <tr><td class="p-4 text-muted-foreground" colspan="5">No admins found.</td></tr>
-                    {/each}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="grid gap-3 md:hidden">
-            {#each filteredAdmins as admin (admin.id)}
-                <div class="rounded-lg border p-3">
-                    <div class="flex items-start justify-between gap-2">
-                        <p class="font-medium">{admin.name}</p>
-                        <Badge variant={admin.is_active ? 'default' : 'secondary'}>
-                            {admin.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                    </div>
-                    <dl class="mt-2 grid grid-cols-2 gap-1 text-sm text-muted-foreground">
-                        <dt>Email</dt>
-                        <dd class="text-right text-foreground">{admin.email}</dd>
-                        <dt>Role</dt>
-                        <dd class="text-right text-foreground">{admin.role?.name ?? '—'}</dd>
-                    </dl>
-                    {#if !admin.role?.is_system}
-                        <div class="mt-3 flex justify-end text-sm">
-                            <button class="text-primary underline" onclick={() => toggleAdminActive(admin)}>
-                                {admin.is_active ? 'Deactivate' : 'Reactivate'}
-                            </button>
-                        </div>
-                    {/if}
-                </div>
-            {:else}
-                <p class="p-4 text-center text-muted-foreground">No admins found.</p>
-            {/each}
-        </div>
+        <ResponsiveTable
+            items={filteredAdmins}
+            key={(admin) => admin.id}
+            columns={[
+                { key: 'name', label: 'Name' },
+                { key: 'email', label: 'Email' },
+                { key: 'role', label: 'Role' },
+                { key: 'status', label: 'Status' },
+            ]}
+            empty="No admins found."
+        >
+            {#snippet cell(admin, column)}
+                {#if column.key === 'name'}
+                    {admin.name}
+                {:else if column.key === 'email'}
+                    {admin.email ?? '—'}
+                {:else if column.key === 'role'}
+                    {admin.role?.name ?? '—'}
+                {:else}
+                    {@render statusBadge(admin.is_active)}
+                {/if}
+            {/snippet}
+            {#snippet actions(admin)}
+                {#if !admin.role?.is_system}
+                    <Button variant="ghost" size="sm" onclick={() => toggleAdminActive(admin)}>
+                        {admin.is_active ? 'Deactivate' : 'Reactivate'}
+                    </Button>
+                {/if}
+            {/snippet}
+        </ResponsiveTable>
     {:else if tab === 'roles'}
-        <div class="mb-4 flex items-center justify-between">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-xl font-semibold">Roles</h1>
             <Button onclick={() => (createRoleOpen = true)}>Create role</Button>
         </div>
 
-        <Input bind:value={roleSearch} placeholder="Search roles..." class="mb-4 max-w-sm" />
+        <Input bind:value={roleSearch} placeholder="Search roles..." class="mb-4 sm:max-w-sm" />
 
         <div class="space-y-3">
             {#each filteredRoles as role (role.id)}
                 <div class="rounded-lg border p-3">
-                    <div class="flex items-center justify-between">
-                        <div>
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="min-w-0">
                             <p class="font-medium">{role.name}</p>
                             <p class="text-xs text-muted-foreground">
                                 {role.permissions.map((p) => p.name).join(', ') || 'No permissions'}
                             </p>
                         </div>
                         {#if !role.is_system}
-                            <button class="text-red-600 underline" onclick={() => askDeleteRole(role)}>Delete</button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                class="text-destructive hover:text-destructive"
+                                onclick={() => askDeleteRole(role)}
+                            >
+                                Delete
+                            </Button>
                         {/if}
                     </div>
                 </div>
@@ -287,70 +262,44 @@
     {:else if tab === 'customers'}
         <h1 class="mb-4 text-xl font-semibold">Customers</h1>
 
-        <Input bind:value={customerSearch} placeholder="Search customers..." class="mb-4 max-w-sm" />
+        <Input bind:value={customerSearch} placeholder="Search customers..." class="mb-4 sm:max-w-sm" />
 
-        <div class="hidden overflow-x-auto rounded-lg border md:block">
-            <table class="w-full text-sm">
-                <thead class="bg-muted/50 text-left">
-                    <tr>
-                        <th class="p-2">Name</th>
-                        <th class="p-2">Email</th>
-                        <th class="p-2">Phone</th>
-                        <th class="p-2">Status</th>
-                        <th class="p-2"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each filteredCustomers as customer (customer.id)}
-                        <tr class="border-t">
-                            <td class="p-2">{customer.name}</td>
-                            <td class="p-2">{customer.email ?? '—'}</td>
-                            <td class="p-2">{customer.phone ?? '—'}</td>
-                            <td class="p-2">
-                                <Badge variant={customer.is_active ? 'default' : 'secondary'}>
-                                    {customer.is_active ? 'Active' : 'Inactive'}
-                                </Badge>
-                            </td>
-                            <td class="p-2 text-right">
-                                <button class="text-primary underline" onclick={() => toggleCustomerActive(customer)}>
-                                    {customer.is_active ? 'Deactivate' : 'Reactivate'}
-                                </button>
-                            </td>
-                        </tr>
-                    {:else}
-                        <tr><td class="p-4 text-muted-foreground" colspan="5">No customers found.</td></tr>
-                    {/each}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="grid gap-3 md:hidden">
-            {#each filteredCustomers as customer (customer.id)}
-                <div class="rounded-lg border p-3">
-                    <div class="flex items-start justify-between gap-2">
-                        <p class="font-medium">{customer.name}</p>
-                        <Badge variant={customer.is_active ? 'default' : 'secondary'}>
-                            {customer.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                    </div>
-                    <dl class="mt-2 grid grid-cols-2 gap-1 text-sm text-muted-foreground">
-                        <dt>Email</dt>
-                        <dd class="text-right text-foreground">{customer.email ?? '—'}</dd>
-                        <dt>Phone</dt>
-                        <dd class="text-right text-foreground">{customer.phone ?? '—'}</dd>
-                    </dl>
-                    <div class="mt-3 flex justify-end text-sm">
-                        <button class="text-primary underline" onclick={() => toggleCustomerActive(customer)}>
-                            {customer.is_active ? 'Deactivate' : 'Reactivate'}
-                        </button>
-                    </div>
-                </div>
-            {:else}
-                <p class="p-4 text-center text-muted-foreground">No customers found.</p>
-            {/each}
-        </div>
+        <ResponsiveTable
+            items={filteredCustomers}
+            key={(customer) => customer.id}
+            columns={[
+                { key: 'name', label: 'Name' },
+                { key: 'email', label: 'Email' },
+                { key: 'phone', label: 'Phone' },
+                { key: 'status', label: 'Status' },
+            ]}
+            empty="No customers found."
+        >
+            {#snippet cell(customer, column)}
+                {#if column.key === 'name'}
+                    {customer.name}
+                {:else if column.key === 'email'}
+                    {customer.email ?? '—'}
+                {:else if column.key === 'phone'}
+                    {customer.phone ?? '—'}
+                {:else}
+                    {@render statusBadge(customer.is_active)}
+                {/if}
+            {/snippet}
+            {#snippet actions(customer)}
+                <Button variant="ghost" size="sm" onclick={() => toggleCustomerActive(customer)}>
+                    {customer.is_active ? 'Deactivate' : 'Reactivate'}
+                </Button>
+            {/snippet}
+        </ResponsiveTable>
     {/if}
 </div>
+
+{#snippet statusBadge(isActive: boolean)}
+    <Badge variant={isActive ? 'default' : 'secondary'}>
+        {isActive ? 'Active' : 'Inactive'}
+    </Badge>
+{/snippet}
 
 <Dialog bind:open={createAdminOpen}>
     <DialogContent>
@@ -370,16 +319,14 @@
             </div>
             <div class="grid gap-2">
                 <Label for="admin_role">Role</Label>
-                <select
+                <FormSelect
                     id="admin_role"
                     bind:value={newAdmin.role_id}
-                    class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                >
-                    <option value="">Select a role</option>
-                    {#each roles.filter((r) => !r.is_system) as role (role.id)}
-                        <option value={role.id}>{role.name}</option>
-                    {/each}
-                </select>
+                    placeholder="Select a role"
+                    options={roles
+                        .filter((role) => !role.is_system)
+                        .map((role) => ({ value: String(role.id), label: role.name }))}
+                />
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onclick={() => (createAdminOpen = false)}>Cancel</Button>

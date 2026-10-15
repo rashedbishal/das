@@ -12,6 +12,7 @@
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
+    import ResponsiveTable from '@/components/dashboard/ResponsiveTable.svelte';
     import InputError from '@/components/InputError.svelte';
     import { Badge } from '@/components/ui/badge';
     import { Button } from '@/components/ui/button';
@@ -58,92 +59,50 @@
 
 <AppHead title="Brands" />
 
-<div class="p-4">
-    <div class="mb-4 flex items-center justify-between">
+<div class="w-full p-4">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-xl font-semibold">Brands</h1>
         <Button onclick={() => (createOpen = true)}>Create brand</Button>
     </div>
 
-    <Input bind:value={search} placeholder="Search brands..." class="mb-4 max-w-sm" />
+    <Input bind:value={search} placeholder="Search brands..." class="mb-4 sm:max-w-sm" />
 
-    <div class="hidden overflow-x-auto rounded-lg border md:block">
-        <table class="w-full text-sm">
-            <thead class="bg-muted/50 text-left">
-                <tr>
-                    <th class="p-2">Name</th>
-                    <th class="p-2">Active</th>
-                    <th class="p-2">Products</th>
-                    <th class="p-2"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each filteredBrands as brand (brand.id)}
-                    <tr class="border-t">
-                        <td class="p-2">{brand.name}</td>
-                        <td class="p-2">
-                            <Badge variant={brand.is_active ? 'default' : 'secondary'}>
-                                {brand.is_active ? 'Active' : 'Inactive'}
-                            </Badge>
-                        </td>
-                        <td class="p-2">{brand.products_count}</td>
-                        <td class="p-2 text-right">
-                            <button
-                                class="mr-3 text-muted-foreground hover:text-primary"
-                                aria-label="Edit {brand.name}"
-                                onclick={() => editBrand(brand)}
-                            >
-                                <Pencil class="size-4" />
-                            </button>
-                            <button
-                                class="text-muted-foreground hover:text-red-600"
-                                aria-label="Delete {brand.name}"
-                                onclick={() => askDeleteBrand(brand)}
-                            >
-                                <Trash2 class="size-4" />
-                            </button>
-                        </td>
-                    </tr>
-                {:else}
-                    <tr><td class="p-4 text-muted-foreground" colspan="4">No brands found.</td></tr>
-                {/each}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="grid gap-3 md:hidden">
-        {#each filteredBrands as brand (brand.id)}
-            <div class="rounded-lg border p-3">
-                <div class="flex items-start justify-between gap-2">
-                    <p class="font-medium">{brand.name}</p>
-                    <Badge variant={brand.is_active ? 'default' : 'secondary'}>
-                        {brand.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                </div>
-                <dl class="mt-2 grid grid-cols-2 gap-1 text-sm text-muted-foreground">
-                    <dt>Products</dt>
-                    <dd class="text-right text-foreground">{brand.products_count}</dd>
-                </dl>
-                <div class="mt-3 flex justify-end gap-4">
-                    <button
-                        class="text-muted-foreground hover:text-primary"
-                        aria-label="Edit {brand.name}"
-                        onclick={() => editBrand(brand)}
-                    >
-                        <Pencil class="size-4" />
-                    </button>
-                    <button
-                        class="text-muted-foreground hover:text-red-600"
-                        aria-label="Delete {brand.name}"
-                        onclick={() => askDeleteBrand(brand)}
-                    >
-                        <Trash2 class="size-4" />
-                    </button>
-                </div>
-            </div>
-        {:else}
-            <p class="p-4 text-center text-muted-foreground">No brands found.</p>
-        {/each}
-    </div>
+    <ResponsiveTable
+        items={filteredBrands}
+        key={(brand) => brand.id}
+        columns={[
+            { key: 'name', label: 'Name' },
+            { key: 'active', label: 'Active' },
+            { key: 'products', label: 'Products' },
+        ]}
+        empty="No brands found."
+    >
+        {#snippet cell(brand, column)}
+            {#if column.key === 'name'}
+                {brand.name}
+            {:else if column.key === 'active'}
+                <Badge variant={brand.is_active ? 'default' : 'secondary'}>
+                    {brand.is_active ? 'Active' : 'Inactive'}
+                </Badge>
+            {:else}
+                {brand.products_count}
+            {/if}
+        {/snippet}
+        {#snippet actions(brand)}
+            <Button variant="ghost" size="sm" aria-label="Edit {brand.name}" onclick={() => editBrand(brand)}>
+                <Pencil class="size-4" />
+            </Button>
+            <Button
+                variant="ghost"
+                size="sm"
+                class="text-destructive hover:text-destructive"
+                aria-label="Delete {brand.name}"
+                onclick={() => askDeleteBrand(brand)}
+            >
+                <Trash2 class="size-4" />
+            </Button>
+        {/snippet}
+    </ResponsiveTable>
 </div>
 
 <Dialog bind:open={createOpen}>

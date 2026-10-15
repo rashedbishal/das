@@ -1,4 +1,5 @@
 <script lang="ts">
+    import FormSelect from '@/components/dashboard/FormSelect.svelte';
     import InputError from '@/components/InputError.svelte';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
@@ -47,14 +48,22 @@
 
     const selectedTagIds = new Set(product?.tags.map((t) => t.id) ?? []);
 
-    let selectedCategoryId = $state<number | ''>(product?.category_id ?? '');
-    let selectedSubcategoryId = $state<number | ''>(product?.subcategory_id ?? '');
+    const toOptions = (items: Option[]) =>
+        items.map((item) => ({ value: String(item.id), label: item.name }));
+    const labelled = (values: string[]) =>
+        values.map((value) => ({
+            value,
+            label: value.charAt(0).toUpperCase() + value.slice(1).replaceAll('_', ' '),
+        }));
+
+    let selectedCategoryId = $state(product ? String(product.category_id) : '');
+    let selectedSubcategoryId = $state(product ? String(product.subcategory_id) : '');
     const availableSubcategories = $derived(
-        subcategories.filter((subcategory) => subcategory.category_id === selectedCategoryId),
+        subcategories.filter((subcategory) => String(subcategory.category_id) === selectedCategoryId),
     );
 
     $effect(() => {
-        if (!availableSubcategories.some((subcategory) => subcategory.id === selectedSubcategoryId)) {
+        if (!availableSubcategories.some((subcategory) => String(subcategory.id) === selectedSubcategoryId)) {
             selectedSubcategoryId = '';
         }
     });
@@ -66,7 +75,7 @@
     <InputError message={errors.name} />
 </div>
 
-<div class="grid grid-cols-2 gap-4">
+<div class="grid gap-4 sm:grid-cols-2">
     <div class="grid gap-2">
         <Label for="sku">SKU</Label>
         <Input id="sku" name="sku" required value={product?.sku ?? ''} />
@@ -81,18 +90,13 @@
 
 <div class="grid gap-2">
     <Label for="brand_id">Brand</Label>
-    <select
+    <FormSelect
         id="brand_id"
         name="brand_id"
-        class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-    >
-        <option value="">No brand</option>
-        {#each brands as brand (brand.id)}
-            <option value={brand.id} selected={product?.brand_id === brand.id}>
-                {brand.name}
-            </option>
-        {/each}
-    </select>
+        value={product?.brand_id ? String(product.brand_id) : ''}
+        placeholder="No brand"
+        options={[{ value: '', label: 'No brand' }, ...toOptions(brands)]}
+    />
     <InputError message={errors.brand_id} />
 </div>
 
@@ -118,7 +122,7 @@
     <InputError message={errors.full_description} />
 </div>
 
-<div class="grid grid-cols-3 gap-4">
+<div class="grid gap-4 sm:grid-cols-3">
     <div class="grid gap-2">
         <Label for="regular_price">Regular price</Label>
         <Input id="regular_price" name="regular_price" type="number" step="0.01" required value={product?.regular_price ?? ''} />
@@ -136,7 +140,7 @@
     </div>
 </div>
 
-<div class="grid grid-cols-3 gap-4">
+<div class="grid gap-4 sm:grid-cols-3">
     <div class="grid gap-2">
         <Label for="stock_quantity">Stock quantity</Label>
         <Input id="stock_quantity" name="stock_quantity" type="number" required value={product?.stock_quantity ?? 0} />
@@ -144,32 +148,22 @@
     </div>
     <div class="grid gap-2">
         <Label for="stock_status">Stock status</Label>
-        <select
+        <FormSelect
             id="stock_status"
             name="stock_status"
-            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-        >
-            {#each ['in_stock', 'out_of_stock', 'backorder'] as value}
-                <option {value} selected={(product?.stock_status ?? 'in_stock') === value}>
-                    {value.replace('_', ' ')}
-                </option>
-            {/each}
-        </select>
+            value={product?.stock_status ?? 'in_stock'}
+            options={labelled(['in_stock', 'out_of_stock', 'backorder'])}
+        />
         <InputError message={errors.stock_status} />
     </div>
     <div class="grid gap-2">
         <Label for="status">Status</Label>
-        <select
+        <FormSelect
             id="status"
             name="status"
-            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-        >
-            {#each ['draft', 'published', 'archived'] as value}
-                <option {value} selected={(product?.status ?? 'draft') === value}>
-                    {value}
-                </option>
-            {/each}
-        </select>
+            value={product?.status ?? 'draft'}
+            options={labelled(['draft', 'published', 'archived'])}
+        />
         <InputError message={errors.status} />
     </div>
 </div>
@@ -179,45 +173,37 @@
     Featured product
 </label>
 
-<div class="grid grid-cols-2 gap-4">
+<div class="grid gap-4 sm:grid-cols-2">
     <div class="grid gap-2">
         <Label for="category_id">Category</Label>
-        <select
+        <FormSelect
             id="category_id"
             name="category_id"
             required
             bind:value={selectedCategoryId}
-            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-        >
-            <option value="" disabled>Select a category</option>
-            {#each categories as category (category.id)}
-                <option value={category.id}>{category.name}</option>
-            {/each}
-        </select>
+            placeholder="Select a category"
+            options={toOptions(categories)}
+        />
         <InputError message={errors.category_id} />
     </div>
     <div class="grid gap-2">
         <Label for="subcategory_id">Subcategory</Label>
-        <select
+        <FormSelect
             id="subcategory_id"
             name="subcategory_id"
             required
             disabled={!selectedCategoryId}
             bind:value={selectedSubcategoryId}
-            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-        >
-            <option value="" disabled>Select a subcategory</option>
-            {#each availableSubcategories as subcategory (subcategory.id)}
-                <option value={subcategory.id}>{subcategory.name}</option>
-            {/each}
-        </select>
+            placeholder="Select a subcategory"
+            options={toOptions(availableSubcategories)}
+        />
         <InputError message={errors.subcategory_id} />
     </div>
 </div>
 
 <fieldset class="grid gap-2">
     <legend class="mb-1 text-sm font-medium">Tags</legend>
-    <div class="grid max-h-48 grid-cols-2 gap-1 overflow-y-auto rounded-md border p-3 text-sm">
+    <div class="grid max-h-48 gap-1 overflow-y-auto rounded-md border p-3 text-sm sm:grid-cols-2">
         {#each tags as tag (tag.id)}
             <label class="flex items-center gap-2">
                 <input type="checkbox" name="tag_ids[]" value={tag.id} checked={selectedTagIds.has(tag.id)} />

@@ -12,6 +12,8 @@
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
+    import FormSelect from '@/components/dashboard/FormSelect.svelte';
+    import ResponsiveTable from '@/components/dashboard/ResponsiveTable.svelte';
     import InputError from '@/components/InputError.svelte';
     import { Badge } from '@/components/ui/badge';
     import { Button } from '@/components/ui/button';
@@ -41,6 +43,10 @@
     };
 
     let { categories, subcategories }: { categories: CategoryRow[]; subcategories: SubcategoryRow[] } = $props();
+
+    const categoryOptions = $derived(
+        categories.map((category) => ({ value: String(category.id), label: category.name })),
+    );
 
     let tab = $state<'categories' | 'subcategories'>('categories');
 
@@ -105,11 +111,32 @@
 
 <AppHead title="Category Management" />
 
-<div class="p-4">
-    <div class="mb-6 flex gap-2 border-b">
+{#snippet rowActions(name: string, onEdit: () => void, onDelete: () => void)}
+    <Button variant="ghost" size="sm" aria-label="Edit {name}" onclick={onEdit}>
+        <Pencil class="size-4" />
+    </Button>
+    <Button
+        variant="ghost"
+        size="sm"
+        class="text-destructive hover:text-destructive"
+        aria-label="Delete {name}"
+        onclick={onDelete}
+    >
+        <Trash2 class="size-4" />
+    </Button>
+{/snippet}
+
+{#snippet activeBadge(isActive: boolean)}
+    <Badge variant={isActive ? 'default' : 'secondary'}>
+        {isActive ? 'Active' : 'Inactive'}
+    </Badge>
+{/snippet}
+
+<div class="w-full p-4">
+    <div class="mb-6 flex gap-2 overflow-x-auto border-b">
         {#each [['categories', 'Categories'], ['subcategories', 'Subcategories']] as [value, label] (value)}
             <button
-                class="border-b-2 px-3 py-2 text-sm {tab === value ? 'border-primary font-medium' : 'border-transparent text-muted-foreground'}"
+                class="shrink-0 border-b-2 px-3 py-2 text-sm {tab === value ? 'border-primary font-medium' : 'border-transparent text-muted-foreground'}"
                 onclick={() => (tab = value as typeof tab)}
             >
                 {label}
@@ -118,185 +145,81 @@
     </div>
 
     {#if tab === 'categories'}
-        <div class="mb-4 flex items-center justify-between">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-xl font-semibold">Categories</h1>
             <Button onclick={() => (createCategoryOpen = true)}>Create category</Button>
         </div>
 
-        <Input bind:value={categorySearch} placeholder="Search categories..." class="mb-4 max-w-sm" />
+        <Input bind:value={categorySearch} placeholder="Search categories..." class="mb-4 sm:max-w-sm" />
 
-        <div class="hidden overflow-x-auto rounded-lg border md:block">
-            <table class="w-full text-sm">
-                <thead class="bg-muted/50 text-left">
-                    <tr>
-                        <th class="p-2">Name</th>
-                        <th class="p-2">Active</th>
-                        <th class="p-2">Subcategories</th>
-                        <th class="p-2">Products</th>
-                        <th class="p-2"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each filteredCategories as category (category.id)}
-                        <tr class="border-t">
-                            <td class="p-2">{category.name}</td>
-                            <td class="p-2">
-                                <Badge variant={category.is_active ? 'default' : 'secondary'}>
-                                    {category.is_active ? 'Active' : 'Inactive'}
-                                </Badge>
-                            </td>
-                            <td class="p-2">{category.subcategories_count}</td>
-                            <td class="p-2">{category.products_count}</td>
-                            <td class="p-2 text-right whitespace-nowrap">
-                                <button
-                                    class="mr-3 text-muted-foreground hover:text-primary"
-                                    aria-label="Edit {category.name}"
-                                    onclick={() => editCategory(category)}
-                                >
-                                    <Pencil class="size-4" />
-                                </button>
-                                <button
-                                    class="text-muted-foreground hover:text-red-600"
-                                    aria-label="Delete {category.name}"
-                                    onclick={() => askDeleteCategory(category)}
-                                >
-                                    <Trash2 class="size-4" />
-                                </button>
-                            </td>
-                        </tr>
-                    {:else}
-                        <tr><td class="p-4 text-muted-foreground" colspan="5">No categories found.</td></tr>
-                    {/each}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="grid gap-3 md:hidden">
-            {#each filteredCategories as category (category.id)}
-                <div class="rounded-lg border p-3">
-                    <div class="flex items-start justify-between gap-2">
-                        <p class="font-medium">{category.name}</p>
-                        <Badge variant={category.is_active ? 'default' : 'secondary'}>
-                            {category.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                    </div>
-                    <dl class="mt-2 grid grid-cols-2 gap-1 text-sm text-muted-foreground">
-                        <dt>Subcategories</dt>
-                        <dd class="text-right text-foreground">{category.subcategories_count}</dd>
-                        <dt>Products</dt>
-                        <dd class="text-right text-foreground">{category.products_count}</dd>
-                    </dl>
-                    <div class="mt-3 flex justify-end gap-4">
-                        <button
-                            class="text-muted-foreground hover:text-primary"
-                            aria-label="Edit {category.name}"
-                            onclick={() => editCategory(category)}
-                        >
-                            <Pencil class="size-4" />
-                        </button>
-                        <button
-                            class="text-muted-foreground hover:text-red-600"
-                            aria-label="Delete {category.name}"
-                            onclick={() => askDeleteCategory(category)}
-                        >
-                            <Trash2 class="size-4" />
-                        </button>
-                    </div>
-                </div>
-            {:else}
-                <p class="p-4 text-center text-muted-foreground">No categories found.</p>
-            {/each}
-        </div>
+        <ResponsiveTable
+            items={filteredCategories}
+            key={(category) => category.id}
+            columns={[
+                { key: 'name', label: 'Name' },
+                { key: 'active', label: 'Active' },
+                { key: 'subcategories', label: 'Subcategories', class: 'text-right' },
+                { key: 'products', label: 'Products', class: 'text-right' },
+            ]}
+            empty="No categories found."
+        >
+            {#snippet cell(category, column)}
+                {#if column.key === 'name'}
+                    {category.name}
+                {:else if column.key === 'active'}
+                    {@render activeBadge(category.is_active)}
+                {:else if column.key === 'subcategories'}
+                    {category.subcategories_count}
+                {:else}
+                    {category.products_count}
+                {/if}
+            {/snippet}
+            {#snippet actions(category)}
+                {@render rowActions(
+                    category.name,
+                    () => editCategory(category),
+                    () => askDeleteCategory(category),
+                )}
+            {/snippet}
+        </ResponsiveTable>
     {:else if tab === 'subcategories'}
-        <div class="mb-4 flex items-center justify-between">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-xl font-semibold">Subcategories</h1>
             <Button onclick={() => (createSubcategoryOpen = true)}>Create subcategory</Button>
         </div>
 
-        <Input bind:value={subcategorySearch} placeholder="Search subcategories..." class="mb-4 max-w-sm" />
+        <Input bind:value={subcategorySearch} placeholder="Search subcategories..." class="mb-4 sm:max-w-sm" />
 
-        <div class="hidden overflow-x-auto rounded-lg border md:block">
-            <table class="w-full text-sm">
-                <thead class="bg-muted/50 text-left">
-                    <tr>
-                        <th class="p-2">Name</th>
-                        <th class="p-2">Category</th>
-                        <th class="p-2">Active</th>
-                        <th class="p-2">Products</th>
-                        <th class="p-2"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each filteredSubcategories as subcategory (subcategory.id)}
-                        <tr class="border-t">
-                            <td class="p-2">{subcategory.name}</td>
-                            <td class="p-2 text-muted-foreground">{subcategory.category.name}</td>
-                            <td class="p-2">
-                                <Badge variant={subcategory.is_active ? 'default' : 'secondary'}>
-                                    {subcategory.is_active ? 'Active' : 'Inactive'}
-                                </Badge>
-                            </td>
-                            <td class="p-2">{subcategory.products_count}</td>
-                            <td class="p-2 text-right whitespace-nowrap">
-                                <button
-                                    class="mr-3 text-muted-foreground hover:text-primary"
-                                    aria-label="Edit {subcategory.name}"
-                                    onclick={() => editSubcategory(subcategory)}
-                                >
-                                    <Pencil class="size-4" />
-                                </button>
-                                <button
-                                    class="text-muted-foreground hover:text-red-600"
-                                    aria-label="Delete {subcategory.name}"
-                                    onclick={() => askDeleteSubcategory(subcategory)}
-                                >
-                                    <Trash2 class="size-4" />
-                                </button>
-                            </td>
-                        </tr>
-                    {:else}
-                        <tr><td class="p-4 text-muted-foreground" colspan="5">No subcategories found.</td></tr>
-                    {/each}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="grid gap-3 md:hidden">
-            {#each filteredSubcategories as subcategory (subcategory.id)}
-                <div class="rounded-lg border p-3">
-                    <div class="flex items-start justify-between gap-2">
-                        <p class="font-medium">{subcategory.name}</p>
-                        <Badge variant={subcategory.is_active ? 'default' : 'secondary'}>
-                            {subcategory.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                    </div>
-                    <dl class="mt-2 grid grid-cols-2 gap-1 text-sm text-muted-foreground">
-                        <dt>Category</dt>
-                        <dd class="text-right text-foreground">{subcategory.category.name}</dd>
-                        <dt>Products</dt>
-                        <dd class="text-right text-foreground">{subcategory.products_count}</dd>
-                    </dl>
-                    <div class="mt-3 flex justify-end gap-4">
-                        <button
-                            class="text-muted-foreground hover:text-primary"
-                            aria-label="Edit {subcategory.name}"
-                            onclick={() => editSubcategory(subcategory)}
-                        >
-                            <Pencil class="size-4" />
-                        </button>
-                        <button
-                            class="text-muted-foreground hover:text-red-600"
-                            aria-label="Delete {subcategory.name}"
-                            onclick={() => askDeleteSubcategory(subcategory)}
-                        >
-                            <Trash2 class="size-4" />
-                        </button>
-                    </div>
-                </div>
-            {:else}
-                <p class="p-4 text-center text-muted-foreground">No subcategories found.</p>
-            {/each}
-        </div>
+        <ResponsiveTable
+            items={filteredSubcategories}
+            key={(subcategory) => subcategory.id}
+            columns={[
+                { key: 'name', label: 'Name' },
+                { key: 'category', label: 'Category' },
+                { key: 'active', label: 'Active' },
+                { key: 'products', label: 'Products', class: 'text-right' },
+            ]}
+            empty="No subcategories found."
+        >
+            {#snippet cell(subcategory, column)}
+                {#if column.key === 'name'}
+                    {subcategory.name}
+                {:else if column.key === 'category'}
+                    <span class="text-muted-foreground">{subcategory.category.name}</span>
+                {:else if column.key === 'active'}
+                    {@render activeBadge(subcategory.is_active)}
+                {:else}
+                    {subcategory.products_count}
+                {/if}
+            {/snippet}
+            {#snippet actions(subcategory)}
+                {@render rowActions(
+                    subcategory.name,
+                    () => editSubcategory(subcategory),
+                    () => askDeleteSubcategory(subcategory),
+                )}
+            {/snippet}
+        </ResponsiveTable>
     {/if}
 </div>
 
@@ -370,17 +293,13 @@
             {#snippet children({ errors, processing })}
                 <div class="grid gap-2">
                     <Label for="subcategory_category_id">Category</Label>
-                    <select
+                    <FormSelect
                         id="subcategory_category_id"
                         name="category_id"
                         required
-                        class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                    >
-                        <option value="" disabled selected>Select a category</option>
-                        {#each categories as category (category.id)}
-                            <option value={category.id}>{category.name}</option>
-                        {/each}
-                    </select>
+                        options={categoryOptions}
+                        placeholder="Select a category"
+                    />
                     <InputError message={errors.category_id} />
                 </div>
 
@@ -417,18 +336,13 @@
                 {#snippet children({ errors, processing })}
                     <div class="grid gap-2">
                         <Label for="edit_subcategory_category_id">Category</Label>
-                        <select
+                        <FormSelect
                             id="edit_subcategory_category_id"
                             name="category_id"
                             required
-                            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                        >
-                            {#each categories as category (category.id)}
-                                <option value={category.id} selected={category.id === subcategory.category_id}>
-                                    {category.name}
-                                </option>
-                            {/each}
-                        </select>
+                            options={categoryOptions}
+                            value={String(subcategory.category_id)}
+                        />
                         <InputError message={errors.category_id} />
                     </div>
 

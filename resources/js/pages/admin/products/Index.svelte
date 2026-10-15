@@ -12,8 +12,9 @@
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
+    import ResponsiveTable from '@/components/dashboard/ResponsiveTable.svelte';
     import { Badge } from '@/components/ui/badge';
-    import { Button } from '@/components/ui/button';
+    import { Button, buttonVariants } from '@/components/ui/button';
     import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
     import { Spinner } from '@/components/ui/spinner';
@@ -107,106 +108,70 @@
 
 <AppHead title="Products" />
 
-<div class="p-4">
-    <div class="mb-4 flex items-center justify-between">
+<div class="w-full p-4">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-xl font-semibold">Products</h1>
         <Button onclick={() => (createOpen = true)}>New product</Button>
     </div>
 
     <form onsubmit={applySearch} class="mb-4 flex gap-2">
-        <Input bind:value={search} placeholder="Search by name, SKU, model..." class="max-w-sm" />
+        <Input
+            bind:value={search}
+            placeholder="Search by name, SKU, model..."
+            class="min-w-0 flex-1 sm:max-w-sm"
+        />
         <Button type="submit">Search</Button>
     </form>
 
-    <div class="hidden overflow-x-auto rounded-lg border md:block">
-        <table class="w-full text-sm">
-            <thead class="bg-muted/50 text-left">
-                <tr>
-                    <th class="p-2">Name</th>
-                    <th class="p-2">SKU</th>
-                    <th class="p-2">Status</th>
-                    <th class="p-2">Price</th>
-                    <th class="p-2">Stock</th>
-                    <th class="p-2"></th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each products.data as product (product.id)}
-                    <tr class="border-t">
-                        <td class="p-2">{product.name}</td>
-                        <td class="p-2">{product.sku}</td>
-                        <td class="p-2"><Badge variant="outline">{product.status}</Badge></td>
-                        <td class="p-2">{product.regular_price}</td>
-                        <td class="p-2">{product.stock_quantity}</td>
-                        <td class="p-2 text-right">
-                            <button
-                                class="mr-3 text-muted-foreground hover:text-primary"
-                                aria-label="Edit {product.name}"
-                                onclick={() => askEditProduct(product)}
-                            >
-                                <Pencil class="size-4" />
-                            </button>
-                            <button
-                                class="text-muted-foreground hover:text-red-600"
-                                aria-label="Delete {product.name}"
-                                onclick={() => askDeleteProduct(product)}
-                            >
-                                <Trash2 class="size-4" />
-                            </button>
-                        </td>
-                    </tr>
-                {:else}
-                    <tr><td class="p-4 text-muted-foreground" colspan="6">No products found.</td></tr>
-                {/each}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="grid gap-3 md:hidden">
-        {#each products.data as product (product.id)}
-            <div class="rounded-lg border p-3">
-                <div class="flex items-start justify-between gap-2">
-                    <p class="font-medium">{product.name}</p>
-                    <Badge variant="outline">{product.status}</Badge>
-                </div>
-                <dl class="mt-2 grid grid-cols-2 gap-1 text-sm text-muted-foreground">
-                    <dt>SKU</dt>
-                    <dd class="text-right text-foreground">{product.sku}</dd>
-                    <dt>Price</dt>
-                    <dd class="text-right text-foreground">{product.regular_price}</dd>
-                    <dt>Stock</dt>
-                    <dd class="text-right text-foreground">{product.stock_quantity}</dd>
-                </dl>
-                <div class="mt-3 flex justify-end gap-4">
-                    <button
-                        class="text-muted-foreground hover:text-primary"
-                        aria-label="Edit {product.name}"
-                        onclick={() => askEditProduct(product)}
-                    >
-                        <Pencil class="size-4" />
-                    </button>
-                    <button
-                        class="text-muted-foreground hover:text-red-600"
-                        aria-label="Delete {product.name}"
-                        onclick={() => askDeleteProduct(product)}
-                    >
-                        <Trash2 class="size-4" />
-                    </button>
-                </div>
-            </div>
-        {:else}
-            <p class="p-4 text-center text-muted-foreground">No products found.</p>
-        {/each}
-    </div>
+    <ResponsiveTable
+        items={products.data}
+        key={(product) => product.id}
+        columns={[
+            { key: 'name', label: 'Name' },
+            { key: 'sku', label: 'SKU' },
+            { key: 'status', label: 'Status' },
+            { key: 'price', label: 'Price', class: 'text-right' },
+            { key: 'stock', label: 'Stock', class: 'text-right' },
+        ]}
+        empty="No products found."
+    >
+        {#snippet cell(product, column)}
+            {#if column.key === 'name'}
+                {product.name}
+            {:else if column.key === 'sku'}
+                <span class="font-mono text-xs">{product.sku}</span>
+            {:else if column.key === 'status'}
+                <Badge variant="outline" class="capitalize">{product.status}</Badge>
+            {:else if column.key === 'price'}
+                {product.regular_price}
+            {:else}
+                {product.stock_quantity}
+            {/if}
+        {/snippet}
+        {#snippet actions(product)}
+            <Button variant="ghost" size="sm" aria-label="Edit {product.name}" onclick={() => askEditProduct(product)}>
+                <Pencil class="size-4" />
+            </Button>
+            <Button
+                variant="ghost"
+                size="sm"
+                class="text-destructive hover:text-destructive"
+                aria-label="Delete {product.name}"
+                onclick={() => askDeleteProduct(product)}
+            >
+                <Trash2 class="size-4" />
+            </Button>
+        {/snippet}
+    </ResponsiveTable>
 
     {#if products.last_page > 1}
-        <div class="mt-4 flex items-center justify-center gap-4 text-sm">
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm">
             {#if products.prev_page_url}
-                <Link href={products.prev_page_url}>Previous</Link>
+                <Link href={products.prev_page_url} class={buttonVariants({ variant: 'ghost', size: 'sm' })}>Previous</Link>
             {/if}
             <span>Page {products.current_page} of {products.last_page}</span>
             {#if products.next_page_url}
-                <Link href={products.next_page_url}>Next</Link>
+                <Link href={products.next_page_url} class={buttonVariants({ variant: 'ghost', size: 'sm' })}>Next</Link>
             {/if}
         </div>
     {/if}
