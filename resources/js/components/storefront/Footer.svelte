@@ -1,0 +1,81 @@
+<script lang="ts">
+    import { Link } from '@inertiajs/svelte';
+    import Phone from '@lucide/svelte/icons/phone';
+    import Plus from '@lucide/svelte/icons/plus';
+    import { business, categories } from '@/data/catalogue';
+    import { about, brands, catalogue, contact, home } from '@/routes';
+    import Wordmark from './Wordmark.svelte';
+</script>
+
+<footer class="footer">
+    <div class="container-wide pt-16 pb-8">
+        <div
+            class="grid grid-cols-2 gap-x-8 gap-y-10 lg:grid-cols-[1.5fr_1fr_1fr_1.1fr]"
+        >
+            <div class="col-span-2 lg:col-span-1">
+                <Link href={home.url()}>
+                    <Wordmark />
+                </Link>
+                <p class="mt-6 max-w-[270px] text-xs leading-7 opacity-65">
+                    Precision equipment. Professional guidance. A considered
+                    approach to equipping modern dental practices.
+                </p>
+                <div
+                    class="mt-5 inline-flex items-center gap-2 text-[10px] opacity-65"
+                >
+                    <Plus class="size-3" />
+                    Built around your practice.
+                </div>
+            </div>
+            <div>
+                <h3 class="footer-heading">Explore equipment</h3>
+                <div class="footer-links">
+                    {#each categories.slice(0, 5) as c (c.id)}
+                        <Link href={catalogue.url({ query: { category: c.id } })}>
+                            {c.name}
+                        </Link>
+                    {/each}
+                </div>
+            </div>
+            <div>
+                <h3 class="footer-heading">DENTORA</h3>
+                <div class="footer-links">
+                    <Link href={about.url()}>About Us</Link>
+                    <Link href={brands.url()}>Our Brands</Link>
+                    <Link href={catalogue.url()}>Product Catalogue</Link>
+                    <Link href={contact.url()}>Contact Us</Link>
+                    <Link href={contact.url()}>Request a Quote</Link>
+                </div>
+            </div>
+            <div class="col-span-2 sm:col-span-1">
+                <h3 class="footer-heading">Let’s talk equipment</h3>
+                <div class="footer-links">
+                    <a
+                        href="tel:{business.telephone}"
+                        class="flex items-center gap-2"
+                    >
+                        <Phone class="size-3.5" />
+                        {business.phone}
+                    </a>
+                    <a href="mailto:{business.email}">{business.email}</a>
+                    <span class="leading-6 opacity-65">{business.hours}</span>
+                    <span class="text-[10px] opacity-50">
+                        Placeholder contact details · demo only
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div
+            class="mt-14 flex flex-col justify-between gap-4 border-t border-on-deep/15 pt-6 text-[10px] opacity-55 sm:flex-row"
+        >
+            <span>
+                © {new Date().getFullYear()}
+                {business.name}. All rights reserved.
+            </span>
+            <span
+                >Frontend demonstration · Illustrative products, brands and
+                prices</span
+            >
+        </div>
+    </div>
+</footer>

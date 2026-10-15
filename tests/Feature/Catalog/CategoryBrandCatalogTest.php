@@ -9,7 +9,7 @@ test('guests can browse active categories but not inactive ones', function () {
     Category::factory()->create(['name' => 'Visible', 'is_active' => true]);
     Category::factory()->inactive()->create(['name' => 'Hidden']);
 
-    $response = $this->get(route('categories.index'));
+    $response = $this->get(route('catalog.categories.index'));
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page->has('categories', 1));
@@ -18,7 +18,7 @@ test('guests can browse active categories but not inactive ones', function () {
 test('an inactive category detail page is not found', function () {
     $category = Category::factory()->inactive()->create();
 
-    $this->get(route('categories.show', $category))->assertNotFound();
+    $this->get(route('catalog.categories.show', $category))->assertNotFound();
 });
 
 test('a category page lists its active subcategories', function () {
@@ -26,7 +26,7 @@ test('a category page lists its active subcategories', function () {
     $visible = Subcategory::factory()->for($category)->create();
     Subcategory::factory()->for($category)->inactive()->create();
 
-    $response = $this->get(route('categories.show', $category));
+    $response = $this->get(route('catalog.categories.show', $category));
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
@@ -46,7 +46,7 @@ test('a subcategory page lists only published products in that subcategory', fun
         'subcategory_id' => $subcategory->id,
     ]);
 
-    $response = $this->get(route('subcategories.show', $subcategory));
+    $response = $this->get(route('catalog.subcategories.show', $subcategory));
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page->where('products.total', 1));
@@ -55,17 +55,17 @@ test('a subcategory page lists only published products in that subcategory', fun
 test('an inactive subcategory detail page is not found', function () {
     $subcategory = Subcategory::factory()->inactive()->create();
 
-    $this->get(route('subcategories.show', $subcategory))->assertNotFound();
+    $this->get(route('catalog.subcategories.show', $subcategory))->assertNotFound();
 });
 
 test('guests can browse active brands', function () {
     Brand::factory()->count(2)->create();
 
-    $this->get(route('brands.index'))->assertOk();
+    $this->get(route('catalog.brands.index'))->assertOk();
 });
 
 test('an inactive brand detail page is not found', function () {
     $brand = Brand::factory()->inactive()->create();
 
-    $this->get(route('brands.show', $brand))->assertNotFound();
+    $this->get(route('catalog.brands.show', $brand))->assertNotFound();
 });

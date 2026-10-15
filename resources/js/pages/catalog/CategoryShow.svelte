@@ -2,7 +2,8 @@
     import { Link, page } from '@inertiajs/svelte';
     import AppHead from '@/components/AppHead.svelte';
     import ContactWidgets from '@/components/ContactWidgets.svelte';
-    import { show as subcategoryShow } from '@/routes/subcategories';
+    import { index as categoriesIndex } from '@/routes/catalog/categories';
+    import { show as subcategoryShow } from '@/routes/catalog/subcategories';
 
     type Subcategory = {
         id: number;
@@ -28,7 +29,7 @@
     <header class="mb-8 flex items-center justify-between">
         <Link href="/" class="text-lg font-semibold">DAS Dental</Link>
         <nav class="flex items-center gap-4 text-sm">
-            <Link href="/categories">Categories</Link>
+            <Link href={categoriesIndex.url()}>Categories</Link>
             {#if auth.user}
                 <Link href="/dashboard">Dashboard</Link>
             {/if}
