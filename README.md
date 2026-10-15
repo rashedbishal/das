@@ -67,14 +67,15 @@ Product images/videos live in one `product_media` table (`type`: image/video, `s
 
 All settings live in one `settings` table (`group`, `key`, `value` as JSON) behind a cached `App\Services\SettingsService`, editable from **Admin → Settings**:
 
-| Group       | Keys                                                                                              |
-| ----------- | ------------------------------------------------------------------------------------------------- |
-| `general`   | site_name, logo, favicon, contact_email, contact_phone, address, currency, timezone, social_links |
-| `auth`      | login_mode (`email`\|`phone`\|`both`), registration_enabled                                       |
-| `whatsapp`  | enabled, phone, message                                                                           |
-| `messenger` | enabled, page_url                                                                                 |
-| `catalog`   | page_size, featured_limit                                                                         |
-| `seo`       | default_title, default_description                                                                |
+| Group       | Keys                                                                                                             |
+| ----------- | ---------------------------------------------------------------------------------------------------------------- |
+| `general`   | site_name, logo, favicon, contact_email, contact_phone, address, currency, timezone, social_links                |
+| `auth`      | login_mode (`email`\|`phone`\|`both`), registration_enabled                                                      |
+| `whatsapp`  | enabled, phone, message                                                                                          |
+| `messenger` | enabled, page_url                                                                                                |
+| `catalog`   | page_size, featured_limit                                                                                        |
+| `seo`       | default_title, default_description                                                                               |
+| `tracking`  | head_scripts, body_scripts (raw JS/HTML, e.g. Google Tag Manager — injected into every page's `<head>`/`<body>`) |
 
 WhatsApp/Messenger config is shared to every Inertia page as `contactWidgets` and exposed publicly at `GET /api/v1/settings/contact-widgets` (and the Inertia-side `GET /contact-widgets`) for the floating widget component — the frontend never hard-codes a phone number or page URL.
 

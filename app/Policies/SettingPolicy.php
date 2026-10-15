@@ -35,4 +35,9 @@ class SettingPolicy
     {
         return $user->hasPermission('settings.manage') || $user->hasPermission('seo.manage');
     }
+
+    public function manageTracking(User $user): bool
+    {
+        return $user->hasPermission('settings.manage');
+    }
 }

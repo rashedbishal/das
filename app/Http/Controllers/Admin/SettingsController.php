@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\Settings\UpdateAuthSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateCatalogSeoSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateGeneralSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateMessengerSettingsRequest;
+use App\Http\Requests\Admin\Settings\UpdateTrackingSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateWhatsappSettingsRequest;
 use App\Models\Setting;
 use App\Services\SettingsService;
@@ -29,6 +30,7 @@ class SettingsController extends Controller
             'messenger' => $this->settings->group('messenger'),
             'catalog' => $this->settings->group('catalog'),
             'seo' => $this->settings->group('seo'),
+            'tracking' => $this->settings->group('tracking'),
         ]);
     }
 
@@ -68,6 +70,13 @@ class SettingsController extends Controller
         $this->settings->set('catalog', 'featured_limit', $data['featured_limit']);
         $this->settings->set('seo', 'default_title', $data['default_title'] ?? null);
         $this->settings->set('seo', 'default_description', $data['default_description'] ?? null);
+
+        return back();
+    }
+
+    public function updateTracking(UpdateTrackingSettingsRequest $request): RedirectResponse
+    {
+        $this->persist('tracking', $request->validated());
 
         return back();
     }

@@ -14,8 +14,14 @@
         <x-inertia::head>
             <title>{{ config('app.name', 'Laravel') }}</title>
         </x-inertia::head>
+
+        {{-- Raw head script, e.g. Google Tag Manager, set from Admin -> Settings -> Tracking. Only --}}
+        {{-- admins holding settings.manage can edit this, so it is intentionally unescaped. --}}
+        {!! $headScripts ?? '' !!}
     </head>
     <body class="font-sans antialiased">
+        {{-- Raw body script, e.g. the GTM <noscript> fallback. Same trust boundary as $headScripts. --}}
+        {!! $bodyScripts ?? '' !!}
         <x-inertia::app />
     </body>
 </html>
