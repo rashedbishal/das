@@ -3,6 +3,10 @@
     import AppHead from '@/components/AppHead.svelte';
     import ContactWidgets from '@/components/ContactWidgets.svelte';
     import { Badge } from '@/components/ui/badge';
+    import {
+        index as productsIndex,
+        show as productShow,
+    } from '@/routes/catalog/products';
 
     type ProductDetail = {
         name: string;
@@ -42,7 +46,7 @@
     <header class="mb-8 flex items-center justify-between">
         <Link href="/" class="text-lg font-semibold">DAS Dental</Link>
         <nav class="flex items-center gap-4 text-sm">
-            <Link href="/products">Products</Link>
+            <Link href={productsIndex.url()}>Products</Link>
             {#if auth.user}
                 <Link href="/dashboard">Dashboard</Link>
             {/if}
@@ -134,7 +138,7 @@
             <h2 class="mb-4 text-lg font-semibold">Related products</h2>
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 {#each detail.related_products as related (related.id)}
-                    <Link href={`/products/${related.slug}`} class="rounded-lg border p-3 hover:shadow-md">
+                    <Link href={productShow.url(related.slug)} class="rounded-lg border p-3 hover:shadow-md">
                         <div class="mb-2 aspect-square overflow-hidden rounded bg-muted">
                             {#if related.main_image}
                                 <img src={related.main_image} alt={related.name} class="h-full w-full object-cover" />

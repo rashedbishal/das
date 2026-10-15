@@ -3,6 +3,8 @@
     import AppHead from '@/components/AppHead.svelte';
     import ContactWidgets from '@/components/ContactWidgets.svelte';
     import { login } from '@/routes';
+    import { show as categoryShow } from '@/routes/catalog/categories';
+    import { index as productsIndex } from '@/routes/catalog/products';
 
     type Category = {
         id: number;
@@ -22,7 +24,7 @@
     <header class="mb-8 flex items-center justify-between">
         <Link href="/" class="text-lg font-semibold">DAS Dental</Link>
         <nav class="flex items-center gap-4 text-sm">
-            <Link href="/products">Products</Link>
+            <Link href={productsIndex.url()}>Products</Link>
             {#if auth.user}
                 <Link href="/dashboard">Dashboard</Link>
             {:else}
@@ -36,7 +38,7 @@
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {#each categories as category (category.id)}
             <Link
-                href={`/categories/${category.slug}`}
+                href={categoryShow.url(category.slug)}
                 class="rounded-lg border p-4 hover:shadow-md"
             >
                 <h2 class="font-medium">{category.name}</h2>

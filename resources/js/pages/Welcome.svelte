@@ -4,8 +4,8 @@
     import ContactWidgets from '@/components/ContactWidgets.svelte';
     import { toUrl } from '@/lib/utils';
     import { dashboard, login, register } from '@/routes';
-    import { index as productsIndex, show as productShow } from '@/routes/products';
-    import { index as categoriesIndex } from '@/routes/categories';
+    import { index as productsIndex, show as productShow } from '@/routes/catalog/products';
+    import { index as categoriesIndex } from '@/routes/catalog/categories';
 
     type ProductCard = {
         id: number;
