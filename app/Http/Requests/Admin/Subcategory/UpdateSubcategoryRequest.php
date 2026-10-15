@@ -23,6 +23,7 @@ class UpdateSubcategoryRequest extends FormRequest
             'slug' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'string', 'max:2048'],
+            'image_file' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'is_active' => ['boolean'],
             'sort_order' => ['integer', 'min:0'],
         ];

@@ -9,6 +9,7 @@
 <script lang="ts">
     import { Form, Link, router } from '@inertiajs/svelte';
     import Pencil from '@lucide/svelte/icons/pencil';
+    import { untrack } from 'svelte';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
@@ -74,7 +75,7 @@
         tags: Option[];
     } = $props();
 
-    let search = $state(filters.search ?? '');
+    let search = $state(untrack(() => filters.search ?? ''));
     let createOpen = $state(false);
 
     let editingProductId = $state<number | null>(null);

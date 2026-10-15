@@ -38,28 +38,28 @@ class SettingsController extends Controller
     {
         $this->persist('general', $request->validated());
 
-        return back();
+        return $this->backWithToast('General settings saved.');
     }
 
     public function updateAuth(UpdateAuthSettingsRequest $request): RedirectResponse
     {
         $this->persist('auth', $request->validated());
 
-        return back();
+        return $this->backWithToast('Authentication settings saved.');
     }
 
     public function updateWhatsapp(UpdateWhatsappSettingsRequest $request): RedirectResponse
     {
         $this->persist('whatsapp', $request->validated());
 
-        return back();
+        return $this->backWithToast('WhatsApp settings saved.');
     }
 
     public function updateMessenger(UpdateMessengerSettingsRequest $request): RedirectResponse
     {
         $this->persist('messenger', $request->validated());
 
-        return back();
+        return $this->backWithToast('Messenger settings saved.');
     }
 
     public function updateCatalogSeo(UpdateCatalogSeoSettingsRequest $request): RedirectResponse
@@ -71,14 +71,14 @@ class SettingsController extends Controller
         $this->settings->set('seo', 'default_title', $data['default_title'] ?? null);
         $this->settings->set('seo', 'default_description', $data['default_description'] ?? null);
 
-        return back();
+        return $this->backWithToast('Catalog & SEO settings saved.');
     }
 
     public function updateTracking(UpdateTrackingSettingsRequest $request): RedirectResponse
     {
         $this->persist('tracking', $request->validated());
 
-        return back();
+        return $this->backWithToast('Tracking scripts saved.');
     }
 
     /**
@@ -89,5 +89,12 @@ class SettingsController extends Controller
         foreach ($data as $key => $value) {
             $this->settings->set($group, $key, $value);
         }
+    }
+
+    private function backWithToast(string $message): RedirectResponse
+    {
+        Inertia::flash('toast', ['type' => 'success', 'message' => $message]);
+
+        return back();
     }
 }

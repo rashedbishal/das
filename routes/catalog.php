@@ -7,7 +7,7 @@ use App\Http\Controllers\Catalog\SubcategoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('products', [ProductController::class, 'index'])->name('products.index');
-Route::get('products/{product:slug}', [ProductController::class, 'show'])->middleware('auth')->name('products.show');
+Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
 
 Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::get('categories/{category:slug}', [CategoryController::class, 'show'])->name('categories.show');

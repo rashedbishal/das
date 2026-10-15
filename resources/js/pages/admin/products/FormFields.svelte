@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { untrack } from 'svelte';
     import FormSelect from '@/components/dashboard/FormSelect.svelte';
     import InputError from '@/components/InputError.svelte';
     import { Input } from '@/components/ui/input';
@@ -46,7 +47,7 @@
         errors: Record<string, string>;
     } = $props();
 
-    const selectedTagIds = new Set(product?.tags.map((t) => t.id) ?? []);
+    const selectedTagIds = untrack(() => new Set(product?.tags.map((t) => t.id) ?? []));
 
     const toOptions = (items: Option[]) =>
         items.map((item) => ({ value: String(item.id), label: item.name }));
@@ -56,8 +57,8 @@
             label: value.charAt(0).toUpperCase() + value.slice(1).replaceAll('_', ' '),
         }));
 
-    let selectedCategoryId = $state(product ? String(product.category_id) : '');
-    let selectedSubcategoryId = $state(product ? String(product.subcategory_id) : '');
+    let selectedCategoryId = $state(untrack(() => (product ? String(product.category_id) : '')));
+    let selectedSubcategoryId = $state(untrack(() => (product ? String(product.subcategory_id) : '')));
     const availableSubcategories = $derived(
         subcategories.filter((subcategory) => String(subcategory.category_id) === selectedCategoryId),
     );

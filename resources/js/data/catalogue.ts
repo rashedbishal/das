@@ -48,12 +48,20 @@ export type ProductDetail = ProductCard & {
     relatedProducts: ProductCard[];
 };
 
+export type CategorySubcategory = {
+    id: number;
+    name: string;
+    slug: string;
+    image: string | null;
+};
+
 export type Category = {
     id: number;
     name: string;
     slug: string;
     description: string | null;
     image: string | null;
+    subcategories: CategorySubcategory[];
 };
 
 export type Brand = {
@@ -67,6 +75,7 @@ export type Brand = {
 export type CatalogueFilters = {
     q?: string | undefined;
     category?: string | undefined;
+    subcategory?: string | undefined;
     brand?: string | undefined;
     stockStatus?: string | undefined;
     maxPrice?: number | undefined;
@@ -161,6 +170,12 @@ function mapCategory(raw: {
     slug: string;
     description: string | null;
     image: string | null;
+    subcategories?: {
+        id: number;
+        name: string;
+        slug: string;
+        image: string | null;
+    }[];
 }): Category {
     return {
         id: raw.id,
@@ -168,6 +183,12 @@ function mapCategory(raw: {
         slug: raw.slug,
         description: raw.description,
         image: raw.image,
+        subcategories: (raw.subcategories ?? []).map((s) => ({
+            id: s.id,
+            name: s.name,
+            slug: s.slug,
+            image: s.image,
+        })),
     };
 }
 
@@ -214,6 +235,7 @@ export async function fetchProducts(
             query: {
                 search: filters.q,
                 category: filters.category,
+                subcategory: filters.subcategory,
                 brand: filters.brand,
                 stock_status: filters.stockStatus,
                 max_price: filters.maxPrice,
@@ -332,6 +354,7 @@ export function parseFilters(url: string): CatalogueFilters {
     return {
         q: text('q'),
         category: text('category'),
+        subcategory: text('subcategory'),
         brand: text('brand'),
         stockStatus: text('stockStatus'),
         maxPrice: maxPrice > 0 ? maxPrice : undefined,

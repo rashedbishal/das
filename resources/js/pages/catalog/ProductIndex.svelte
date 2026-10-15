@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Link, page, router } from '@inertiajs/svelte';
+    import { untrack } from 'svelte';
     import AppHead from '@/components/AppHead.svelte';
     import ContactWidgets from '@/components/ContactWidgets.svelte';
     import { Button } from '@/components/ui/button';
@@ -39,7 +40,7 @@
         filters: Record<string, string | undefined>;
     } = $props();
 
-    let search = $state(filters.search ?? '');
+    let search = $state(untrack(() => filters.search ?? ''));
 
     function applySearch(event: SubmitEvent) {
         event.preventDefault();

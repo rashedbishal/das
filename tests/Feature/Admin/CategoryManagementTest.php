@@ -4,6 +4,8 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Subcategory;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 test('an admin with categories.manage can create a category', function () {
     $admin = adminUser(['categories.manage', 'categories.view']);
@@ -48,6 +50,45 @@ test('an admin with categories.manage can update a category', function () {
 
     $response->assertRedirect(route('admin.categories.index'));
     expect($category->fresh()->name)->toBe('New Name');
+});
+
+test('uploading an image when creating a category stores it on the public disk', function () {
+    Storage::fake('public');
+    $admin = adminUser(['categories.manage', 'categories.view']);
+
+    $response = $this->actingAs($admin)->post(route('admin.categories.store'), [
+        'name' => 'Dental Chairs',
+        'is_active' => true,
+        'image_file' => UploadedFile::fake()->image('chair.jpg'),
+    ]);
+
+    $response->assertRedirect(route('admin.categories.index'));
+    $category = Category::query()->where('slug', 'dental-chairs')->firstOrFail();
+    expect($category->image)->not->toBeNull();
+    Storage::disk('public')->assertExists("categories/{$category->id}/".basename($category->image));
+});
+
+test('uploading a new image when updating a category replaces and deletes the old one', function () {
+    Storage::fake('public');
+    $admin = adminUser(['categories.manage']);
+    $category = Category::factory()->create();
+    $this->actingAs($admin)->put(route('admin.categories.update', $category), [
+        'name' => $category->name,
+        'is_active' => true,
+        'image_file' => UploadedFile::fake()->image('first.jpg'),
+    ]);
+    $firstImagePath = "categories/{$category->id}/".basename($category->fresh()->image);
+    Storage::disk('public')->assertExists($firstImagePath);
+
+    $this->actingAs($admin)->put(route('admin.categories.update', $category), [
+        'name' => $category->name,
+        'is_active' => true,
+        'image_file' => UploadedFile::fake()->image('second.jpg'),
+    ]);
+
+    Storage::disk('public')->assertMissing($firstImagePath);
+    $secondImagePath = "categories/{$category->id}/".basename($category->fresh()->image);
+    Storage::disk('public')->assertExists($secondImagePath);
 });
 
 test('a category cannot be deleted while it still has subcategories', function () {

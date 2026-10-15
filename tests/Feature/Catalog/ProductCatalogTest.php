@@ -23,33 +23,50 @@ test('the public listing never exposes full description, specifications, or seo 
     $response->assertDontSee('SECRET INTERNAL DETAIL');
 });
 
-test('guests are redirected to login when opening a product detail page', function () {
+test('guests see an inline login prompt instead of being redirected off a product detail page', function () {
     $product = Product::factory()->published()->create();
 
-    $response = $this->get(route('catalog.products.show', $product));
+    $response = $this->get(route('catalog.products.show', $product->slug));
 
-    $response->assertRedirect(route('login'));
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('catalog/ProductShow')
+        ->where('authRequired', true)
+        ->where('product', null));
 });
 
-test('guests are redirected back to the product after logging in', function () {
+test('a product detail page never reveals whether a slug exists to guests', function () {
+    $published = Product::factory()->published()->create();
+    $draft = Product::factory()->create(['status' => 'draft']);
+
+    $forPublished = $this->get(route('catalog.products.show', $published->slug));
+    $forDraft = $this->get(route('catalog.products.show', $draft->slug));
+    $forMissing = $this->get(route('catalog.products.show', 'no-such-product'));
+
+    $forPublished->assertOk()->assertInertia(fn ($page) => $page->where('authRequired', true));
+    $forDraft->assertOk()->assertInertia(fn ($page) => $page->where('authRequired', true));
+    $forMissing->assertOk()->assertInertia(fn ($page) => $page->where('authRequired', true));
+});
+
+test('guests are redirected back to the product after logging in through the modal', function () {
     $product = Product::factory()->published()->create();
     $customer = User::factory()->create(['password' => 'password']);
 
-    $this->get(route('catalog.products.show', $product));
+    $this->get(route('catalog.products.show', $product->slug));
 
     $response = $this->post(route('login.store'), [
         'email' => $customer->email,
         'password' => 'password',
     ]);
 
-    $response->assertRedirect(route('catalog.products.show', $product, absolute: false));
+    $response->assertRedirect(route('catalog.products.show', $product->slug, absolute: false));
 });
 
 test('an authenticated customer can view a published product detail', function () {
     $product = Product::factory()->published()->create();
     $customer = User::factory()->create();
 
-    $response = $this->actingAs($customer)->get(route('catalog.products.show', $product));
+    $response = $this->actingAs($customer)->get(route('catalog.products.show', $product->slug));
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page->where('product.data.sku', $product->sku));
@@ -59,7 +76,7 @@ test('an authenticated customer cannot view a draft product detail', function ()
     $product = Product::factory()->create(['status' => 'draft']);
     $customer = User::factory()->create();
 
-    $response = $this->actingAs($customer)->get(route('catalog.products.show', $product));
+    $response = $this->actingAs($customer)->get(route('catalog.products.show', $product->slug));
 
     $response->assertNotFound();
 });
@@ -68,7 +85,7 @@ test('an authenticated customer cannot view an archived product detail', functio
     $product = Product::factory()->archived()->create();
     $customer = User::factory()->create();
 
-    $response = $this->actingAs($customer)->get(route('catalog.products.show', $product));
+    $response = $this->actingAs($customer)->get(route('catalog.products.show', $product->slug));
 
     $response->assertNotFound();
 });

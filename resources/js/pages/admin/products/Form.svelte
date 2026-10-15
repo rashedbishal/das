@@ -70,7 +70,7 @@
         tags: Option[];
     } = $props();
 
-    const isEdit = Boolean(product);
+    const isEdit = $derived(Boolean(product));
 </script>
 
 <AppHead title={isEdit ? 'Edit product' : 'New product'} />

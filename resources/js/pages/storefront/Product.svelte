@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Link, page, router } from '@inertiajs/svelte';
+    import { Link, page } from '@inertiajs/svelte';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import Check from '@lucide/svelte/icons/check';
     import Info from '@lucide/svelte/icons/info';
@@ -22,24 +22,32 @@
         stockLabel,
         type ProductDetail,
     } from '@/data/catalogue';
+    import LoginModal from '@/components/LoginModal.svelte';
     import { resolvePhone } from '@/lib/contact';
-    import { catalogue, login } from '@/routes';
+    import { catalogue } from '@/routes';
     import { show as categoryShow } from '@/routes/categories';
+
+    let { loginMode = 'both' }: { loginMode?: 'email' | 'phone' | 'both' } = $props();
 
     const slug = $derived(pathSegment(page.url, 1));
     const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
+    const authed = $derived(!!page.props.auth.user);
 
     let product = $state<ProductDetail | null>(null);
     let loading = $state(true);
     let zoom = $state(false);
+    let loginModalOpen = $state(false);
 
     $effect(() => {
-        if (!page.props.auth.user) {
-            router.visit(login.url());
+        if (!authed) {
+            loginModalOpen = true;
+            loading = false;
+            product = null;
 
             return;
         }
 
+        loginModalOpen = false;
         loading = true;
         product = null;
 
@@ -50,7 +58,18 @@
     });
 </script>
 
-{#if product}
+{#if !authed}
+    <section class="container-wide flex flex-col items-center gap-4 py-20 text-center">
+        <h1 class="text-xl font-semibold">Sign in to view this product</h1>
+        <p class="max-w-sm text-sm text-muted-foreground">
+            Full product details, including pricing and specifications, are available to
+            registered customers. Log in below to continue — no need to leave this page.
+        </p>
+        <Button onclick={() => (loginModalOpen = true)}>Log in</Button>
+    </section>
+
+    <LoginModal bind:open={loginModalOpen} {loginMode} />
+{:else if product}
     {@const p = product}
     <PageMeta title={p.name} description={p.shortDescription ?? p.name} />
 

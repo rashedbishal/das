@@ -26,6 +26,7 @@
     type CategoryRow = {
         id: number;
         name: string;
+        image: string | null;
         is_active: boolean;
         sort_order: number;
         subcategories_count: number;
@@ -37,6 +38,7 @@
         category_id: number;
         category: { id: number; name: string };
         name: string;
+        image: string | null;
         is_active: boolean;
         sort_order: number;
         products_count: number;
@@ -132,6 +134,14 @@
     </Badge>
 {/snippet}
 
+{#snippet thumbnail(image: string | null, name: string)}
+    {#if image}
+        <img src={image} alt={name} class="h-10 w-10 rounded object-cover" />
+    {:else}
+        <div class="h-10 w-10 rounded bg-muted"></div>
+    {/if}
+{/snippet}
+
 <div class="w-full p-4">
     <div class="mb-6 flex gap-2 overflow-x-auto border-b">
         {#each [['categories', 'Categories'], ['subcategories', 'Subcategories']] as [value, label] (value)}
@@ -156,6 +166,7 @@
             items={filteredCategories}
             key={(category) => category.id}
             columns={[
+                { key: 'image', label: 'Image' },
                 { key: 'name', label: 'Name' },
                 { key: 'active', label: 'Active' },
                 { key: 'subcategories', label: 'Subcategories', class: 'text-right' },
@@ -164,7 +175,9 @@
             empty="No categories found."
         >
             {#snippet cell(category, column)}
-                {#if column.key === 'name'}
+                {#if column.key === 'image'}
+                    {@render thumbnail(category.image, category.name)}
+                {:else if column.key === 'name'}
                     {category.name}
                 {:else if column.key === 'active'}
                     {@render activeBadge(category.is_active)}
@@ -194,6 +207,7 @@
             items={filteredSubcategories}
             key={(subcategory) => subcategory.id}
             columns={[
+                { key: 'image', label: 'Image' },
                 { key: 'name', label: 'Name' },
                 { key: 'category', label: 'Category' },
                 { key: 'active', label: 'Active' },
@@ -202,7 +216,9 @@
             empty="No subcategories found."
         >
             {#snippet cell(subcategory, column)}
-                {#if column.key === 'name'}
+                {#if column.key === 'image'}
+                    {@render thumbnail(subcategory.image, subcategory.name)}
+                {:else if column.key === 'name'}
                     {subcategory.name}
                 {:else if column.key === 'category'}
                     <span class="text-muted-foreground">{subcategory.category.name}</span>
@@ -234,7 +250,20 @@
                     <InputError message={errors.name} />
                 </div>
 
+                <div class="grid gap-2">
+                    <Label for="image_file">Image</Label>
+                    <input
+                        id="image_file"
+                        name="image_file"
+                        type="file"
+                        accept="image/*"
+                        class="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                    />
+                    <InputError message={errors.image_file} />
+                </div>
+
                 <label class="flex items-center gap-2 text-sm">
+                    <input type="hidden" name="is_active" value="0" />
                     <input type="checkbox" name="is_active" value="1" checked />
                     Active
                 </label>
@@ -265,7 +294,24 @@
                         <InputError message={errors.name} />
                     </div>
 
+                    <div class="grid gap-2">
+                        <Label for="edit_category_image_file">Image</Label>
+                        {#if category.image}
+                            <img src={category.image} alt={category.name} class="h-16 w-16 rounded object-cover" />
+                        {/if}
+                        <input
+                            id="edit_category_image_file"
+                            name="image_file"
+                            type="file"
+                            accept="image/*"
+                            class="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                        />
+                        <p class="text-xs text-muted-foreground">Leave blank to keep the current image.</p>
+                        <InputError message={errors.image_file} />
+                    </div>
+
                     <label class="flex items-center gap-2 text-sm">
+                        <input type="hidden" name="is_active" value="0" />
                         <input type="checkbox" name="is_active" value="1" checked={category.is_active} />
                         Active
                     </label>
@@ -309,7 +355,20 @@
                     <InputError message={errors.name} />
                 </div>
 
+                <div class="grid gap-2">
+                    <Label for="subcategory_image_file">Image</Label>
+                    <input
+                        id="subcategory_image_file"
+                        name="image_file"
+                        type="file"
+                        accept="image/*"
+                        class="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                    />
+                    <InputError message={errors.image_file} />
+                </div>
+
                 <label class="flex items-center gap-2 text-sm">
+                    <input type="hidden" name="is_active" value="0" />
                     <input type="checkbox" name="is_active" value="1" checked />
                     Active
                 </label>
@@ -352,7 +411,24 @@
                         <InputError message={errors.name} />
                     </div>
 
+                    <div class="grid gap-2">
+                        <Label for="edit_subcategory_image_file">Image</Label>
+                        {#if subcategory.image}
+                            <img src={subcategory.image} alt={subcategory.name} class="h-16 w-16 rounded object-cover" />
+                        {/if}
+                        <input
+                            id="edit_subcategory_image_file"
+                            name="image_file"
+                            type="file"
+                            accept="image/*"
+                            class="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-medium"
+                        />
+                        <p class="text-xs text-muted-foreground">Leave blank to keep the current image.</p>
+                        <InputError message={errors.image_file} />
+                    </div>
+
                     <label class="flex items-center gap-2 text-sm">
+                        <input type="hidden" name="is_active" value="0" />
                         <input type="checkbox" name="is_active" value="1" checked={subcategory.is_active} />
                         Active
                     </label>

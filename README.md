@@ -56,7 +56,7 @@ Native `roles` / `permissions` tables (no third-party package), chosen so the Mo
 Enforced on the backend (not just the frontend), on **both** the Inertia routes and the `/api/v1` routes:
 
 - Guests may browse product/category/brand listings (summary fields only — never full description, specifications, or SEO fields; see `App\Http\Resources\ProductCardResource`).
-- Opening a product detail page as a guest redirects to login (Inertia) / returns `401` (API); after login, the user is returned to the product they requested (`redirect()->intended()`).
+- Opening a product detail page as a guest never navigates away or reveals whether the slug exists (Inertia route): the page renders in place with `authRequired: true` and `product: null`, and the Svelte page shows an inline login modal over it. The API instead returns `401`. Either way, logging in returns the user to the product they requested (`session(['url.intended' => ...])` set by the controller, consumed by Fortify's `redirect()->intended()`).
 - Authenticated customers see full detail only for **published** products; admins see all statuses. Non-public statuses return `404` rather than `403` for authenticated non-admins, to avoid confirming a draft/archived product's existence.
 
 ## Media & Storage
@@ -97,7 +97,7 @@ The backend and API for all of the following are complete and tested; only the S
 - Homepage banner/section management has no admin UI yet (`admin/homepage-sections` Inertia routes exist and are tested).
 - Public brand browsing pages (`/api/v1/brands`, Inertia `Catalog\BrandController`) exist but have no Svelte pages; only category pages were built per the brief's explicit page list.
 - Admin category/brand editing (vs. create/delete) has no UI yet.
-- No image upload UI for category/brand images — these accept a plain URL string for now.
+- No image upload UI for brand images — these accept a plain URL string for now. (Category/subcategory images now support file upload, stored on the `public` disk via `CategoryService`/`SubcategoryService`, alongside the existing URL-string option.)
 
 ## Running Tests
 

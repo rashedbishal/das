@@ -3,14 +3,18 @@
     import ArrowRight from '@lucide/svelte/icons/arrow-right';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import ChevronDown from '@lucide/svelte/icons/chevron-down';
+    import ChevronLeft from '@lucide/svelte/icons/chevron-left';
     import Menu from '@lucide/svelte/icons/menu';
     import Phone from '@lucide/svelte/icons/phone';
     import Search from '@lucide/svelte/icons/search';
+    import { backOut, cubicOut, quintOut } from 'svelte/easing';
+    import { fade } from 'svelte/transition';
     import {
         categories,
         fetchProducts,
         filterQuery,
         loadCategories,
+        type Category,
         type ProductCard,
     } from '@/data/catalogue';
     import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
@@ -43,7 +47,79 @@
     let searchOpen = $state(false);
     let q = $state('');
     let mega = $state(false);
+    let expandedCategory = $state<Category | null>(null);
     let matches = $state<ProductCard[]>([]);
+    let closeMegaTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    function openMega() {
+        clearTimeout(closeMegaTimeout);
+        mega = true;
+    }
+
+    function scheduleCloseMega() {
+        clearTimeout(closeMegaTimeout);
+        closeMegaTimeout = setTimeout(() => {
+            mega = false;
+            expandedCategory = null;
+        }, 150);
+    }
+
+    function toggleMega() {
+        clearTimeout(closeMegaTimeout);
+
+        if (mega) {
+            mega = false;
+            expandedCategory = null;
+        } else {
+            mega = true;
+        }
+    }
+
+    function selectCategory(category: Category) {
+        expandedCategory = expandedCategory?.id === category.id ? null : category;
+    }
+
+    // Drops and unfurls from the nav bar, rather than a mechanical height-slide.
+    function panelReveal(_node: HTMLElement, { duration = 380, delay = 0 } = {}) {
+        return {
+            duration,
+            delay,
+            easing: quintOut,
+            css: (t: number) => `
+                opacity: ${t};
+                transform-origin: top;
+                transform: translateY(${(1 - t) * -14}px) scaleY(${0.94 + t * 0.06});
+            `,
+        };
+    }
+
+    // A "focus pull" reveal — items drift up and scale in while coming into focus from a
+    // soft blur, one at a time. backOut overshoots slightly past full size before settling,
+    // which reads as a deliberate, confident pop rather than a flat fade.
+    function itemReveal(_node: HTMLElement, { duration = 700, delay = 0 } = {}) {
+        return {
+            duration,
+            delay,
+            easing: backOut,
+            css: (t: number, u: number) => `
+                opacity: ${Math.min(1, Math.max(0, t))};
+                filter: blur(${Math.max(0, u) * 4}px);
+                transform: translateY(${u * 26}px) scale(${1 - u * 0.3});
+            `,
+        };
+    }
+
+    // Horizontal cross-fade used when swapping between the category and subcategory views.
+    function viewSwap(_node: HTMLElement, { duration = 320 } = {}) {
+        return {
+            duration,
+            easing: quintOut,
+            css: (t: number) => `
+                opacity: ${t};
+                transform: translateX(${(1 - t) * 18}px);
+            `,
+        };
+    }
 
     $effect(() => {
         const term = q.trim();
@@ -90,10 +166,31 @@
         </Link>
         <nav
             aria-label="Main navigation"
-            class="hidden items-center gap-[25px] text-[11px] font-medium xl:flex"
+            class="hidden items-center gap-[25px] text-sm font-medium xl:flex"
         >
             {#each links as [name, path] (path)}
-                <div class="relative">
+                {#if name === 'Categories'}
+                    <div
+                        role="presentation"
+                        onmouseenter={openMega}
+                        onmouseleave={scheduleCloseMega}
+                    >
+                        <button
+                            type="button"
+                            class="flex items-center gap-1 py-8 transition-colors hover:text-primary {mega
+                                ? 'text-primary'
+                                : ''}"
+                            aria-label="Browse category menu"
+                            aria-expanded={mega}
+                            onclick={toggleMega}
+                        >
+                            {name}
+                            <ChevronDown
+                                class="size-3 transition-transform duration-300 ease-out {mega ? 'rotate-180' : ''}"
+                            />
+                        </button>
+                    </div>
+                {:else}
                     <Link
                         href={path}
                         class="py-8 transition-colors hover:text-primary {current.currentUrl ===
@@ -103,19 +200,7 @@
                     >
                         {name}
                     </Link>
-                    {#if name === 'Categories'}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Browse category menu"
-                            aria-expanded={mega}
-                            onclick={() => (mega = !mega)}
-                            class="ml-0.5 size-5"
-                        >
-                            <ChevronDown class="size-3" />
-                        </Button>
-                    {/if}
-                </div>
+                {/if}
             {/each}
         </nav>
         <div class="flex items-center gap-3">
@@ -151,26 +236,94 @@
         </div>
     </div>
     {#if mega}
-        <div class="absolute inset-x-0 border-b bg-background shadow-lg">
-            <div class="container-wide grid grid-cols-4 gap-5 py-7">
-                {#each $categories as c (c.id)}
-                    <Link
-                        href={catalogue.url({ query: { category: c.slug } })}
-                        onclick={() => (mega = false)}
-                        class="flex items-center gap-3 hover:text-primary"
-                    >
-                        <img
-                            src={c.image}
-                            alt=""
-                            class="h-14 w-14 rounded bg-secondary object-contain"
-                        />
-                        <span class="text-xs">{c.name}</span>
-                    </Link>
-                {/each}
+        <div
+            class="absolute inset-x-0 border-b bg-background shadow-lg"
+            role="presentation"
+            onmouseenter={openMega}
+            onmouseleave={scheduleCloseMega}
+            transition:panelReveal
+        >
+            <div class="container-wide py-7">
+                {#if !expandedCategory}
+                    <div class="grid grid-cols-4 gap-5">
+                        {#each $categories as c, i (c.id)}
+                            <button
+                                type="button"
+                                class="group flex items-center gap-3 text-left transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:text-primary"
+                                in:itemReveal={{ delay: i * 90 }}
+                                onclick={() => selectCategory(c)}
+                            >
+                                <img
+                                    src={c.image}
+                                    alt=""
+                                    class="h-14 w-14 rounded bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
+                                />
+                                <span class="text-xs">{c.name}</span>
+                                {#if c.subcategories.length}
+                                    <ChevronDown class="-ml-1 size-3 -rotate-90 text-muted-foreground" />
+                                {/if}
+                            </button>
+                        {/each}
+                    </div>
+                {:else}
+                    {@const activeCategory = expandedCategory}
+                    <div in:viewSwap>
+                        <button
+                            type="button"
+                            class="mb-5 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary"
+                            onclick={() => (expandedCategory = null)}
+                        >
+                            <ChevronLeft class="size-3" />
+                            Back to categories
+                        </button>
+                        {#if activeCategory.subcategories.length}
+                            <div class="grid grid-cols-4 gap-5">
+                                {#each activeCategory.subcategories as s, i (s.id)}
+                                    <div in:itemReveal={{ delay: i * 90 }}>
+                                        <Link
+                                            href={catalogue.url({
+                                                query: { category: activeCategory.slug, subcategory: s.slug },
+                                            })}
+                                            onclick={() => {
+                                                mega = false;
+                                                expandedCategory = null;
+                                            }}
+                                            class="group flex items-center gap-3 transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:text-primary"
+                                        >
+                                            <img
+                                                src={s.image}
+                                                alt=""
+                                                class="h-14 w-14 rounded bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
+                                            />
+                                            <span class="text-xs">{s.name}</span>
+                                        </Link>
+                                    </div>
+                                {/each}
+                            </div>
+                        {:else}
+                            <p class="text-xs text-muted-foreground">
+                                No subcategories yet in {activeCategory.name}.
+                            </p>
+                        {/if}
+                    </div>
+                {/if}
             </div>
         </div>
     {/if}
 </header>
+
+{#if mega}
+    <button
+        type="button"
+        class="fixed inset-0 z-30 cursor-default bg-black/5 backdrop-blur-[1px]"
+        aria-label="Close category menu"
+        transition:fade={{ duration: 280, easing: cubicOut }}
+        onclick={() => {
+            mega = false;
+            expandedCategory = null;
+        }}
+    ></button>
+{/if}
 
 <Drawer bind:open={mobile} label="Navigation" class="overflow-y-auto">
     <h2 class="mt-6 text-lg font-semibold text-foreground">

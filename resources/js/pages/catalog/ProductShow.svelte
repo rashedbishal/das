@@ -2,7 +2,9 @@
     import { Link, page } from '@inertiajs/svelte';
     import AppHead from '@/components/AppHead.svelte';
     import ContactWidgets from '@/components/ContactWidgets.svelte';
+    import LoginModal from '@/components/LoginModal.svelte';
     import { Badge } from '@/components/ui/badge';
+    import { Button } from '@/components/ui/button';
     import {
         index as productsIndex,
         show as productShow,
@@ -31,17 +33,32 @@
         related_products: { id: number; name: string; slug: string; main_image: string | null }[];
     };
 
-    let { product }: { product: { data: ProductDetail } } = $props();
-    const detail = $derived(product.data);
+    let {
+        product,
+        authRequired = false,
+        loginMode = 'both',
+    }: {
+        product: { data: ProductDetail } | null;
+        authRequired?: boolean;
+        loginMode?: 'email' | 'phone' | 'both';
+    } = $props();
+    const detail = $derived(product?.data);
     const mainImage = $derived(
-        detail.media.find((m) => m.is_main && m.type === 'image') ??
-            detail.media.find((m) => m.type === 'image'),
+        detail?.media.find((m) => m.is_main && m.type === 'image') ??
+            detail?.media.find((m) => m.type === 'image'),
     );
 
     const auth = $derived(page.props.auth);
+    let loginModalOpen = $state(false);
+
+    $effect(() => {
+        if (authRequired) {
+            loginModalOpen = true;
+        }
+    });
 </script>
 
-<AppHead title={detail.name} />
+<AppHead title={detail?.name ?? 'Sign in to view this product'} />
 
 <div class="mx-auto max-w-5xl px-4 py-8">
     <header class="mb-8 flex items-center justify-between">
@@ -54,6 +71,18 @@
         </nav>
     </header>
 
+    {#if authRequired || !detail}
+        <div class="flex flex-col items-center gap-4 rounded-lg border py-20 text-center">
+            <h1 class="text-xl font-semibold">Sign in to view this product</h1>
+            <p class="max-w-sm text-muted-foreground">
+                Full product details, including pricing and specifications, are available to
+                registered customers. Log in below to continue — no need to leave this page.
+            </p>
+            <Button onclick={() => (loginModalOpen = true)}>Log in</Button>
+        </div>
+
+        <LoginModal bind:open={loginModalOpen} {loginMode} />
+    {:else}
     <div class="grid gap-8 md:grid-cols-2">
         <div class="aspect-square overflow-hidden rounded-lg bg-muted">
             {#if mainImage?.url}
@@ -153,6 +182,7 @@
                 {/each}
             </div>
         </section>
+    {/if}
     {/if}
 </div>
 

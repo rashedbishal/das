@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PublicSettingsController;
+use App\Services\SettingsService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -9,7 +11,20 @@ Route::inertia('/', 'storefront/Home')->name('home');
 Route::inertia('catalogue', 'storefront/Catalogue')->name('catalogue');
 Route::inertia('categories', 'storefront/Categories')->name('categories.index');
 Route::inertia('categories/{category}', 'storefront/Category')->name('categories.show');
-Route::inertia('products/{slug}', 'storefront/Product')->name('products.show');
+
+// Not a plain Route::inertia(): guests need the page to stash an intended URL so the
+// inline login modal (see storefront/Product.svelte) returns them here after login,
+// the same way Catalog\ProductController::show() does for the real catalog.
+Route::get('products/{slug}', function (Request $request, SettingsService $settings) {
+    if (! $request->user()) {
+        $request->session()->put('url.intended', $request->fullUrl());
+    }
+
+    return Inertia::render('storefront/Product', [
+        'loginMode' => $settings->loginMode(),
+    ]);
+})->name('products.show');
+
 Route::inertia('brands', 'storefront/Brands')->name('brands');
 Route::inertia('about', 'storefront/About')->name('about');
 Route::inertia('contact', 'storefront/Contact')->name('contact');
