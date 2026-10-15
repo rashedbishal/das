@@ -57,7 +57,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->name('admin.')->g
     Route::get('roles/permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
     Route::apiResource('roles', RoleController::class);
 
-    Route::apiResource('admins', AdminUserController::class)->except(['destroy']);
+    Route::apiResource('admins', AdminUserController::class);
     Route::post('admins/{admin}/deactivate', [AdminUserController::class, 'deactivate'])->name('admins.deactivate');
     Route::post('admins/{admin}/reactivate', [AdminUserController::class, 'reactivate'])->name('admins.reactivate');
     Route::post('admins/{admin}/transfer-mother-admin', [AdminUserController::class, 'transferMotherAdmin'])->name('admins.transfer-mother-admin');

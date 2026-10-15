@@ -5,6 +5,11 @@
 </script>
 
 <script lang="ts">
+    import { page } from '@inertiajs/svelte';
+    import Pencil from '@lucide/svelte/icons/pencil';
+    import Power from '@lucide/svelte/icons/power';
+    import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
+    import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
     import FormSelect from '@/components/dashboard/FormSelect.svelte';
@@ -21,8 +26,10 @@
 
     type Role = { id: number; name: string; slug: string; is_system: boolean; permissions: { id: number; slug: string; name: string }[] };
     type Permission = { id: number; slug: string; name: string; group: string };
-    type AdminUser = { id: number; name: string; email: string | null; is_active: boolean; role: Role | null };
+    type AdminUser = { id: number; name: string; email: string | null; phone: string | null; is_active: boolean; role: Role | null };
     type Customer = { id: number; name: string; email: string | null; phone: string | null; is_active: boolean };
+
+    const currentUserId = $derived(page.props.auth.user?.id as number | undefined);
 
     let tab = $state<'admins' | 'roles' | 'customers'>('admins');
 
@@ -57,9 +64,16 @@
     let createRoleOpen = $state(false);
     let deleteRoleTarget = $state<Role | null>(null);
     let deleteRoleOpen = $state(false);
+    let editAdminOpen = $state(false);
+    let editingAdmin = $state<AdminUser | null>(null);
+    let deleteAdminTarget = $state<AdminUser | null>(null);
+    let deleteAdminOpen = $state(false);
 
     let newAdmin = $state({ name: '', email: '', password: '', role_id: '' });
     let newRole = $state({ name: '', permissions: [] as string[] });
+    let editAdminForm = $state({ name: '', email: '', phone: '', role_id: '', password: '', password_confirmation: '' });
+
+    const isEditingSelf = $derived(editingAdmin !== null && editingAdmin.id === currentUserId);
 
     async function loadAdmins() {
         const result = await apiFetch<{ data: AdminUser[] }>(adminsApi.index.url());
@@ -116,6 +130,67 @@
             await loadAdmins();
         } catch (e) {
             error = e instanceof ApiError ? e.message : 'Action failed';
+        }
+    }
+
+    function openEditAdmin(admin: AdminUser) {
+        editingAdmin = admin;
+        editAdminForm = {
+            name: admin.name,
+            email: admin.email ?? '',
+            phone: admin.phone ?? '',
+            role_id: admin.role ? String(admin.role.id) : '',
+            password: '',
+            password_confirmation: '',
+        };
+        editAdminOpen = true;
+    }
+
+    async function updateAdmin(event: SubmitEvent) {
+        event.preventDefault();
+        if (!editingAdmin) return;
+        error = null;
+
+        if (isEditingSelf && editAdminForm.password && editAdminForm.password !== editAdminForm.password_confirmation) {
+            error = 'Password confirmation does not match.';
+            return;
+        }
+
+        try {
+            const payload = isEditingSelf
+                ? {
+                      name: editAdminForm.name,
+                      ...(editAdminForm.password
+                          ? { password: editAdminForm.password, password_confirmation: editAdminForm.password_confirmation }
+                          : {}),
+                  }
+                : { name: editAdminForm.name, email: editAdminForm.email, phone: editAdminForm.phone || null, role_id: Number(editAdminForm.role_id) };
+
+            await apiFetch(adminsApi.update.url(editingAdmin.id), {
+                method: 'PUT',
+                body: JSON.stringify(payload),
+            });
+            editAdminOpen = false;
+            editingAdmin = null;
+            await loadAdmins();
+        } catch (e) {
+            error = e instanceof ApiError ? e.message : 'Failed to update admin';
+        }
+    }
+
+    function askDeleteAdmin(admin: AdminUser) {
+        deleteAdminTarget = admin;
+        deleteAdminOpen = true;
+    }
+
+    async function confirmDeleteAdmin() {
+        if (!deleteAdminTarget) return;
+        error = null;
+        try {
+            await apiFetch(adminsApi.destroy.url(deleteAdminTarget.id), { method: 'DELETE' });
+            await loadAdmins();
+        } catch (e) {
+            error = e instanceof ApiError ? e.message : 'Failed to delete admin';
         }
     }
 
@@ -218,9 +293,32 @@
                 {/if}
             {/snippet}
             {#snippet actions(admin)}
-                {#if !admin.role?.is_system}
-                    <Button variant="ghost" size="sm" onclick={() => toggleAdminActive(admin)}>
-                        {admin.is_active ? 'Deactivate' : 'Reactivate'}
+                {#if !admin.role?.is_system || admin.id === currentUserId}
+                    <Button variant="ghost" size="sm" aria-label="Edit {admin.name}" onclick={() => openEditAdmin(admin)}>
+                        <Pencil class="size-4" />
+                    </Button>
+                {/if}
+                {#if !admin.role?.is_system && admin.id !== currentUserId}
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={admin.is_active ? `Deactivate ${admin.name}` : `Reactivate ${admin.name}`}
+                        onclick={() => toggleAdminActive(admin)}
+                    >
+                        {#if admin.is_active}
+                            <Power class="size-4" />
+                        {:else}
+                            <RotateCcw class="size-4" />
+                        {/if}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        class="text-destructive hover:text-destructive"
+                        aria-label="Delete {admin.name}"
+                        onclick={() => askDeleteAdmin(admin)}
+                    >
+                        <Trash2 class="size-4" />
                     </Button>
                 {/if}
             {/snippet}
@@ -336,6 +434,66 @@
     </DialogContent>
 </Dialog>
 
+<Dialog bind:open={editAdminOpen}>
+    <DialogContent>
+        <DialogTitle>Edit admin</DialogTitle>
+        {#if editingAdmin}
+            <form onsubmit={updateAdmin} class="space-y-4">
+                <div class="grid gap-2">
+                    <Label for="edit_admin_name">Name</Label>
+                    <Input id="edit_admin_name" required bind:value={editAdminForm.name} />
+                </div>
+                {#if isEditingSelf}
+                    <div class="grid gap-2">
+                        <Label for="edit_admin_password">New password</Label>
+                        <Input
+                            id="edit_admin_password"
+                            type="password"
+                            placeholder="Leave blank to keep current password"
+                            bind:value={editAdminForm.password}
+                        />
+                    </div>
+                    {#if editAdminForm.password}
+                        <div class="grid gap-2">
+                            <Label for="edit_admin_password_confirmation">Confirm new password</Label>
+                            <Input
+                                id="edit_admin_password_confirmation"
+                                type="password"
+                                required
+                                bind:value={editAdminForm.password_confirmation}
+                            />
+                        </div>
+                    {/if}
+                {:else}
+                    <div class="grid gap-2">
+                        <Label for="edit_admin_email">Email</Label>
+                        <Input id="edit_admin_email" type="email" required bind:value={editAdminForm.email} />
+                    </div>
+                    <div class="grid gap-2">
+                        <Label for="edit_admin_phone">Phone</Label>
+                        <Input id="edit_admin_phone" bind:value={editAdminForm.phone} />
+                    </div>
+                    <div class="grid gap-2">
+                        <Label for="edit_admin_role">Role</Label>
+                        <FormSelect
+                            id="edit_admin_role"
+                            bind:value={editAdminForm.role_id}
+                            placeholder="Select a role"
+                            options={roles
+                                .filter((role) => !role.is_system)
+                                .map((role) => ({ value: String(role.id), label: role.name }))}
+                        />
+                    </div>
+                {/if}
+                <DialogFooter>
+                    <Button type="button" variant="outline" onclick={() => (editAdminOpen = false)}>Cancel</Button>
+                    <Button type="submit">Save changes</Button>
+                </DialogFooter>
+            </form>
+        {/if}
+    </DialogContent>
+</Dialog>
+
 <Dialog bind:open={createRoleOpen}>
     <DialogContent>
         <DialogTitle>Create role</DialogTitle>
@@ -370,4 +528,11 @@
     title="Delete role?"
     description={deleteRoleTarget ? `This will permanently delete "${deleteRoleTarget.name}". This cannot be undone.` : ''}
     onConfirm={confirmDeleteRole}
+/>
+
+<ConfirmDialog
+    bind:open={deleteAdminOpen}
+    title="Delete admin?"
+    description={deleteAdminTarget ? `This will permanently delete "${deleteAdminTarget.name}". This cannot be undone.` : ''}
+    onConfirm={confirmDeleteAdmin}
 />

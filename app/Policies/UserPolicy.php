@@ -30,6 +30,10 @@ class UserPolicy
 
     public function update(User $user, User $model): bool
     {
+        if ($user->is($model)) {
+            return true;
+        }
+
         if ($model->isMotherAdmin()) {
             return false;
         }
@@ -40,6 +44,17 @@ class UserPolicy
     }
 
     public function deactivate(User $user, User $model): bool
+    {
+        if ($model->isMotherAdmin() || $user->is($model)) {
+            return false;
+        }
+
+        return $model->isAdmin()
+            ? $user->hasPermission('admins.manage')
+            : $user->hasPermission('customers.manage');
+    }
+
+    public function delete(User $user, User $model): bool
     {
         if ($model->isMotherAdmin() || $user->is($model)) {
             return false;

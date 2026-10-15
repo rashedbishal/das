@@ -45,6 +45,15 @@ class AdminUserController extends Controller
         return response()->json(['data' => $updated->load('role')]);
     }
 
+    public function destroy(Request $request, User $admin): JsonResponse
+    {
+        $this->authorize('delete', $admin);
+
+        $this->admins->deleteAdmin($request->user(), $admin);
+
+        return response()->json(null, 204);
+    }
+
     public function deactivate(Request $request, User $admin): JsonResponse
     {
         $this->authorize('deactivate', $admin);

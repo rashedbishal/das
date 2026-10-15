@@ -42,22 +42,51 @@ class AdminUserService
      */
     public function updateAdmin(User $actor, User $admin, array $data): User
     {
-        if ($admin->isMotherAdmin()) {
+        $isSelf = $actor->is($admin);
+
+        if ($admin->isMotherAdmin() && ! $isSelf) {
             throw new AuthorizationException('The Mother Admin account cannot be modified.');
         }
 
-        if (array_key_exists('role_id', $data) && $data['role_id'] !== $admin->role_id) {
-            $role = Role::query()->findOrFail((int) $data['role_id']);
-            $this->assertCanAssignRole($actor, $role);
+        if ($isSelf) {
+            // Operate on $actor (the in-memory authenticated user instance), not the separately
+            // route-bound $admin: Sanctum's AuthenticateSession middleware refreshes the current
+            // session's stored password hash from $request->user() after the response, so mutating
+            // a different object instance would leave the current session logged out on password change.
+            $admin = $actor;
+
+            // Admins editing their own account (Mother Admin included) may only change their name and password.
+            $admin->fill(Arr::only($data, ['name']));
+
+            if (! empty($data['password'])) {
+                $admin->password = $data['password'];
+            }
+        } else {
+            if (array_key_exists('role_id', $data) && $data['role_id'] !== $admin->role_id) {
+                $role = Role::query()->findOrFail((int) $data['role_id']);
+                $this->assertCanAssignRole($actor, $role);
+            }
+
+            $admin->fill(Arr::only($data, ['name', 'email', 'phone', 'role_id']));
         }
 
-        $admin->fill(Arr::only($data, ['name', 'email', 'phone', 'role_id']));
         $admin->updated_by = $actor->id;
         $admin->save();
 
         $this->activity->log('admin.updated', $admin, "Updated admin {$admin->name}");
 
         return $admin;
+    }
+
+    public function deleteAdmin(User $actor, User $admin): void
+    {
+        if ($admin->isMotherAdmin() || $actor->is($admin)) {
+            throw new AuthorizationException('This account cannot be deleted.');
+        }
+
+        $this->activity->log('admin.deleted', $admin, "Deleted admin {$admin->name}");
+
+        $admin->delete();
     }
 
     public function deactivateAdmin(User $actor, User $admin): User

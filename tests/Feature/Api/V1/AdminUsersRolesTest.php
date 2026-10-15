@@ -54,6 +54,59 @@ test('the mother admin cannot be deactivated through the api', function () {
     expect($motherAdmin->fresh()->is_active)->toBeTrue();
 });
 
+test('an admin self-editing their password must confirm it correctly through the api', function () {
+    $admin = User::factory()->admin(Role::factory()->create())->create();
+
+    $response = $this->actingAs($admin)->putJson(route('api.v1.admin.admins.update', $admin), [
+        'name' => $admin->name,
+        'password' => 'new-secret-password',
+        'password_confirmation' => 'does-not-match',
+    ]);
+
+    $response->assertUnprocessable()->assertJsonValidationErrors('password');
+});
+
+test('an admin self-editing their password succeeds when the confirmation matches', function () {
+    $admin = User::factory()->admin(Role::factory()->create())->create();
+
+    $response = $this->actingAs($admin)->putJson(route('api.v1.admin.admins.update', $admin), [
+        'name' => $admin->name,
+        'password' => 'new-secret-password',
+        'password_confirmation' => 'new-secret-password',
+    ]);
+
+    $response->assertOk();
+});
+
+test('an admin cannot delete their own account through the api', function () {
+    $admin = User::factory()->admin(Role::factory()->create())->create();
+
+    $response = $this->actingAs($admin)->deleteJson(route('api.v1.admin.admins.destroy', $admin));
+
+    $response->assertForbidden();
+    expect(User::query()->find($admin->id))->not->toBeNull();
+});
+
+test('an admin with admins.manage can delete another admin through the api', function () {
+    $actor = adminUser(['admins.manage']);
+    $target = User::factory()->admin(Role::factory()->create())->create();
+
+    $response = $this->actingAs($actor)->deleteJson(route('api.v1.admin.admins.destroy', $target));
+
+    $response->assertNoContent();
+    expect(User::query()->find($target->id))->toBeNull();
+});
+
+test('the mother admin cannot be deleted through the api', function () {
+    $motherAdmin = User::factory()->motherAdmin()->create();
+    $actor = adminUser(['admins.manage']);
+
+    $response = $this->actingAs($actor)->deleteJson(route('api.v1.admin.admins.destroy', $motherAdmin));
+
+    $response->assertForbidden();
+    expect(User::query()->find($motherAdmin->id))->not->toBeNull();
+});
+
 test('an admin with roles.manage can create a role through the api', function () {
     Permission::factory()->create(['slug' => 'products.view', 'group' => 'products']);
     $admin = adminUser(['roles.manage', 'products.view']);

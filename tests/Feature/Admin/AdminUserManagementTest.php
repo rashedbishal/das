@@ -5,6 +5,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\AdminUserService;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Hash;
 
 test('an admin holding admins.manage can create another admin with a role whose permissions they hold', function () {
     $permission = Permission::factory()->create(['slug' => 'products.view', 'group' => 'products']);
@@ -82,6 +83,81 @@ test('an admin cannot deactivate their own account', function () {
 
     app(AdminUserService::class)->deactivateAdmin($admin, $admin);
 })->throws(AuthorizationException::class);
+
+test('the mother admin can change their own name and password', function () {
+    $motherAdmin = User::factory()->motherAdmin()->create(['password' => 'old-password']);
+
+    $updated = app(AdminUserService::class)->updateAdmin($motherAdmin, $motherAdmin, [
+        'name' => 'Renamed Mother Admin',
+        'password' => 'new-password',
+    ]);
+
+    expect($updated->name)->toBe('Renamed Mother Admin')
+        ->and(Hash::check('new-password', $updated->password))->toBeTrue();
+});
+
+test('self-editing mutates the authenticated actor instance in place, not just the database row', function () {
+    // The controller passes two distinct object instances for the same user: $actor (request()->user())
+    // and $admin (the route-bound model). Sanctum's AuthenticateSession middleware refreshes the
+    // session's stored password hash from request()->user() after the response, so updateAdmin() must
+    // mutate the $actor instance on self-edit, or the user's own session gets logged out next request.
+    $admin = User::factory()->admin(Role::factory()->create())->create(['password' => 'old-password']);
+    $actorInstance = User::find($admin->id);
+    $routeBoundInstance = User::find($admin->id);
+
+    $updated = app(AdminUserService::class)->updateAdmin($actorInstance, $routeBoundInstance, [
+        'name' => 'Renamed',
+        'password' => 'new-password',
+    ]);
+
+    expect($updated)->toBe($actorInstance)
+        ->and($actorInstance->name)->toBe('Renamed')
+        ->and(Hash::check('new-password', $actorInstance->password))->toBeTrue();
+});
+
+test('an admin can change their own name and password but not their role or email', function () {
+    $role = Role::factory()->create();
+    $admin = User::factory()->admin($role)->create(['email' => 'original@example.com', 'password' => 'old-password']);
+    $otherRole = Role::factory()->create();
+
+    $updated = app(AdminUserService::class)->updateAdmin($admin, $admin, [
+        'name' => 'Renamed Admin',
+        'password' => 'new-password',
+        'email' => 'changed@example.com',
+        'role_id' => $otherRole->id,
+    ]);
+
+    expect($updated->name)->toBe('Renamed Admin')
+        ->and(Hash::check('new-password', $updated->password))->toBeTrue()
+        ->and($updated->email)->toBe('original@example.com')
+        ->and($updated->role_id)->toBe($role->id);
+});
+
+test('an admin cannot delete their own account', function () {
+    $admin = User::factory()->admin(Role::factory()->create())->create();
+
+    app(AdminUserService::class)->deleteAdmin($admin, $admin);
+})->throws(AuthorizationException::class, 'This account cannot be deleted.');
+
+test('the mother admin account cannot be deleted', function () {
+    $motherAdmin = User::factory()->motherAdmin()->create();
+    $otherAdmin = User::factory()->admin(Role::factory()->create())->create();
+
+    app(AdminUserService::class)->deleteAdmin($otherAdmin, $motherAdmin);
+})->throws(AuthorizationException::class, 'This account cannot be deleted.');
+
+test('an admin holding admins.manage can delete another non-mother admin', function () {
+    $managerRole = Role::factory()->create();
+    $managerRole->permissions()->attach(
+        Permission::factory()->create(['slug' => 'admins.manage', 'group' => 'admins']),
+    );
+    $actor = User::factory()->admin($managerRole)->create();
+    $target = User::factory()->admin(Role::factory()->create())->create();
+
+    app(AdminUserService::class)->deleteAdmin($actor, $target);
+
+    expect(User::query()->find($target->id))->toBeNull();
+});
 
 test('transferring mother admin requires the correct password', function () {
     $motherAdmin = User::factory()->motherAdmin()->create(['password' => 'current-password']);
