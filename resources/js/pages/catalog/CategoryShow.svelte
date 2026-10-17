@@ -1,8 +1,6 @@
 <script lang="ts">
-    import { Link, page } from '@inertiajs/svelte';
+    import { Link } from '@inertiajs/svelte';
     import AppHead from '@/components/AppHead.svelte';
-    import ContactWidgets from '@/components/ContactWidgets.svelte';
-    import { index as categoriesIndex } from '@/routes/catalog/categories';
     import { show as subcategoryShow } from '@/routes/catalog/subcategories';
 
     type Subcategory = {
@@ -20,21 +18,11 @@
         subcategories: Subcategory[];
     } = $props();
 
-    const auth = $derived(page.props.auth);
 </script>
 
 <AppHead title={category.name} />
 
 <div class="mx-auto max-w-6xl px-4 py-8">
-    <header class="mb-8 flex items-center justify-between">
-        <Link href="/" class="text-lg font-semibold">DAS Dental</Link>
-        <nav class="flex items-center gap-4 text-sm">
-            <Link href={categoriesIndex.url()}>Categories</Link>
-            {#if auth.user}
-                <Link href="/dashboard">Dashboard</Link>
-            {/if}
-        </nav>
-    </header>
 
     <h1 class="mb-2 text-2xl font-semibold">{category.name}</h1>
     {#if category.description}
@@ -59,5 +47,3 @@
         {/each}
     </div>
 </div>
-
-<ContactWidgets />

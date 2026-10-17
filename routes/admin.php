@@ -28,6 +28,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 
     Route::post('products/{product}/media', [ProductMediaController::class, 'store'])->name('products.media.store');
+    Route::patch('products/{product}/media/{media}', [ProductMediaController::class, 'update'])->name('products.media.update');
     Route::delete('products/{product}/media/{media}', [ProductMediaController::class, 'destroy'])->name('products.media.destroy');
 
     Route::resource('homepage-sections', HomepageSectionController::class)

@@ -1,12 +1,9 @@
 <script lang="ts">
-    import { Link, page, router } from '@inertiajs/svelte';
+    import { Link, router } from '@inertiajs/svelte';
     import { untrack } from 'svelte';
     import AppHead from '@/components/AppHead.svelte';
-    import ContactWidgets from '@/components/ContactWidgets.svelte';
     import { Button } from '@/components/ui/button';
     import { Input } from '@/components/ui/input';
-    import { login } from '@/routes';
-    import { index as categoriesIndex } from '@/routes/catalog/categories';
     import { index as productsIndex, show as productShow } from '@/routes/catalog/products';
 
     type ProductCard = {
@@ -51,23 +48,11 @@
         );
     }
 
-    const auth = $derived(page.props.auth);
 </script>
 
 <AppHead title="Products" />
 
 <div class="mx-auto max-w-6xl px-4 py-8">
-    <header class="mb-8 flex items-center justify-between">
-        <Link href="/" class="text-lg font-semibold">DAS Dental</Link>
-        <nav class="flex items-center gap-4 text-sm">
-            <Link href={categoriesIndex.url()}>Categories</Link>
-            {#if auth.user}
-                <Link href="/dashboard">Dashboard</Link>
-            {:else}
-                <Link href={login()}>Log in</Link>
-            {/if}
-        </nav>
-    </header>
 
     <form onsubmit={applySearch} class="mb-6 flex gap-2">
         <Input
@@ -139,5 +124,3 @@
         </div>
     {/if}
 </div>
-
-<ContactWidgets />

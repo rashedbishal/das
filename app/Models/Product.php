@@ -106,7 +106,7 @@ class Product extends Model
      */
     public function media(): HasMany
     {
-        return $this->hasMany(ProductMedia::class);
+        return $this->hasMany(ProductMedia::class)->orderBy('sort_order');
     }
 
     /**

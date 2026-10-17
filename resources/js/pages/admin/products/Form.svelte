@@ -24,10 +24,26 @@
     type SubcategoryOption = { id: number; name: string; category_id: number };
     type MediaItem = {
         id: number;
-        type: string;
+        type: 'image' | 'video';
+        source: 'upload' | 'url';
         is_main: boolean;
         alt_text: string | null;
-        url?: string | null;
+        sort_order: number;
+        url: string | null;
+    };
+    type MediaLimits = {
+        image: {
+            max: number;
+            maxSizeKb: number;
+            requiredDimension: number;
+            formats: string[];
+        };
+        video: {
+            max: number;
+            maxSizeKb: number;
+            maxSeconds: number;
+            formats: string[];
+        };
     };
 
     type ProductDetail = {
@@ -62,12 +78,14 @@
         categories,
         subcategories,
         tags,
+        mediaLimits,
     }: {
         product?: ProductDetail;
         brands: Option[];
         categories: Option[];
         subcategories: SubcategoryOption[];
         tags: Option[];
+        mediaLimits?: MediaLimits;
     } = $props();
 
     const isEdit = $derived(Boolean(product));
@@ -92,9 +110,9 @@
         {/snippet}
     </Form>
 
-    {#if isEdit && product}
+    {#if isEdit && product && mediaLimits}
         <div class="border-t pt-6">
-            <MediaManager productId={product.id} media={product.media} />
+            <MediaManager productId={product.id} media={product.media} limits={mediaLimits} />
         </div>
     {/if}
 </div>

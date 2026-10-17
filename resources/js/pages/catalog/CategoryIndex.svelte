@@ -1,10 +1,7 @@
 <script lang="ts">
-    import { Link, page } from '@inertiajs/svelte';
+    import { Link } from '@inertiajs/svelte';
     import AppHead from '@/components/AppHead.svelte';
-    import ContactWidgets from '@/components/ContactWidgets.svelte';
-    import { login } from '@/routes';
     import { show as categoryShow } from '@/routes/catalog/categories';
-    import { index as productsIndex } from '@/routes/catalog/products';
 
     type Category = {
         id: number;
@@ -15,23 +12,11 @@
     };
 
     let { categories }: { categories: Category[] } = $props();
-    const auth = $derived(page.props.auth);
 </script>
 
 <AppHead title="Categories" />
 
 <div class="mx-auto max-w-6xl px-4 py-8">
-    <header class="mb-8 flex items-center justify-between">
-        <Link href="/" class="text-lg font-semibold">DAS Dental</Link>
-        <nav class="flex items-center gap-4 text-sm">
-            <Link href={productsIndex.url()}>Products</Link>
-            {#if auth.user}
-                <Link href="/dashboard">Dashboard</Link>
-            {:else}
-                <Link href={login()}>Log in</Link>
-            {/if}
-        </nav>
-    </header>
 
     <h1 class="mb-6 text-2xl font-semibold">Categories</h1>
 
@@ -55,5 +40,3 @@
         {/each}
     </div>
 </div>
-
-<ContactWidgets />

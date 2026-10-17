@@ -1,14 +1,15 @@
 <script lang="ts">
-    import { Link, page } from '@inertiajs/svelte';
+    import { Link } from '@inertiajs/svelte';
+    import PlayCircle from '@lucide/svelte/icons/play-circle';
     import AppHead from '@/components/AppHead.svelte';
-    import ContactWidgets from '@/components/ContactWidgets.svelte';
     import LoginModal from '@/components/LoginModal.svelte';
     import { Badge } from '@/components/ui/badge';
     import { Button } from '@/components/ui/button';
     import {
-        index as productsIndex,
         show as productShow,
     } from '@/routes/catalog/products';
+
+    type MediaItem = { type: 'image' | 'video'; url: string | null; is_main: boolean; alt_text: string | null };
 
     type ProductDetail = {
         name: string;
@@ -23,7 +24,7 @@
         full_description: string | null;
         highlights: string[] | null;
         specifications: { name: string; value: string }[];
-        media: { type: string; url: string | null; is_main: boolean; alt_text: string | null }[];
+        media: MediaItem[];
         regular_price: string;
         sale_price: string | null;
         currency: string;
@@ -43,12 +44,15 @@
         loginMode?: 'email' | 'phone' | 'both';
     } = $props();
     const detail = $derived(product?.data);
-    const mainImage = $derived(
-        detail?.media.find((m) => m.is_main && m.type === 'image') ??
-            detail?.media.find((m) => m.type === 'image'),
-    );
+    const gallery = $derived(detail?.media.filter((m) => m.url) ?? []);
 
-    const auth = $derived(page.props.auth);
+    let activeIndex = $state(0);
+    $effect(() => {
+        const mainIdx = gallery.findIndex((m) => m.is_main && m.type === 'image');
+        activeIndex = mainIdx >= 0 ? mainIdx : 0;
+    });
+    const activeMedia = $derived(gallery[activeIndex] ?? null);
+
     let loginModalOpen = $state(false);
 
     $effect(() => {
@@ -61,15 +65,6 @@
 <AppHead title={detail?.name ?? 'Sign in to view this product'} />
 
 <div class="mx-auto max-w-5xl px-4 py-8">
-    <header class="mb-8 flex items-center justify-between">
-        <Link href="/" class="text-lg font-semibold">DAS Dental</Link>
-        <nav class="flex items-center gap-4 text-sm">
-            <Link href={productsIndex.url()}>Products</Link>
-            {#if auth.user}
-                <Link href="/dashboard">Dashboard</Link>
-            {/if}
-        </nav>
-    </header>
 
     {#if authRequired || !detail}
         <div class="flex flex-col items-center gap-4 rounded-lg border py-20 text-center">
@@ -84,13 +79,51 @@
         <LoginModal bind:open={loginModalOpen} {loginMode} />
     {:else}
     <div class="grid gap-8 md:grid-cols-2">
-        <div class="aspect-square overflow-hidden rounded-lg bg-muted">
-            {#if mainImage?.url}
-                <img
-                    src={mainImage.url}
-                    alt={mainImage.alt_text ?? detail.name}
-                    class="h-full w-full object-cover"
-                />
+        <div class="flex flex-col gap-3">
+            <div class="aspect-square overflow-hidden rounded-lg bg-muted">
+                {#if activeMedia?.type === 'video' && activeMedia.url}
+                    <video
+                        src={activeMedia.url}
+                        class="h-full w-full object-cover"
+                        controls
+                        playsinline
+                    >
+                        <track kind="captions" />
+                    </video>
+                {:else if activeMedia?.url}
+                    <img
+                        src={activeMedia.url}
+                        alt={activeMedia.alt_text ?? detail.name}
+                        class="h-full w-full object-cover"
+                    />
+                {/if}
+            </div>
+
+            {#if gallery.length > 1}
+                <div class="flex gap-2 overflow-x-auto">
+                    {#each gallery as item, i (i)}
+                        <button
+                            type="button"
+                            onclick={() => (activeIndex = i)}
+                            class={[
+                                'relative aspect-square w-16 shrink-0 overflow-hidden rounded-md border-2 bg-muted',
+                                i === activeIndex ? 'border-primary' : 'border-transparent',
+                            ].join(' ')}
+                            aria-label={item.type === 'video' ? 'Show video' : 'Show image'}
+                        >
+                            {#if item.type === 'video'}
+                                <video src={item.url} class="h-full w-full object-cover" muted preload="metadata">
+                                    <track kind="captions" />
+                                </video>
+                                <span class="absolute inset-0 flex items-center justify-center bg-black/20">
+                                    <PlayCircle class="size-5 text-white" />
+                                </span>
+                            {:else if item.url}
+                                <img src={item.url} alt="" class="h-full w-full object-cover" />
+                            {/if}
+                        </button>
+                    {/each}
+                </div>
             {/if}
         </div>
 
@@ -185,5 +218,3 @@
     {/if}
     {/if}
 </div>
-
-<ContactWidgets />

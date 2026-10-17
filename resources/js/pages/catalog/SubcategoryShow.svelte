@@ -1,8 +1,7 @@
 <script lang="ts">
-    import { Link, page } from '@inertiajs/svelte';
+    import { Link } from '@inertiajs/svelte';
     import AppHead from '@/components/AppHead.svelte';
-    import ContactWidgets from '@/components/ContactWidgets.svelte';
-    import { index as categoriesIndex, show as categoryShow } from '@/routes/catalog/categories';
+    import { show as categoryShow } from '@/routes/catalog/categories';
     import { show as productShow } from '@/routes/catalog/products';
 
     type ProductCard = {
@@ -31,21 +30,11 @@
         products: Paginated<ProductCard>;
     } = $props();
 
-    const auth = $derived(page.props.auth);
 </script>
 
 <AppHead title={subcategory.name} />
 
 <div class="mx-auto max-w-6xl px-4 py-8">
-    <header class="mb-8 flex items-center justify-between">
-        <Link href="/" class="text-lg font-semibold">DAS Dental</Link>
-        <nav class="flex items-center gap-4 text-sm">
-            <Link href={categoriesIndex.url()}>Categories</Link>
-            {#if auth.user}
-                <Link href="/dashboard">Dashboard</Link>
-            {/if}
-        </nav>
-    </header>
 
     <Link href={categoryShow.url(subcategory.category.slug)} class="mb-2 inline-block text-sm text-muted-foreground hover:underline">
         &larr; {subcategory.category.name}
@@ -84,5 +73,3 @@
         {/each}
     </div>
 </div>
-
-<ContactWidgets />

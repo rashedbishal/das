@@ -12,33 +12,356 @@
 </script>
 
 <script lang="ts">
+    import { Link, page } from '@inertiajs/svelte';
+    import AlertTriangle from '@lucide/svelte/icons/alert-triangle';
+    import Boxes from '@lucide/svelte/icons/boxes';
+    import Building2 from '@lucide/svelte/icons/building-2';
+    import ClipboardList from '@lucide/svelte/icons/clipboard-list';
+    import LayoutGrid from '@lucide/svelte/icons/layout-grid';
+    import MessageCircle from '@lucide/svelte/icons/message-circle';
+    import Package from '@lucide/svelte/icons/package';
+    import PackageSearch from '@lucide/svelte/icons/package-search';
+    import Settings from '@lucide/svelte/icons/settings';
+    import Tags from '@lucide/svelte/icons/tags';
+    import UserCog from '@lucide/svelte/icons/user-cog';
+    import Users from '@lucide/svelte/icons/users';
     import AppHead from '@/components/AppHead.svelte';
-    import PlaceholderPattern from '@/components/PlaceholderPattern.svelte';
+    import BarChart from '@/components/dashboard/BarChart.svelte';
+    import type { Column } from '@/components/dashboard/ResponsiveTable.svelte';
+    import ResponsiveTable from '@/components/dashboard/ResponsiveTable.svelte';
+    import StatCard from '@/components/dashboard/StatCard.svelte';
+    import TrendChart from '@/components/dashboard/TrendChart.svelte';
+    import { buttonVariants } from '@/components/ui/button';
+    import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+    import { index as adminBrands } from '@/routes/admin/brands';
+    import { index as adminCategories } from '@/routes/admin/categories';
+    import { create as createProduct, index as adminProducts } from '@/routes/admin/products';
+    import { edit as adminSettings } from '@/routes/admin/settings';
+    import { index as adminTags } from '@/routes/admin/tags';
+    import { index as adminUsers } from '@/routes/admin/users';
+    import { index as catalogBrands } from '@/routes/catalog/brands';
+    import { index as catalogCategories } from '@/routes/catalog/categories';
+    import { index as catalogProducts, show as catalogProductShow } from '@/routes/catalog/products';
+    import { contact } from '@/routes';
+
+    type ProductCard = {
+        id: number;
+        name: string;
+        slug: string;
+        brand: { name: string; slug: string } | null;
+        main_image: string | null;
+        regular_price: string;
+        sale_price: string | null;
+        currency: string;
+        stock_status: string;
+    };
+
+    type LowStockProduct = {
+        id: number;
+        name: string;
+        sku: string;
+        stock_quantity: number;
+        stock_status: string;
+    };
+
+    type ActivityEntry = {
+        id: number;
+        description: string | null;
+        action: string;
+        created_at: string;
+        user: { name: string } | null;
+    };
+
+    let {
+        viewer,
+        permissions,
+        stats,
+        categoryBreakdown,
+        monthlyTrend,
+        lowStock,
+        recentActivity,
+        newArrivals,
+    }: {
+        viewer: 'admin' | 'customer';
+        permissions?: Record<string, boolean>;
+        stats?: {
+            products: { total: number; published: number; draft: number } | null;
+            categories: { total: number } | null;
+            subcategories: { total: number } | null;
+            brands: { total: number } | null;
+            customers: { total: number } | null;
+            admins: { total: number } | null;
+        };
+        categoryBreakdown?: { label: string; value: number }[] | null;
+        monthlyTrend?: { label: string; value: number }[] | null;
+        lowStock?: LowStockProduct[] | null;
+        recentActivity?: ActivityEntry[] | null;
+        newArrivals?: { data: ProductCard[] };
+    } = $props();
+
+    const user = $derived(page.props.auth.user);
+
+    const lowStockColumns: Column[] = [
+        { key: 'name', label: 'Product' },
+        { key: 'sku', label: 'SKU' },
+        { key: 'stock_quantity', label: 'Qty', class: 'text-right whitespace-nowrap' },
+        { key: 'stock_status', label: 'Status', class: 'whitespace-nowrap' },
+    ];
+
+    function stockLabel(status: string) {
+        return status
+            .split('_')
+            .map((w) => w[0].toUpperCase() + w.slice(1))
+            .join(' ');
+    }
+
+    function timeAgo(iso: string) {
+        const diff = Date.now() - new Date(iso).getTime();
+        const mins = Math.round(diff / 60000);
+        if (mins < 1) return 'just now';
+        if (mins < 60) return `${mins}m ago`;
+        const hours = Math.round(mins / 60);
+        if (hours < 24) return `${hours}h ago`;
+        return `${Math.round(hours / 24)}d ago`;
+    }
 </script>
 
 <AppHead title="Dashboard" />
 
-<div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-    <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-        <div
-            class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-        >
-            <PlaceholderPattern />
-        </div>
-        <div
-            class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-        >
-            <PlaceholderPattern />
-        </div>
-        <div
-            class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-        >
-            <PlaceholderPattern />
-        </div>
+<div class="flex h-full flex-1 flex-col gap-4 p-4">
+    <div>
+        <h1 class="text-xl font-semibold tracking-tight">
+            Welcome back, {user?.name?.split(' ')[0]}
+        </h1>
+        <p class="text-sm text-muted-foreground">
+            {#if viewer === 'admin'}
+                Here's what's happening in your catalog today.
+            {:else}
+                Browse the latest dental equipment and supplies.
+            {/if}
+        </p>
     </div>
-    <div
-        class="relative min-h-screen flex-1 rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border"
-    >
-        <PlaceholderPattern />
-    </div>
+
+    {#if viewer === 'admin'}
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {#if stats?.products}
+                <StatCard
+                    label="Products"
+                    value={stats.products.total}
+                    hint="{stats.products.published} published · {stats.products.draft} draft"
+                    icon={Package}
+                />
+            {/if}
+            {#if stats?.categories}
+                <StatCard
+                    label="Categories"
+                    value={stats.categories.total}
+                    hint={stats?.subcategories ? `${stats.subcategories.total} subcategories` : undefined}
+                    icon={LayoutGrid}
+                />
+            {/if}
+            {#if stats?.brands}
+                <StatCard label="Brands" value={stats.brands.total} icon={Building2} />
+            {/if}
+            {#if stats?.customers}
+                <StatCard
+                    label="Customers"
+                    value={stats.customers.total}
+                    hint={stats?.admins ? `${stats.admins.total} admin accounts` : undefined}
+                    icon={Users}
+                />
+            {/if}
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-[2fr_1fr]">
+            <div class="flex min-w-0 flex-col gap-4">
+                {#if categoryBreakdown}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle class="text-base">Products by category</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <BarChart data={categoryBreakdown} />
+                        </CardContent>
+                    </Card>
+                {/if}
+
+                {#if monthlyTrend}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle class="text-base">New products, last 6 months</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <TrendChart data={monthlyTrend} />
+                        </CardContent>
+                    </Card>
+                {/if}
+
+                {#if lowStock}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle class="flex items-center gap-2 text-base">
+                                <AlertTriangle class="size-4 text-destructive" />
+                                Needs attention
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveTable items={lowStock} columns={lowStockColumns} key={(p) => p.id} empty="Everything is well stocked.">
+                                {#snippet cell(item: LowStockProduct, column: Column)}
+                                    {#if column.key === 'stock_status'}
+                                        <span
+                                            class={[
+                                                'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+                                                item.stock_status === 'out_of_stock'
+                                                    ? 'bg-destructive/10 text-destructive'
+                                                    : 'bg-muted text-muted-foreground',
+                                            ].join(' ')}
+                                        >
+                                            {stockLabel(item.stock_status)}
+                                        </span>
+                                    {:else}
+                                        {item[column.key as keyof LowStockProduct]}
+                                    {/if}
+                                {/snippet}
+                                {#snippet actions(item: LowStockProduct)}
+                                    <Link
+                                        href={adminProducts().url}
+                                        class={buttonVariants({ variant: 'ghost', size: 'sm' })}
+                                    >
+                                        View
+                                    </Link>
+                                {/snippet}
+                            </ResponsiveTable>
+                        </CardContent>
+                    </Card>
+                {/if}
+            </div>
+
+            <div class="flex min-w-0 flex-col gap-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle class="text-base">Quick links</CardTitle>
+                    </CardHeader>
+                    <CardContent class="flex flex-col gap-1.5">
+                        {#if permissions?.products}
+                            <Link href={createProduct().url} class={buttonVariants({ variant: 'outline', class: 'justify-start' })}>
+                                <PackageSearch class="size-4" /> Add a product
+                            </Link>
+                        {/if}
+                        {#if permissions?.categories}
+                            <Link href={adminCategories().url} class={buttonVariants({ variant: 'ghost', class: 'justify-start' })}>
+                                <LayoutGrid class="size-4" /> Manage categories
+                            </Link>
+                        {/if}
+                        {#if permissions?.brands}
+                            <Link href={adminBrands().url} class={buttonVariants({ variant: 'ghost', class: 'justify-start' })}>
+                                <Building2 class="size-4" /> Manage brands
+                            </Link>
+                        {/if}
+                        {#if permissions?.tags}
+                            <Link href={adminTags().url} class={buttonVariants({ variant: 'ghost', class: 'justify-start' })}>
+                                <Tags class="size-4" /> Manage tags
+                            </Link>
+                        {/if}
+                        {#if permissions?.admins || permissions?.customers}
+                            <Link href={adminUsers().url} class={buttonVariants({ variant: 'ghost', class: 'justify-start' })}>
+                                <UserCog class="size-4" /> Users & roles
+                            </Link>
+                        {/if}
+                        {#if permissions?.settings}
+                            <Link href={adminSettings().url} class={buttonVariants({ variant: 'ghost', class: 'justify-start' })}>
+                                <Settings class="size-4" /> Settings
+                            </Link>
+                        {/if}
+                    </CardContent>
+                </Card>
+
+                {#if recentActivity}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle class="flex items-center gap-2 text-base">
+                                <ClipboardList class="size-4" /> Recent activity
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {#if recentActivity.length === 0}
+                                <p class="text-sm text-muted-foreground">No activity yet.</p>
+                            {:else}
+                                <ul class="flex flex-col gap-3">
+                                    {#each recentActivity as entry (entry.id)}
+                                        <li class="text-sm">
+                                            <p class="break-words">
+                                                <span class="font-medium">{entry.user?.name ?? 'System'}</span>
+                                                {entry.description ?? entry.action}
+                                            </p>
+                                            <p class="text-xs text-muted-foreground">{timeAgo(entry.created_at)}</p>
+                                        </li>
+                                    {/each}
+                                </ul>
+                            {/if}
+                        </CardContent>
+                    </Card>
+                {/if}
+            </div>
+        </div>
+    {:else}
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Link href={catalogProducts().url} class={buttonVariants({ variant: 'outline', class: 'h-auto flex-col items-start gap-1 p-4 text-left' })}>
+                <Boxes class="size-4.5 text-primary" />
+                <span class="font-medium">Browse products</span>
+                <span class="text-xs text-muted-foreground">See the full catalog</span>
+            </Link>
+            <Link href={catalogCategories().url} class={buttonVariants({ variant: 'outline', class: 'h-auto flex-col items-start gap-1 p-4 text-left' })}>
+                <LayoutGrid class="size-4.5 text-primary" />
+                <span class="font-medium">Shop by category</span>
+                <span class="text-xs text-muted-foreground">Find equipment by type</span>
+            </Link>
+            <Link href={catalogBrands().url} class={buttonVariants({ variant: 'outline', class: 'h-auto flex-col items-start gap-1 p-4 text-left' })}>
+                <Building2 class="size-4.5 text-primary" />
+                <span class="font-medium">Shop by brand</span>
+                <span class="text-xs text-muted-foreground">Explore our brands</span>
+            </Link>
+            <Link href={contact().url} class={buttonVariants({ variant: 'outline', class: 'h-auto flex-col items-start gap-1 p-4 text-left' })}>
+                <MessageCircle class="size-4.5 text-primary" />
+                <span class="font-medium">Contact us</span>
+                <span class="text-xs text-muted-foreground">Get a quote or ask a question</span>
+            </Link>
+        </div>
+
+        <Card>
+            <CardHeader class="flex flex-row items-center justify-between">
+                <CardTitle class="text-base">New arrivals</CardTitle>
+                <Link href={catalogProducts().url} class={buttonVariants({ variant: 'ghost', size: 'sm' })}>View all</Link>
+            </CardHeader>
+            <CardContent>
+                {#if !newArrivals || newArrivals.data.length === 0}
+                    <p class="text-sm text-muted-foreground">No products available yet.</p>
+                {:else}
+                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {#each newArrivals.data as product (product.id)}
+                            <Link
+                                href={catalogProductShow(product.slug).url}
+                                class="group flex flex-col gap-2 rounded-lg border p-3 transition-colors hover:bg-muted/40"
+                            >
+                                <div class="aspect-square overflow-hidden rounded-md bg-muted">
+                                    {#if product.main_image}
+                                        <img src={product.main_image} alt={product.name} class="size-full object-cover" />
+                                    {/if}
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-medium group-hover:text-primary">{product.name}</p>
+                                    {#if product.brand}
+                                        <p class="truncate text-xs text-muted-foreground">{product.brand.name}</p>
+                                    {/if}
+                                    <p class="mt-1 text-sm font-semibold">
+                                        {product.currency} {product.sale_price ?? product.regular_price}
+                                    </p>
+                                </div>
+                            </Link>
+                        {/each}
+                    </div>
+                {/if}
+            </CardContent>
+        </Card>
+    {/if}
 </div>

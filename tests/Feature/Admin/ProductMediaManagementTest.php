@@ -13,7 +13,7 @@ test('an admin can upload an image for a product', function () {
     $response = $this->actingAs($admin)->post(route('admin.products.media.store', $product), [
         'source' => 'upload',
         'type' => 'image',
-        'file' => UploadedFile::fake()->image('photo.jpg'),
+        'file' => UploadedFile::fake()->image('photo.webp', 1200, 1200),
         'is_main' => true,
     ]);
 
@@ -62,7 +62,7 @@ test('setting a new main image unsets the previous main image', function () {
     $this->actingAs($admin)->post(route('admin.products.media.store', $product), [
         'source' => 'upload',
         'type' => 'image',
-        'file' => UploadedFile::fake()->image('new-main.jpg'),
+        'file' => UploadedFile::fake()->image('new-main.webp', 1200, 1200),
         'is_main' => true,
     ]);
 
@@ -79,4 +79,62 @@ test('an admin cannot delete media belonging to a different product', function (
 
     $response->assertNotFound();
     expect(ProductMedia::query()->whereKey($media->id)->exists())->toBeTrue();
+});
+
+test('an oversized image is rejected', function () {
+    Storage::fake('public');
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+
+    $response = $this->actingAs($admin)->post(route('admin.products.media.store', $product), [
+        'source' => 'upload',
+        'type' => 'image',
+        'file' => UploadedFile::fake()->image('too-big.jpg', 400, 400)->size(600),
+    ]);
+
+    $response->assertSessionHasErrors('file');
+    expect($product->media()->exists())->toBeFalse();
+});
+
+test('a webm video is rejected in favour of mp4 and mov only', function () {
+    Storage::fake('public');
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+
+    $response = $this->actingAs($admin)->post(route('admin.products.media.store', $product), [
+        'source' => 'upload',
+        'type' => 'video',
+        'file' => UploadedFile::fake()->create('clip.webm', 500, 'video/webm'),
+    ]);
+
+    $response->assertSessionHasErrors('file');
+});
+
+test('a product cannot exceed the per-type media limit', function () {
+    Storage::fake('public');
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+    ProductMedia::factory()->for($product)->video()->count(2)->create();
+
+    $response = $this->actingAs($admin)->post(route('admin.products.media.store', $product), [
+        'source' => 'url',
+        'type' => 'video',
+        'url' => 'https://www.youtube.com/watch?v=onetoomany',
+    ]);
+
+    $response->assertSessionHasErrors('file');
+    expect($product->media()->where('type', 'video')->count())->toBe(2);
+});
+
+test('an admin can switch which image is the main one', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+    $currentMain = ProductMedia::factory()->for($product)->main()->create();
+    $other = ProductMedia::factory()->for($product)->create(['is_main' => false]);
+
+    $response = $this->actingAs($admin)->patch(route('admin.products.media.update', [$product, $other]));
+
+    $response->assertRedirect();
+    expect($other->fresh()->is_main)->toBeTrue()
+        ->and($currentMain->fresh()->is_main)->toBeFalse();
 });

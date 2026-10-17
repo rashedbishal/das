@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PublicSettingsController;
 use App\Services\SettingsService;
@@ -30,7 +31,7 @@ Route::inertia('about', 'storefront/About')->name('about');
 Route::inertia('contact', 'storefront/Contact')->name('contact');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 });
 
 Route::get('contact-widgets', [PublicSettingsController::class, 'widgets'])->name('contact-widgets');

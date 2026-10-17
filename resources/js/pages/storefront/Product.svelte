@@ -2,9 +2,9 @@
     import { Link, page } from '@inertiajs/svelte';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import Check from '@lucide/svelte/icons/check';
-    import Info from '@lucide/svelte/icons/info';
     import Maximize2 from '@lucide/svelte/icons/maximize-2';
     import Phone from '@lucide/svelte/icons/phone';
+    import PlayCircle from '@lucide/svelte/icons/play-circle';
     import Breadcrumb from '@/components/storefront/Breadcrumb.svelte';
     import Button from '@/components/storefront/Button.svelte';
     import { buttonClass } from '@/components/storefront/button';
@@ -37,6 +37,36 @@
     let loading = $state(true);
     let zoom = $state(false);
     let loginModalOpen = $state(false);
+    let activeIndex = $state(0);
+
+    const gallery = $derived.by(() => {
+        if (!product) {
+            return [];
+        }
+
+        const media = product.media.filter((m) => m.url);
+
+        return media.length > 0
+            ? media
+            : product.image
+              ? [
+                    {
+                        type: 'image',
+                        url: product.image,
+                        isMain: true,
+                        altText: null,
+                    },
+                ]
+              : [];
+    });
+    const activeMedia = $derived(gallery[activeIndex] ?? null);
+
+    $effect(() => {
+        const main = gallery.findIndex(
+            (m) => m.isMain && m.type === 'image',
+        );
+        activeIndex = main >= 0 ? main : 0;
+    });
 
     $effect(() => {
         if (!authed) {
@@ -86,43 +116,78 @@
                 <div
                     class="relative aspect-square overflow-hidden rounded-md bg-photo"
                 >
-                    <img
-                        src={p.image}
-                        alt={p.name}
-                        width={600}
-                        height={600}
-                        class="h-full w-full object-contain mix-blend-multiply"
-                    />
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        class="absolute right-4 bottom-4"
-                        aria-label="Enlarge product image"
-                        title="Enlarge product image"
-                        onclick={() => (zoom = true)}
-                    >
-                        <Maximize2 />
-                    </Button>
-                    <span
-                        class="absolute top-5 left-5 bg-background/90 px-3 py-1.5 text-[10px] text-primary"
-                    >
-                        Illustrative product photography
-                    </span>
-                </div>
-                <div class="mt-4 flex items-center gap-3">
-                    <span
-                        class="h-16 w-16 overflow-hidden rounded border border-primary"
-                    >
-                        <img
-                            src={p.image}
-                            alt="{p.name} main view"
+                    {#if activeMedia?.type === 'video'}
+                        <video
+                            src={activeMedia.url}
                             class="h-full w-full object-contain"
+                            controls
+                            playsinline
+                        >
+                            <track kind="captions" />
+                        </video>
+                    {:else if activeMedia}
+                        <img
+                            src={activeMedia.url}
+                            alt={activeMedia.altText ?? p.name}
+                            width={600}
+                            height={600}
+                            class="h-full w-full object-contain mix-blend-multiply"
                         />
-                    </span>
-                    <span class="text-[10px] text-muted-foreground"
-                        >Studio product view</span
-                    >
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            class="absolute right-4 bottom-4"
+                            aria-label="Enlarge product image"
+                            title="Enlarge product image"
+                            onclick={() => (zoom = true)}
+                        >
+                            <Maximize2 />
+                        </Button>
+                    {/if}
                 </div>
+                {#if gallery.length > 1}
+                    <div class="mt-4 flex gap-3 overflow-x-auto">
+                        {#each gallery as item, i (i)}
+                            <button
+                                type="button"
+                                onclick={() => (activeIndex = i)}
+                                class={[
+                                    'relative h-16 w-16 shrink-0 overflow-hidden rounded border bg-photo',
+                                    i === activeIndex
+                                        ? 'border-primary'
+                                        : 'border-transparent',
+                                ]}
+                                aria-label={item.type === 'video'
+                                    ? 'Show video'
+                                    : 'Show image'}
+                            >
+                                {#if item.type === 'video'}
+                                    <video
+                                        src={item.url}
+                                        class="h-full w-full object-cover"
+                                        muted
+                                        preload="metadata"
+                                    >
+                                        <track kind="captions" />
+                                    </video>
+                                    <span
+                                        class="absolute inset-0 flex items-center justify-center bg-foreground/20"
+                                    >
+                                        <PlayCircle
+                                            class="size-5 text-background"
+                                        />
+                                    </span>
+                                {:else}
+                                    <img
+                                        src={item.url}
+                                        alt=""
+                                        class="h-full w-full object-contain"
+                                    />
+                                {/if}
+                            </button>
+                        {/each}
+                    </div>
+                {/if}
             </div>
             <div class="lg:pt-4">
                 <div class="eyebrow mb-4">
@@ -141,27 +206,42 @@
                     </Link>
                 {/if}
                 <div class="mt-5 flex gap-4 text-[10px] text-muted-foreground">
-                    <span>Model: {p.sku}</span>
-                    <span>•</span>
+                    {#if p.sku}
+                        <span>SKU: {p.sku}</span>
+                        <span>•</span>
+                    {/if}
+                    {#if p.modelNumber}
+                        <span>Model: {p.modelNumber}</span>
+                        <span>•</span>
+                    {/if}
                     <span>{stockLabel(p.stockStatus)}</span>
                 </div>
-                <p
-                    class="mt-3 border-y py-6 text-sm leading-7 text-muted-foreground"
-                >
-                    {p.shortDescription}. A considered addition to your clinical
-                    workflow.
-                </p>
+                {#if p.shortDescription}
+                    <p
+                        class="mt-3 border-y py-6 text-sm leading-7 text-muted-foreground"
+                    >
+                        {p.shortDescription}
+                    </p>
+                {/if}
                 <div class="mt-6">
                     <div class="text-[27px] font-semibold">
                         {p.regularPrice !== null || p.salePrice !== null
                             ? formatPrice(p)
                             : 'Contact for Price'}
+                        {#if p.salePrice !== null && p.regularPrice !== null}
+                            <span
+                                class="ml-2 text-base font-normal text-muted-foreground line-through"
+                            >
+                                {formatPrice({ ...p, salePrice: null })}
+                            </span>
+                        {/if}
                     </div>
-                    <span class="text-[10px] text-muted-foreground">
-                        {p.regularPrice !== null || p.salePrice !== null
-                            ? 'Illustrative price. Not an offer for sale.'
-                            : 'Let’s discuss the configuration that suits your practice.'}
-                    </span>
+                    {#if p.regularPrice === null && p.salePrice === null}
+                        <span class="text-[10px] text-muted-foreground">
+                            Let’s discuss the configuration that suits your
+                            practice.
+                        </span>
+                    {/if}
                 </div>
                 <ul class="my-7 space-y-3">
                     {#each p.highlights as f (f)}
@@ -183,16 +263,6 @@
                         <QuoteDialog product={p.name} />
                     {/key}
                 </div>
-                <div
-                    class="mt-7 flex gap-3 rounded bg-accent p-4 text-[10px] leading-6 text-muted-foreground"
-                >
-                    <Info class="mt-1 size-4 shrink-0 text-primary" />
-                    <p>
-                        Demo product. Images and specifications are illustrative,
-                        not manufacturer-verified. Contact details are
-                        placeholders. No online ordering.
-                    </p>
-                </div>
             </div>
         </div>
         <div
@@ -212,10 +282,6 @@
             </div>
             <div>
                 <h2 class="mb-5 text-2xl">Technical specifications</h2>
-                <p class="mb-5 text-[10px] text-muted-foreground">
-                    Illustrative specifications only. Confirm exact requirements
-                    with the supplier.
-                </p>
                 <dl>
                     {#each p.specifications as spec (spec.name)}
                         <div class="spec-row">
@@ -244,12 +310,11 @@
     <Modal
         bind:open={zoom}
         title={p.name}
-        description="Illustrative studio photograph"
         class="max-h-[95dvh] max-w-3xl overflow-y-auto"
     >
         <img
-            src={p.image}
-            alt={p.name}
+            src={activeMedia?.url ?? p.image}
+            alt={activeMedia?.altText ?? p.name}
             class="h-[65dvh] w-full bg-photo object-contain"
         />
     </Modal>

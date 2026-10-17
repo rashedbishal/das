@@ -25,7 +25,29 @@
 
     type Option = { id: number; name: string };
     type SubcategoryOption = { id: number; name: string; category_id: number };
-    type MediaItem = { id: number; type: string; is_main: boolean; alt_text: string | null; url?: string | null };
+    type MediaItem = {
+        id: number;
+        type: 'image' | 'video';
+        source: 'upload' | 'url';
+        is_main: boolean;
+        alt_text: string | null;
+        sort_order: number;
+        url: string | null;
+    };
+    type MediaLimits = {
+        image: {
+            max: number;
+            maxSizeKb: number;
+            requiredDimension: number;
+            formats: string[];
+        };
+        video: {
+            max: number;
+            maxSizeKb: number;
+            maxSeconds: number;
+            formats: string[];
+        };
+    };
 
     type ProductRow = {
         id: number;
@@ -66,6 +88,7 @@
         categories,
         subcategories,
         tags,
+        mediaLimits,
     }: {
         products: Paginated<ProductRow>;
         filters: Record<string, string | undefined>;
@@ -73,6 +96,7 @@
         categories: Option[];
         subcategories: SubcategoryOption[];
         tags: Option[];
+        mediaLimits: MediaLimits;
     } = $props();
 
     let search = $state(untrack(() => filters.search ?? ''));
@@ -217,7 +241,7 @@
             </Form>
 
             <div class="border-t pt-6">
-                <MediaManager productId={product.id} media={product.media} />
+                <MediaManager productId={product.id} media={product.media} limits={mediaLimits} />
             </div>
         {/if}
     </DialogContent>

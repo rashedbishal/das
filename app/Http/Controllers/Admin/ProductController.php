@@ -8,8 +8,10 @@ use App\Http\Requests\Admin\Product\UpdateProductRequest;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductMedia;
 use App\Models\Subcategory;
 use App\Models\Tag;
+use App\Services\ProductMediaService;
 use App\Services\ProductService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,9 +32,16 @@ class ProductController extends Controller
             includeAllStatuses: true,
         );
 
+        $products->getCollection()->each(
+            fn (Product $product) => $product->media->each(
+                fn (ProductMedia $media) => $media->url = $media->resolvedUrl(),
+            ),
+        );
+
         return Inertia::render('admin/products/Index', [
             'products' => $products,
             'filters' => $request->only(['search', 'status', 'brand', 'category', 'subcategory', 'stock_status', 'sort']),
+            'mediaLimits' => ProductMediaService::limits(),
             ...$this->formOptions(),
         ]);
     }
@@ -58,9 +67,11 @@ class ProductController extends Controller
         $this->authorize('manage', $product);
 
         $product->load(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'relatedProducts']);
+        $product->media->each(fn (ProductMedia $media) => $media->url = $media->resolvedUrl());
 
         return Inertia::render('admin/products/Form', [
             'product' => $product,
+            'mediaLimits' => ProductMediaService::limits(),
             ...$this->formOptions(),
         ]);
     }
