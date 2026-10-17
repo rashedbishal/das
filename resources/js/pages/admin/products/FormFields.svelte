@@ -68,12 +68,69 @@
             selectedSubcategoryId = '';
         }
     });
+
+    // Mirrors Laravel's Str::slug(), which the server applies again on save.
+    const slugify = (value: string) =>
+        value
+            .normalize('NFKD')
+            .replace(/[̀-ͯ]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+
+    const originalSlug = untrack(() => product?.slug ?? '');
+    let name = $state(untrack(() => product?.name ?? ''));
+    let slug = $state(originalSlug);
+    let slugEdited = $state(untrack(() => !!product));
+
+    // A blank slug keeps the current one on edit, or is generated from the name on create.
+    const effectiveSlug = $derived(slugify(slug) || (product ? originalSlug : slugify(name)));
+    const slugChanged = $derived(!!product && effectiveSlug !== originalSlug);
+
+    function onNameInput() {
+        if (!slugEdited) {
+            slug = slugify(name);
+        }
+    }
 </script>
 
 <div class="grid gap-2">
     <Label for="name">Name</Label>
-    <Input id="name" name="name" required value={product?.name ?? ''} />
+    <Input id="name" name="name" required bind:value={name} oninput={onNameInput} />
     <InputError message={errors.name} />
+</div>
+
+<div class="grid gap-2">
+    <Label for="slug">URL slug</Label>
+    <Input
+        id="slug"
+        name="slug"
+        bind:value={slug}
+        oninput={() => (slugEdited = true)}
+        onblur={() => (slug = slugify(slug))}
+        placeholder={product ? originalSlug : 'generated-from-the-name'}
+    />
+    <p class="text-xs break-all text-muted-foreground">
+        Page address: /products/<span class="font-medium text-foreground">{effectiveSlug || '…'}</span>
+    </p>
+    {#if !product}
+        <p class="text-xs text-muted-foreground">
+            This fills in automatically from the name, and it's best to leave it as is. It becomes the
+            product's web address, so pick something you're happy to keep.
+        </p>
+    {:else if slugChanged}
+        <p class="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-foreground">
+            Heads up: once you save, the old address <span class="font-medium break-all">/products/{originalSlug}</span>
+            will stop working. Anyone using a shared link, a bookmark or a search result will see a "page not found"
+            message instead. If that's not what you want, change it back to <span class="font-medium">{originalSlug}</span>.
+        </p>
+    {:else}
+        <p class="text-xs text-muted-foreground">
+            This is the product's web address. We'd recommend keeping it the same — if you change it, links people
+            have already shared or bookmarked will no longer find this product.
+        </p>
+    {/if}
+    <InputError message={errors.slug} />
 </div>
 
 <div class="grid gap-4 sm:grid-cols-2">
