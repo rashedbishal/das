@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Link } from '@inertiajs/svelte';
-    import PlayCircle from '@lucide/svelte/icons/play-circle';
+    import CirclePlay from '@lucide/svelte/icons/circle-play';
     import AppHead from '@/components/AppHead.svelte';
     import LoginModal from '@/components/LoginModal.svelte';
     import { Badge } from '@/components/ui/badge';
@@ -116,7 +116,7 @@
                                     <track kind="captions" />
                                 </video>
                                 <span class="absolute inset-0 flex items-center justify-center bg-black/20">
-                                    <PlayCircle class="size-5 text-white" />
+                                    <CirclePlay class="size-5 text-white" />
                                 </span>
                             {:else if item.url}
                                 <img src={item.url} alt="" class="h-full w-full object-cover" />

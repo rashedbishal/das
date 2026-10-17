@@ -4,7 +4,7 @@
     import Check from '@lucide/svelte/icons/check';
     import Maximize2 from '@lucide/svelte/icons/maximize-2';
     import Phone from '@lucide/svelte/icons/phone';
-    import PlayCircle from '@lucide/svelte/icons/play-circle';
+    import CirclePlay from '@lucide/svelte/icons/circle-play';
     import Breadcrumb from '@/components/storefront/Breadcrumb.svelte';
     import Button from '@/components/storefront/Button.svelte';
     import { buttonClass } from '@/components/storefront/button';
@@ -81,10 +81,16 @@
         loading = true;
         product = null;
 
-        fetchProduct(slug).then((result) => {
-            product = result;
-            loading = false;
-        });
+        fetchProduct(slug)
+            .then((result) => {
+                product = result;
+            })
+            .catch(() => {
+                product = null;
+            })
+            .finally(() => {
+                loading = false;
+            });
     });
 </script>
 
@@ -173,7 +179,7 @@
                                     <span
                                         class="absolute inset-0 flex items-center justify-center bg-foreground/20"
                                     >
-                                        <PlayCircle
+                                        <CirclePlay
                                             class="size-5 text-background"
                                         />
                                     </span>

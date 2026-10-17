@@ -4,7 +4,7 @@
     import Info from '@lucide/svelte/icons/info';
     import Link from '@lucide/svelte/icons/link';
     import Loader2 from '@lucide/svelte/icons/loader-2';
-    import PlayCircle from '@lucide/svelte/icons/play-circle';
+    import CirclePlay from '@lucide/svelte/icons/circle-play';
     import Star from '@lucide/svelte/icons/star';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import UploadCloud from '@lucide/svelte/icons/upload-cloud';
@@ -263,7 +263,7 @@
 
                     {#if item.type === 'video'}
                         <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-                            <PlayCircle class="size-8 text-white drop-shadow" />
+                            <CirclePlay class="size-8 text-white drop-shadow" />
                         </div>
                     {/if}
 
