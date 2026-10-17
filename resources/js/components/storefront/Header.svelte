@@ -7,7 +7,7 @@
     import Menu from '@lucide/svelte/icons/menu';
     import Phone from '@lucide/svelte/icons/phone';
     import Search from '@lucide/svelte/icons/search';
-    import { backOut, cubicOut, quintOut } from 'svelte/easing';
+    import { cubicOut, quintOut } from 'svelte/easing';
     import { fade } from 'svelte/transition';
     import {
         categories,
@@ -50,9 +50,18 @@
     let expandedCategory = $state<Category | null>(null);
     let matches = $state<ProductCard[]>([]);
     let closeMegaTimeout: ReturnType<typeof setTimeout> | undefined;
+    // Bumped every time the menu genuinely opens from closed, so the keyed
+    // category grid remounts (and replays its slide-in) even if the panel
+    // itself stayed mounted across a quick hover-out/hover-in.
+    let megaOpenId = $state(0);
 
     function openMega() {
         clearTimeout(closeMegaTimeout);
+
+        if (!mega) {
+            megaOpenId += 1;
+        }
+
         mega = true;
     }
 
@@ -71,6 +80,7 @@
             mega = false;
             expandedCategory = null;
         } else {
+            megaOpenId += 1;
             mega = true;
         }
     }
@@ -80,34 +90,18 @@
     }
 
     // Drops and unfurls from the nav bar, rather than a mechanical height-slide.
-    function panelReveal(_node: HTMLElement, { duration = 380, delay = 0 } = {}) {
+    function panelReveal(_node: HTMLElement, { duration = 320, delay = 0 } = {}) {
         return {
             duration,
             delay,
             easing: quintOut,
             css: (t: number) => `
                 opacity: ${t};
-                transform-origin: top;
-                transform: translateY(${(1 - t) * -14}px) scaleY(${0.94 + t * 0.06});
+                transform: translateY(${(1 - t) * -10}px);
             `,
         };
     }
 
-    // A "focus pull" reveal — items drift up and scale in while coming into focus from a
-    // soft blur, one at a time. backOut overshoots slightly past full size before settling,
-    // which reads as a deliberate, confident pop rather than a flat fade.
-    function itemReveal(_node: HTMLElement, { duration = 700, delay = 0 } = {}) {
-        return {
-            duration,
-            delay,
-            easing: backOut,
-            css: (t: number, u: number) => `
-                opacity: ${Math.min(1, Math.max(0, t))};
-                filter: blur(${Math.max(0, u) * 4}px);
-                transform: translateY(${u * 26}px) scale(${1 - u * 0.3});
-            `,
-        };
-    }
 
     // Horizontal cross-fade used when swapping between the category and subcategory views.
     function viewSwap(_node: HTMLElement, { duration = 320 } = {}) {
@@ -245,26 +239,28 @@
         >
             <div class="container-wide py-7">
                 {#if !expandedCategory}
-                    <div class="grid grid-cols-4 gap-5">
-                        {#each $categories as c, i (c.id)}
-                            <button
-                                type="button"
-                                class="group flex items-center gap-3 text-left transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:text-primary"
-                                in:itemReveal={{ delay: i * 90 }}
-                                onclick={() => selectCategory(c)}
-                            >
-                                <img
-                                    src={c.image}
-                                    alt=""
-                                    class="h-14 w-14 rounded bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
-                                />
-                                <span class="text-xs">{c.name}</span>
-                                {#if c.subcategories.length}
-                                    <ChevronDown class="-ml-1 size-3 -rotate-90 text-muted-foreground" />
-                                {/if}
-                            </button>
-                        {/each}
-                    </div>
+                    {#key megaOpenId}
+                        <div class="grid grid-cols-4 gap-5">
+                            {#each $categories as c, i (c.id)}
+                                <button
+                                    type="button"
+                                    class="mega-slide group flex items-center gap-3 text-left transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:text-primary"
+                                    style="--slide-delay: {80 + i * 80}ms"
+                                    onclick={() => selectCategory(c)}
+                                >
+                                    <img
+                                        src={c.image}
+                                        alt=""
+                                        class="h-14 w-14 rounded bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
+                                    />
+                                    <span class="text-xs">{c.name}</span>
+                                    {#if c.subcategories.length}
+                                        <ChevronDown class="-ml-1 size-3 -rotate-90 text-muted-foreground" />
+                                    {/if}
+                                </button>
+                            {/each}
+                        </div>
+                    {/key}
                 {:else}
                     {@const activeCategory = expandedCategory}
                     <div in:viewSwap>
@@ -279,7 +275,7 @@
                         {#if activeCategory.subcategories.length}
                             <div class="grid grid-cols-4 gap-5">
                                 {#each activeCategory.subcategories as s, i (s.id)}
-                                    <div in:itemReveal={{ delay: i * 90 }}>
+                                    <div class="mega-slide" style="--slide-delay: {60 + i * 80}ms">
                                         <Link
                                             href={catalogue.url({
                                                 query: { category: activeCategory.slug, subcategory: s.slug },
@@ -412,3 +408,26 @@
         </div>
     {/if}
 </Modal>
+
+<style>
+    /* CSS keyframe animations replay on every DOM insertion, unlike Svelte's
+       in: transitions which can fail to re-fire in runes mode. Items glide in
+       from the left with a slow, premium easing curve. Using the standalone
+       `translate` property avoids conflicts with Tailwind's hover:transform
+       utilities after the animation ends. */
+    .mega-slide {
+        animation: mega-slide-in 1.1s cubic-bezier(0.23, 1, 0.32, 1) backwards;
+        animation-delay: var(--slide-delay, 0ms);
+    }
+
+    @keyframes mega-slide-in {
+        from {
+            opacity: 0;
+            translate: -52px;
+        }
+        to {
+            opacity: 1;
+            translate: 0px;
+        }
+    }
+</style>
