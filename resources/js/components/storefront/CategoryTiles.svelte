@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Link } from '@inertiajs/svelte';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
+    import LayoutGrid from '@lucide/svelte/icons/layout-grid';
     import { categories, countProducts, loadCategories } from '@/data/catalogue';
     import { catalogue } from '@/routes';
 
@@ -19,22 +20,42 @@
     });
 </script>
 
-<div class="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
-    {#each $categories as c, i (c.id)}
+<!-- Wrapping, centred row (not a grid) so a short last row sits in the middle. -->
+<div class="category-cards">
+    {#each $categories as c (c.id)}
         <Link
             href={catalogue.url({ query: { category: c.slug } })}
-            class="category-tile {i === 0 || i === 6 ? 'bg-accent' : ''}"
+            class="category-card"
         >
-            <img
-                src={c.image}
-                alt={c.name}
-                width={384}
-                height={512}
-                loading="lazy"
-            />
-            <h3>{c.name}</h3>
-            <small>{counts[c.slug] ?? 0} products to explore</small>
-            <ArrowUpRight class="cat-arrow size-4 text-primary" />
+            <div class="category-card-media">
+                {#if c.image}
+                    <img
+                        src={c.image}
+                        alt=""
+                        width={384}
+                        height={512}
+                        loading="lazy"
+                    />
+                {:else}
+                    <LayoutGrid class="size-8 text-primary/40" strokeWidth={1.3} />
+                {/if}
+            </div>
+            <div class="category-card-body">
+                <div class="min-w-0">
+                    <h3>{c.name}</h3>
+                    <small>
+                        {#if c.slug in counts}
+                            {counts[c.slug]}
+                            {counts[c.slug] === 1 ? 'product' : 'products'}
+                        {:else}
+                            &nbsp;
+                        {/if}
+                    </small>
+                </div>
+                <span class="category-card-arrow" aria-hidden="true">
+                    <ArrowUpRight class="size-3.5" />
+                </span>
+            </div>
         </Link>
     {/each}
 </div>

@@ -574,47 +574,123 @@
     font-weight: 600;
     font-size: 15px;
 }
-.category-tile {
-    position: relative;
-    background: var(--secondary);
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    overflow: hidden;
-    padding: 20px 22px;
-    min-height: 230px;
+/* Home page category cards: a centred, wrapping row of fixed-width cards. */
+.category-cards {
+    --cat-gap: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--cat-gap);
+}
+.category-card {
     display: flex;
     flex-direction: column;
-    justify-content: end;
-    isolation: isolate;
+    flex: 0 0 calc((100% - var(--cat-gap) * 4) / 5);
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--background);
+    overflow: hidden;
+    transition:
+        transform 0.25s ease,
+        border-color 0.25s,
+        box-shadow 0.25s;
 }
-.category-tile img {
-    position: absolute;
-    right: -5px;
-    top: -35px;
-    width: 64%;
-    height: 190px;
+.category-card:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--primary) 45%, var(--border));
+    box-shadow: 0 10px 24px
+        color-mix(in oklab, var(--foreground) 7%, transparent);
+}
+.category-card-media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 4 / 3;
+    padding: 14px;
+    background: var(--secondary);
+}
+.category-card-media img {
+    width: 100%;
+    height: 100%;
     object-fit: contain;
     mix-blend-mode: multiply;
-    z-index: -1;
-    transition: transform 0.3s;
+    transition: transform 0.35s ease;
 }
-.category-tile:hover img {
-    transform: translateY(-5px);
+.category-card:hover .category-card-media img {
+    transform: scale(1.05);
 }
-.category-tile h3 {
-    font-size: 15px;
-    max-width: 165px;
-    line-height: 1.5;
+.category-card-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px 14px;
 }
-.category-tile small {
+.category-card-body h3 {
+    overflow: hidden;
+    font-size: 13.5px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.category-card-body small {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
     color: var(--muted-foreground);
-    font-size: 10px;
-    margin-top: 5px;
 }
-.category-tile .cat-arrow {
-    position: absolute;
-    bottom: 23px;
-    right: 22px;
+.category-card-arrow {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--primary);
+    transition:
+        background 0.25s,
+        color 0.25s;
+}
+.category-card:hover .category-card-arrow {
+    background: var(--primary);
+    color: var(--primary-foreground);
+}
+@media (max-width: 1099px) {
+    .category-card {
+        flex-basis: calc((100% - var(--cat-gap) * 2) / 3);
+    }
+}
+@media (max-width: 639px) {
+    .category-cards {
+        --cat-gap: 12px;
+    }
+    .category-card {
+        flex-basis: calc((100% - var(--cat-gap)) / 2);
+    }
+    .category-card-media {
+        padding: 10px;
+    }
+    .category-card-body {
+        padding: 10px 10px 12px;
+    }
+    .category-card-body h3 {
+        font-size: 12.5px;
+    }
+    .category-card-arrow {
+        display: none;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .category-card,
+    .category-card-media img {
+        transition: none;
+    }
+    .category-card:hover {
+        transform: none;
+    }
 }
 .brand-word {
     /* Real brand names can be long; let them wrap inside their grid cell
@@ -804,13 +880,6 @@
     .section-space {
         padding-block: 64px;
     }
-    .category-tile {
-        padding: 18px;
-        min-height: 220px;
-    }
-    .category-tile h3 {
-        font-size: 13px;
-    }
     .brand-word {
         font-size: 22px;
     }
@@ -876,29 +945,6 @@
     }
     .page-heading {
         font-size: 33px;
-    }
-    .category-tile {
-        min-height: 215px;
-        padding: 16px;
-    }
-    .category-tile img {
-        width: 90%;
-        height: 140px;
-        top: 0;
-        right: -12px;
-    }
-    .category-tile h3 {
-        font-size: 13px;
-        max-width: 145px;
-    }
-    .category-tile small {
-        max-width: 115px;
-        font-size: 9px;
-    }
-    .category-tile .cat-arrow {
-        right: 12px;
-        bottom: 20px;
-        width: 13px;
     }
     .product-body {
         padding: 13px;
