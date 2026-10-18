@@ -364,7 +364,7 @@
 {#if mega}
     <button
         type="button"
-        class="fixed inset-0 z-30 cursor-default bg-black/5 backdrop-blur-[1px]"
+        class="fixed inset-0 z-30 cursor-default bg-black/10 backdrop-blur-[6px]"
         aria-label="Close category menu"
         transition:fade={{ duration: 280, easing: cubicOut }}
         onclick={() => {
