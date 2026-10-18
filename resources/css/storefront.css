@@ -168,20 +168,146 @@
     overflow: hidden;
     background: var(--secondary);
 }
+/* "Scanner sweep" transition. The incoming slide is a window that slides in
+   while its frame slides the opposite way, so the picture stays put and only
+   the window's edge travels; a teal scan line rides that edge. Everything
+   animates transform/opacity only, so it stays on the GPU compositor. */
+.hero-banners {
+    --hero-dir: 1;
+    --hero-sweep: 1600ms;
+    --hero-ease: cubic-bezier(0.77, 0, 0.18, 1);
+    --hero-interval: 6000ms;
+}
+.hero-banners.is-reverse {
+    --hero-dir: -1;
+}
 .hero-banner {
     position: absolute;
     inset: 0;
-    opacity: 0;
-    transition: opacity 0.8s ease;
+    overflow: hidden;
+    visibility: hidden;
 }
 .hero-banner.is-active {
-    opacity: 1;
+    visibility: visible;
+    z-index: 2;
+}
+.hero-banner.is-leaving {
+    visibility: visible;
     z-index: 1;
+}
+.hero-banner-frame {
+    position: absolute;
+    inset: 0;
 }
 .hero-banner img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+.hero-banner.is-entering {
+    animation: hero-window var(--hero-sweep) var(--hero-ease) both;
+}
+.hero-banner.is-entering .hero-banner-frame {
+    animation: hero-frame var(--hero-sweep) var(--hero-ease) both;
+}
+.hero-banner.is-entering img {
+    animation: hero-settle 2.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.hero-banner.is-leaving img {
+    animation: hero-recede var(--hero-sweep) ease-in both;
+}
+.hero-banner.is-entering .hero-banner-copy > * {
+    animation: rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.hero-banner.is-entering .hero-banner-copy > :nth-child(1) {
+    animation-delay: 0.9s;
+}
+.hero-banner.is-entering .hero-banner-copy > :nth-child(2) {
+    animation-delay: 1.05s;
+}
+.hero-banner.is-entering .hero-banner-copy > :nth-child(3) {
+    animation-delay: 1.2s;
+}
+.hero-scan {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    animation:
+        hero-window var(--hero-sweep) var(--hero-ease) both,
+        hero-scan-fade var(--hero-sweep) linear both;
+}
+.hero-scan::before,
+.hero-scan::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+}
+.hero-scan::before {
+    width: 180px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        color-mix(in oklab, var(--primary) 16%, transparent)
+    );
+}
+.hero-scan::after {
+    width: 2px;
+    background: var(--primary);
+    box-shadow: 0 0 14px 2px
+        color-mix(in oklab, var(--primary) 55%, transparent);
+}
+.is-reverse .hero-scan::before,
+.is-reverse .hero-scan::after {
+    right: auto;
+    left: 0;
+}
+.is-reverse .hero-scan::before {
+    background: linear-gradient(
+        270deg,
+        transparent,
+        color-mix(in oklab, var(--primary) 16%, transparent)
+    );
+}
+@keyframes hero-window {
+    from {
+        transform: translate3d(calc(var(--hero-dir) * -100%), 0, 0);
+    }
+    to {
+        transform: translate3d(0, 0, 0);
+    }
+}
+@keyframes hero-frame {
+    from {
+        transform: translate3d(calc(var(--hero-dir) * 100%), 0, 0);
+    }
+    to {
+        transform: translate3d(0, 0, 0);
+    }
+}
+@keyframes hero-settle {
+    from {
+        transform: scale(1.06);
+    }
+    to {
+        transform: scale(1);
+    }
+}
+@keyframes hero-recede {
+    to {
+        transform: scale(1.03);
+    }
+}
+@keyframes hero-scan-fade {
+    0%,
+    75% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
 }
 .hero-banner-scrim {
     position: absolute;
@@ -202,7 +328,7 @@
 .hero-banner-copy {
     max-width: 520px;
 }
-.hero-banner.is-active .hero-banner-copy {
+.hero-banners.is-intro .hero-banner.is-active .hero-banner-copy {
     animation: rise 0.7s 0.15s both;
 }
 .hero-banner-title {
@@ -217,52 +343,109 @@
     line-height: 1.8;
     color: var(--muted-foreground);
 }
-.hero-banner-arrow {
+.hero-controls-wrap {
     position: absolute;
-    top: 50%;
-    z-index: 2;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    z-index: 4;
+    display: flex;
+    justify-content: flex-end;
+    pointer-events: none;
+}
+.hero-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    border: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--background) 92%, transparent);
+    box-shadow: 0 6px 20px
+        color-mix(in oklab, var(--foreground) 10%, transparent);
+    pointer-events: auto;
+}
+.hero-control-arrow {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 999px;
-    translate: 0 -50%;
-    background: color-mix(in oklab, var(--background) 80%, transparent);
     color: var(--foreground);
-    opacity: 0;
     transition:
-        opacity 0.2s,
-        background 0.2s;
+        background 0.2s,
+        color 0.2s;
+    touch-action: manipulation;
 }
-.hero-banners:hover .hero-banner-arrow,
-.hero-banner-arrow:focus-visible {
-    opacity: 1;
+.hero-control-arrow:hover {
+    background: var(--accent);
+    color: var(--primary);
 }
-.hero-banner-arrow:hover {
-    background: var(--background);
+.hero-control-arrow:active {
+    background: color-mix(in oklab, var(--primary) 14%, transparent);
 }
-.hero-banner-dots {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    z-index: 2;
+.hero-control-arrow:focus-visible,
+.hero-dot:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+}
+.hero-dots {
     display: flex;
-    gap: 8px;
-    translate: -50% 0;
+    align-items: center;
 }
-.hero-banner-dots button {
-    width: 8px;
-    height: 8px;
+/* The visible dot is small, but the button around it is a full 44px-tall target. */
+.hero-dot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 44px;
+    padding: 0 6px;
     border-radius: 999px;
-    background: color-mix(in oklab, var(--foreground) 25%, transparent);
+    touch-action: manipulation;
+}
+.hero-dot span {
+    position: relative;
+    overflow: hidden;
+    display: block;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--foreground) 22%, transparent);
     transition:
         width 0.3s,
         background 0.3s;
 }
-.hero-banner-dots button.is-active {
-    width: 24px;
+.hero-dot:hover span {
+    background: color-mix(in oklab, var(--foreground) 40%, transparent);
+}
+/* The active dot fills up as a countdown to the next banner. */
+.hero-dot.is-active span {
+    width: 32px;
+    background: color-mix(in oklab, var(--primary) 28%, transparent);
+}
+.hero-dot.is-active span::after {
+    content: '';
+    position: absolute;
+    inset: 0;
     background: var(--primary);
+    transform-origin: left;
+    animation: hero-countdown var(--hero-interval) linear both;
+}
+.hero-controls.is-paused .hero-dot.is-active span::after {
+    animation-play-state: paused;
+}
+.hero-controls.is-static .hero-dot.is-active span::after {
+    animation: none;
+}
+@keyframes hero-countdown {
+    from {
+        transform: scaleX(0);
+    }
+    to {
+        transform: scaleX(1);
+    }
 }
 @media (max-width: 1099px) {
     .hero-banners {
@@ -288,17 +471,9 @@
     .hero-banner img {
         object-position: center 35%;
     }
-    .hero-banner-scrim {
-        background: linear-gradient(
-            0deg,
-            oklch(0.98 0.003 170 / 0.95) 0%,
-            oklch(0.98 0.003 170 / 0.75) 30%,
-            transparent 55%
-        );
-    }
     .hero-banner-inner {
         align-items: flex-end;
-        padding-bottom: 44px;
+        padding-bottom: 76px;
     }
     .hero-banner-title {
         font-size: 24px;
@@ -313,19 +488,25 @@
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
     }
-    .hero-banner-dots {
-        bottom: 16px;
+    .hero-banner-scrim {
+        background: linear-gradient(
+            0deg,
+            oklch(0.98 0.003 170 / 0.96) 0%,
+            oklch(0.98 0.003 170 / 0.8) 38%,
+            transparent 64%
+        );
     }
-    .hero-banner-arrow {
-        display: none;
+    .hero-controls-wrap {
+        bottom: 14px;
+        justify-content: center;
     }
 }
 @media (prefers-reduced-motion: reduce) {
-    .hero-banner {
-        transition: none;
-    }
-    .hero-banner.is-active .hero-banner-copy {
-        animation: none;
+    .hero-banner,
+    .hero-banner *,
+    .hero-scan,
+    .hero-dot span::after {
+        animation: none !important;
     }
 }
 .product-card {
