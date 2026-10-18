@@ -10,12 +10,15 @@
         title,
         description,
         class: className = '',
+        header,
         children,
     }: {
         open?: boolean;
         title: string;
         description?: string;
         class?: string;
+        /** Replaces the default title/description; receives the ids to use for them. */
+        header?: Snippet<[{ titleId: string; descriptionId: string }]>;
         children?: Snippet;
     } = $props();
 
@@ -61,16 +64,26 @@
         )}
         transition:zoom
     >
-        <h2
-            id="{id}-title"
-            class="text-lg leading-none font-semibold tracking-tight"
-        >
-            {title}
-        </h2>
-        {#if description}
-            <p id="{id}-description" class="text-sm text-muted-foreground">
-                {description}
-            </p>
+        {#if header}
+            {@render header({
+                titleId: `${id}-title`,
+                descriptionId: `${id}-description`,
+            })}
+        {:else}
+            <h2
+                id="{id}-title"
+                class="text-lg leading-none font-semibold tracking-tight"
+            >
+                {title}
+            </h2>
+            {#if description}
+                <p
+                    id="{id}-description"
+                    class="text-sm text-muted-foreground"
+                >
+                    {description}
+                </p>
+            {/if}
         {/if}
         {@render children?.()}
         <button
