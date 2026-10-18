@@ -159,6 +159,159 @@
     width: 38px;
     background: var(--primary);
 }
+/* Banner-mode hero: CMS images at a fixed ratio per device
+   (desktop 3:1, tablet 2:1, mobile 4:5; see BannerImageService::SIZES). */
+.hero-banners {
+    position: relative;
+    aspect-ratio: 3 / 1;
+    max-height: 760px;
+    overflow: hidden;
+    background: var(--secondary);
+}
+.hero-banner {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+}
+.hero-banner.is-active {
+    opacity: 1;
+    z-index: 1;
+}
+.hero-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.hero-banner-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        oklch(0.98 0.003 170 / 0.92) 0%,
+        oklch(0.98 0.003 170 / 0.7) 30%,
+        transparent 58%
+    );
+}
+.hero-banner-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+}
+.hero-banner-copy {
+    max-width: 520px;
+}
+.hero-banner.is-active .hero-banner-copy {
+    animation: rise 0.7s 0.15s both;
+}
+.hero-banner-title {
+    font-size: 48px;
+    line-height: 1.13;
+    font-weight: 600;
+}
+.hero-banner-subtitle {
+    margin-top: 16px;
+    max-width: 430px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--muted-foreground);
+}
+.hero-banner-arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    translate: 0 -50%;
+    background: color-mix(in oklab, var(--background) 80%, transparent);
+    color: var(--foreground);
+    opacity: 0;
+    transition:
+        opacity 0.2s,
+        background 0.2s;
+}
+.hero-banners:hover .hero-banner-arrow,
+.hero-banner-arrow:focus-visible {
+    opacity: 1;
+}
+.hero-banner-arrow:hover {
+    background: var(--background);
+}
+.hero-banner-dots {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    z-index: 2;
+    display: flex;
+    gap: 8px;
+    translate: -50% 0;
+}
+.hero-banner-dots button {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--foreground) 25%, transparent);
+    transition:
+        width 0.3s,
+        background 0.3s;
+}
+.hero-banner-dots button.is-active {
+    width: 24px;
+    background: var(--primary);
+}
+@media (max-width: 1099px) {
+    .hero-banners {
+        aspect-ratio: 2 / 1;
+    }
+    .hero-banner-title {
+        font-size: 38px;
+    }
+    .hero-banner-copy {
+        max-width: 440px;
+    }
+}
+@media (max-width: 767px) {
+    .hero-banners {
+        aspect-ratio: 4 / 5;
+        max-height: none;
+    }
+    .hero-banner-scrim {
+        background: linear-gradient(
+            0deg,
+            oklch(0.98 0.003 170 / 0.95) 0%,
+            oklch(0.98 0.003 170 / 0.75) 30%,
+            transparent 55%
+        );
+    }
+    .hero-banner-inner {
+        align-items: flex-end;
+        padding-bottom: 52px;
+    }
+    .hero-banner-title {
+        font-size: 28px;
+    }
+    .hero-banner-subtitle {
+        margin-top: 8px;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+    .hero-banner-arrow {
+        display: none;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .hero-banner {
+        transition: none;
+    }
+    .hero-banner.is-active .hero-banner-copy {
+        animation: none;
+    }
+}
 .product-card {
     display: flex;
     flex-direction: column;

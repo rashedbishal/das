@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\HomepageSectionResource;
 use App\Http\Resources\ProductCardResource;
 use App\Models\HomepageSection;
 use App\Models\Product;
@@ -18,7 +19,7 @@ class HomepageController extends Controller
         $featuredLimit = (int) $this->settings->get('catalog', 'featured_limit', 8);
 
         return response()->json([
-            'sections' => HomepageSection::query()->visible()->orderBy('sort_order')->get(),
+            'sections' => HomepageSectionResource::collection(HomepageSection::query()->visible()->orderBy('sort_order')->get()),
             'featured_products' => ProductCardResource::collection(
                 Product::query()->published()->featured()->with(['brand', 'media'])->limit($featuredLimit)->get(),
             ),

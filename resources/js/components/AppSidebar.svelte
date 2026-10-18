@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Link, page, router } from '@inertiajs/svelte';
+    import Images from '@lucide/svelte/icons/images';
     import LayoutGrid from '@lucide/svelte/icons/layout-grid';
     import Package from '@lucide/svelte/icons/package';
     import Settings from '@lucide/svelte/icons/settings';
@@ -48,6 +49,7 @@
                   { title: 'Category Management', href: '/admin/categories', icon: Tags },
                   { title: 'Brands', href: '/admin/brands', icon: Tags },
                   { title: 'Tags', href: '/admin/tags', icon: Tags },
+                  { title: 'Homepage Banners', href: '/admin/homepage-sections', icon: Images },
                   { title: 'Users & Roles', href: '/admin/users', icon: Users },
                   { title: 'Settings', href: '/admin/settings', icon: Settings },
               ]

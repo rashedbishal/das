@@ -15,7 +15,10 @@ use Illuminate\Support\Carbon;
  * @property string $title
  * @property string|null $subtitle
  * @property string|null $image
+ * @property string|null $image_tablet
+ * @property string|null $image_mobile
  * @property string|null $link_url
+ * @property string|null $link_label
  * @property array<string, mixed>|null $content
  * @property int $sort_order
  * @property bool $is_active
@@ -24,7 +27,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['type', 'title', 'subtitle', 'image', 'link_url', 'content', 'sort_order', 'is_active', 'starts_at', 'ends_at'])]
+#[Fillable(['type', 'title', 'subtitle', 'image', 'image_tablet', 'image_mobile', 'link_url', 'link_label', 'content', 'sort_order', 'is_active', 'starts_at', 'ends_at'])]
 class HomepageSection extends Model
 {
     /** @use HasFactory<HomepageSectionFactory> */

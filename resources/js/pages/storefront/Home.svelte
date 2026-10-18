@@ -13,6 +13,9 @@
     import { buttonClass } from '@/components/storefront/button';
     import CategoryTiles from '@/components/storefront/CategoryTiles.svelte';
     import ContactBanner from '@/components/storefront/ContactBanner.svelte';
+    import HeroBanners, {
+        type Banner,
+    } from '@/components/storefront/HeroBanners.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
     import ProductGrid from '@/components/storefront/ProductGrid.svelte';
     import SectionHeading from '@/components/storefront/SectionHeading.svelte';
@@ -25,6 +28,8 @@
     } from '@/data/catalogue';
     import { brands as brandsRoute, catalogue, contact } from '@/routes';
     import { index as categoriesIndex } from '@/routes/categories';
+
+    let { banners = [] }: { banners?: Banner[] } = $props();
 
     loadBrands();
 
@@ -61,6 +66,9 @@
     description="Discover precision dental equipment, clinical essentials and personal product guidance for your practice."
 />
 
+{#if banners.length > 0}
+    <HeroBanners {banners} />
+{:else}
 <section class="hero">
     <img
         class="hero-image"
@@ -114,6 +122,7 @@
     </div>
     <div class="hero-corner">DESIGNED AROUND YOUR PRACTICE</div>
 </section>
+{/if}
 
 <TrustStrip />
 

@@ -3,12 +3,13 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PublicSettingsController;
+use App\Http\Controllers\StorefrontHomeController;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::inertia('/', 'storefront/Home')->name('home');
+Route::get('/', StorefrontHomeController::class)->name('home');
 Route::inertia('catalogue', 'storefront/Catalogue')->name('catalogue');
 Route::inertia('categories', 'storefront/Categories')->name('categories.index');
 Route::inertia('categories/{category}', 'storefront/Category')->name('categories.show');
