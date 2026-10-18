@@ -219,7 +219,9 @@
             <ArrowUpRight class="size-4" />
         </Link>
     </div>
-    <div class="grid grid-cols-3 items-center gap-x-4 gap-y-7 md:grid-cols-6">
+    <div
+        class="grid grid-cols-2 items-center gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-6"
+    >
         {#each $brands as b (b.id)}
             <Link
                 href={catalogue.url({ query: { brand: b.slug } })}

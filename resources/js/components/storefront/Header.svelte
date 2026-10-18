@@ -167,7 +167,7 @@
 </div>
 <header class="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-md">
     <div
-        class="container-wide flex h-[86px] items-center justify-between gap-6"
+        class="container-wide flex h-[86px] items-center justify-between gap-3 sm:gap-6"
     >
         <Link href={home.url()} aria-label="DENTORA home">
             <Wordmark />
@@ -211,7 +211,7 @@
                 {/if}
             {/each}
         </nav>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1 sm:gap-3">
             <Button
                 variant="ghost"
                 size="icon"

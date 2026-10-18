@@ -607,11 +607,26 @@
     right: 22px;
 }
 .brand-word {
+    /* Real brand names can be long; let them wrap inside their grid cell
+       rather than widening the grid (and the page) on small screens. */
+    min-width: 0;
+    overflow-wrap: anywhere;
+    line-height: 1.25;
     font-size: 26px;
     font-weight: 700;
     letter-spacing: 2px;
     color: var(--muted-foreground);
     transition: color 0.2s;
+}
+/* Very small phones (< 360px): shrink the wordmark so the header fits. */
+@media (max-width: 359px) {
+    .wordmark-name {
+        font-size: 21px;
+    }
+    .wordmark-tagline {
+        font-size: 8px;
+        letter-spacing: 0.5px;
+    }
 }
 .brand-word:hover {
     color: var(--primary);
@@ -914,7 +929,7 @@
         max-width: 285px;
     }
     .brand-word {
-        font-size: 21px;
+        font-size: 18px;
     }
     .spec-row {
         grid-template-columns: 1fr 1fr;
