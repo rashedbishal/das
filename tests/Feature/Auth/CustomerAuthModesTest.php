@@ -146,7 +146,7 @@ test('an admin can always log in with email even when customer login mode is pho
         'password' => 'password',
     ]);
 
-    $this->post(route('login.store'), [
+    $this->post(route('admin.login.store'), [
         'email' => 'admin@example.com',
         'password' => 'password',
     ]);

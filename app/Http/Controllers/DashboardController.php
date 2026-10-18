@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ProductCardResource;
 use App\Models\AdminActivityLog;
 use App\Models\Brand;
 use App\Models\Category;
@@ -10,6 +9,7 @@ use App\Models\Product;
 use App\Models\Subcategory;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -17,17 +17,13 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request): Response|RedirectResponse
     {
         $user = $request->user();
 
+        // The dashboard is admin-only; customers use the storefront.
         if (! $user->isAdmin()) {
-            return Inertia::render('Dashboard', [
-                'viewer' => 'customer',
-                'newArrivals' => ProductCardResource::collection(
-                    Product::query()->published()->with(['brand', 'media'])->latest()->limit(8)->get(),
-                ),
-            ]);
+            return redirect()->route('home');
         }
 
         $can = [
@@ -43,7 +39,6 @@ class DashboardController extends Controller
         ];
 
         return Inertia::render('Dashboard', [
-            'viewer' => 'admin',
             'permissions' => $can,
             'stats' => [
                 'products' => $can['products'] ? [

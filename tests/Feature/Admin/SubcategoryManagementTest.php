@@ -92,7 +92,7 @@ test('an admin with categories.manage can delete an unused subcategory', functio
 test('guests cannot access subcategory management', function () {
     $subcategory = Subcategory::factory()->create();
 
-    $this->delete(route('admin.subcategories.destroy', $subcategory))->assertRedirect(route('login'));
+    $this->delete(route('admin.subcategories.destroy', $subcategory))->assertRedirect(route('admin.login'));
 });
 
 test('customers cannot manage subcategories', function () {

@@ -4,9 +4,12 @@
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import ChevronDown from '@lucide/svelte/icons/chevron-down';
     import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+    import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
+    import LogOut from '@lucide/svelte/icons/log-out';
     import Menu from '@lucide/svelte/icons/menu';
     import Phone from '@lucide/svelte/icons/phone';
     import Search from '@lucide/svelte/icons/search';
+    import UserRound from '@lucide/svelte/icons/user-round';
     import { cubicOut, quintOut } from 'svelte/easing';
     import { fade } from 'svelte/transition';
     import {
@@ -19,7 +22,16 @@
     } from '@/data/catalogue';
     import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
     import { currentUrlState } from '@/lib/currentUrl.svelte';
-    import { about, brands, catalogue, contact, home } from '@/routes';
+    import {
+        about,
+        brands,
+        catalogue,
+        contact,
+        dashboard,
+        home,
+        login,
+        logout,
+    } from '@/routes';
     import { index as categoriesIndex } from '@/routes/categories';
     import { show as productShow } from '@/routes/products';
     import Button from './Button.svelte';
@@ -31,6 +43,8 @@
     loadCategories();
 
     const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
+    const user = $derived(page.props.auth.user);
+    const isAdmin = $derived(user?.user_type === 'admin');
 
     const links = [
         ['Home', home.url()],
@@ -207,6 +221,45 @@
             >
                 <Search class="size-[19px]" />
             </Button>
+            {#if !user}
+                <Link
+                    href={login()}
+                    class={buttonClass({ variant: 'ghost', size: 'icon' })}
+                    aria-label="Log in"
+                    title="Log in"
+                >
+                    <UserRound class="size-[19px]" />
+                </Link>
+            {:else}
+                {#if isAdmin}
+                    <Link
+                        href={dashboard()}
+                        class={buttonClass({
+                            variant: 'ghost',
+                            size: 'icon',
+                            class: 'hidden sm:inline-flex',
+                        })}
+                        aria-label="Dashboard"
+                        title="Dashboard"
+                    >
+                        <LayoutDashboard class="size-[19px]" />
+                    </Link>
+                {/if}
+                <Link
+                    href={logout()}
+                    as="button"
+                    onclick={() => router.flushAll()}
+                    class={buttonClass({
+                        variant: 'ghost',
+                        size: 'icon',
+                        class: 'hidden sm:inline-flex',
+                    })}
+                    aria-label="Log out"
+                    title="Log out"
+                >
+                    <LogOut class="size-[19px]" />
+                </Link>
+            {/if}
             <div class="hidden h-6 border-l md:block"></div>
             <a
                 href="tel:{phone.tel}"
@@ -339,6 +392,39 @@
                 <ArrowUpRight class="size-4 text-primary" />
             </Link>
         {/each}
+        {#if !user}
+            <Link
+                href={login()}
+                onclick={() => (mobile = false)}
+                class="flex justify-between border-b py-4"
+            >
+                Log in
+                <UserRound class="size-4 text-primary" />
+            </Link>
+        {:else}
+            {#if isAdmin}
+                <Link
+                    href={dashboard()}
+                    onclick={() => (mobile = false)}
+                    class="flex justify-between border-b py-4"
+                >
+                    Dashboard
+                    <LayoutDashboard class="size-4 text-primary" />
+                </Link>
+            {/if}
+            <Link
+                href={logout()}
+                as="button"
+                onclick={() => {
+                    mobile = false;
+                    router.flushAll();
+                }}
+                class="flex justify-between border-b py-4 text-left"
+            >
+                Log out
+                <LogOut class="size-4 text-primary" />
+            </Link>
+        {/if}
     </nav>
     <a
         href="tel:{phone.tel}"

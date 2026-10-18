@@ -116,8 +116,8 @@ test('a category cannot be deleted while products are assigned to it', function 
 test('guests cannot access category management', function () {
     $category = Category::factory()->create();
 
-    $this->get(route('admin.categories.index'))->assertRedirect(route('login'));
-    $this->delete(route('admin.categories.destroy', $category))->assertRedirect(route('login'));
+    $this->get(route('admin.categories.index'))->assertRedirect(route('admin.login'));
+    $this->delete(route('admin.categories.destroy', $category))->assertRedirect(route('admin.login'));
 });
 
 test('customers cannot access category management', function () {

@@ -29,6 +29,15 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->statefulApi();
 
+        // The dashboard and admin pages are admin-only, so guests there go to the admin
+        // sign-in; signed-in visitors to a guest page go back to their side of the app.
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('dashboard', 'admin', 'admin/*')
+            ? route('admin.login')
+            : route('login'));
+        $middleware->redirectUsersTo(fn (Request $request) => $request->user()?->isAdmin()
+            ? route('dashboard')
+            : route('home'));
+
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
         ]);

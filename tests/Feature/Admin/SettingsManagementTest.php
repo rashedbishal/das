@@ -89,7 +89,7 @@ test('a seo manager can update catalog and seo settings without settings.manage'
 });
 
 test('guests cannot access the settings page', function () {
-    $this->get(route('admin.settings.edit'))->assertRedirect(route('login'));
+    $this->get(route('admin.settings.edit'))->assertRedirect(route('admin.login'));
 });
 
 test('customers cannot access the settings page', function () {

@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Http\Responses\LoginResponse;
+use App\Http\Responses\RegisterResponse;
 use App\Services\AuthenticationService;
 use App\Services\SettingsService;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -13,6 +15,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
+use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 
@@ -23,7 +27,8 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(LoginResponseContract::class, LoginResponse::class);
+        $this->app->singleton(RegisterResponseContract::class, RegisterResponse::class);
     }
 
     /**
@@ -44,10 +49,19 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
 
-        Fortify::authenticateUsing(fn (Request $request) => app(AuthenticationService::class)->resolveUser(
-            (string) $request->input(Fortify::username()),
-            (string) $request->input('password'),
-        ));
+        Fortify::authenticateUsing(function (Request $request) {
+            $user = app(AuthenticationService::class)->resolveUser(
+                (string) $request->input(Fortify::username()),
+                (string) $request->input('password'),
+            );
+
+            // Admins sign in at /admin/login and customers at /login. An account on the
+            // wrong form fails exactly like a wrong password, so neither form reveals
+            // which kind of account an identifier belongs to.
+            return $user !== null && $user->isAdmin() === $request->routeIs('admin.login.store')
+                ? $user
+                : null;
+        });
     }
 
     /**
