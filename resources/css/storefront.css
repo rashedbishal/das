@@ -178,6 +178,16 @@
     --hero-ease: cubic-bezier(0.77, 0, 0.18, 1);
     --hero-interval: 6000ms;
 }
+/* No text selection or image dragging, so swipes and taps on the banner
+   never start a selection or a ghost-image drag. */
+.hero-banners {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+.hero-banners img {
+    -webkit-user-drag: none;
+}
 .hero-banners.is-reverse {
     --hero-dir: -1;
 }
