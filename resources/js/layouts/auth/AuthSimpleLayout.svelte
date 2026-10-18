@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Link } from '@inertiajs/svelte';
     import type { Snippet } from 'svelte';
-    import AppLogoIcon from '@/components/AppLogoIcon.svelte';
+    import Wordmark from '@/components/storefront/Wordmark.svelte';
     import { home } from '@/routes';
 
     let {
@@ -15,33 +15,49 @@
     } = $props();
 </script>
 
-<div
-    class="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10"
->
-    <div class="w-full max-w-sm">
-        <div class="flex flex-col gap-8">
-            <div class="flex flex-col items-center gap-4">
-                <Link
-                    href={home()}
-                    class="flex flex-col items-center gap-2 font-medium"
-                >
-                    <div
-                        class="mb-1 flex h-9 w-9 items-center justify-center rounded-md"
-                    >
-                        <AppLogoIcon
-                            class="size-9 fill-current text-(--foreground) dark:text-white"
-                        />
+<svelte:head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin="anonymous"
+    />
+    <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+    />
+</svelte:head>
+
+<div class="storefront">
+    <main
+        class="flex min-h-svh flex-col items-center justify-center bg-secondary px-4 py-10 sm:px-6"
+    >
+        <div class="flex w-full max-w-[400px] flex-col items-center gap-8">
+            <Link href={home()} aria-label="Home">
+                <Wordmark />
+            </Link>
+
+            <div
+                class="w-full rounded-xl border bg-background p-7 shadow-sm sm:p-8"
+            >
+                {#if title || description}
+                    <div class="mb-7 text-center">
+                        {#if title}
+                            <h1 class="text-xl leading-tight font-semibold">
+                                {title}
+                            </h1>
+                        {/if}
+                        {#if description}
+                            <p
+                                class="mt-1.5 text-sm leading-relaxed text-muted-foreground"
+                            >
+                                {description}
+                            </p>
+                        {/if}
                     </div>
-                    <span class="sr-only">{title}</span>
-                </Link>
-                <div class="space-y-2 text-center">
-                    <h1 class="text-xl font-medium">{title}</h1>
-                    <p class="text-center text-sm text-muted-foreground">
-                        {description}
-                    </p>
-                </div>
+                {/if}
+                {@render children?.()}
             </div>
-            {@render children?.()}
         </div>
-    </div>
+    </main>
 </div>

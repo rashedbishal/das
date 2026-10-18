@@ -1,7 +1,7 @@
 <script module lang="ts">
     export const layout = {
-        title: 'Log in to your account',
-        description: 'Enter your email and password below to log in',
+        title: 'Welcome back',
+        description: 'Log in to your account to continue.',
     };
 </script>
 
@@ -10,8 +10,8 @@
     import AppHead from '@/components/AppHead.svelte';
     import InputError from '@/components/InputError.svelte';
     import PasswordInput from '@/components/PasswordInput.svelte';
+    import Button from '@/components/storefront/Button.svelte';
     import TextLink from '@/components/TextLink.svelte';
-    import { Button } from '@/components/ui/button';
     import { Checkbox } from '@/components/ui/checkbox';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
@@ -35,86 +35,86 @@
             ? 'Email address'
             : loginMode === 'phone'
               ? 'Phone number'
-              : 'Email or phone number',
+              : 'Email or phone',
     );
     const identifierPlaceholder = $derived(
         loginMode === 'email'
-            ? 'email@example.com'
+            ? 'you@example.com'
             : loginMode === 'phone'
               ? '01XXXXXXXXX'
-              : 'email@example.com or 01XXXXXXXXX',
+              : 'you@example.com or 01XXXXXXXXX',
     );
 </script>
 
 <AppHead title="Log in" />
 
 {#if status}
-    <div class="mb-4 text-center text-sm font-medium text-green-600">
+    <div
+        class="mb-5 rounded-md bg-accent px-3 py-2 text-center text-sm font-medium text-primary"
+    >
         {status}
     </div>
 {/if}
 
-
-<Form
-    {...store.form()}
-    resetOnSuccess={['password']}
-    class="flex flex-col gap-6"
->
+<Form {...store.form()} resetOnSuccess={['password']} class="grid gap-5">
     {#snippet children({ errors, processing })}
-        <div class="grid gap-6">
-            <div class="grid gap-2">
-                <Label for="email">{identifierLabel}</Label>
-                <Input
-                    id="email"
-                    type="text"
-                    name="email"
-                    required
-                    autocomplete="username"
-                    placeholder={identifierPlaceholder}
-                />
-                <InputError message={errors.email} />
-            </div>
-
-            <div class="grid gap-2">
-                <div class="flex items-center justify-between">
-                    <Label for="password">Password</Label>
-                    {#if canResetPassword}
-                        <TextLink href={request()} class="text-sm">
-                            Forgot your password?
-                        </TextLink>
-                    {/if}
-                </div>
-                <PasswordInput
-                    id="password"
-                    name="password"
-                    required
-                    autocomplete="current-password"
-                    placeholder="Password"
-                />
-                <InputError message={errors.password} />
-            </div>
-
-            <div class="flex items-center justify-between">
-                <Label for="remember" class="flex items-center space-x-3">
-                    <Checkbox id="remember" name="remember" />
-                    <span>Remember me</span>
-                </Label>
-            </div>
-
-            <Button
-                type="submit"
-                class="mt-4 w-full"
-                disabled={processing}
-                data-test="login-button"
-            >
-                {#if processing}<Spinner />{/if}
-                Log in
-            </Button>
+        <div class="grid gap-2">
+            <Label for="email" class="text-[13px]">{identifierLabel}</Label>
+            <Input
+                id="email"
+                type="text"
+                name="email"
+                required
+                autocomplete="username"
+                placeholder={identifierPlaceholder}
+                class="h-10"
+            />
+            <InputError message={errors.email} />
         </div>
 
-        <div class="text-center text-sm text-muted-foreground">
-            Don't have an account?
-            <TextLink href={register()}>Sign up</TextLink>
+        <div class="grid gap-2">
+            <div class="flex items-center justify-between gap-3">
+                <Label for="password" class="text-[13px]">Password</Label>
+                {#if canResetPassword}
+                    <TextLink href={request()} class="text-xs">
+                        Forgot password?
+                    </TextLink>
+                {/if}
+            </div>
+            <PasswordInput
+                id="password"
+                name="password"
+                required
+                autocomplete="current-password"
+                placeholder="••••••••"
+                class="h-10"
+            />
+            <InputError message={errors.password} />
         </div>
+
+        <Label
+            for="remember"
+            class="flex w-fit items-center gap-2.5 text-[13px] font-normal text-muted-foreground"
+        >
+            <Checkbox id="remember" name="remember" />
+            Remember me
+        </Label>
+
+        <Button
+            type="submit"
+            class="mt-1 h-10 w-full"
+            disabled={processing}
+            data-test="login-button"
+        >
+            {#if processing}<Spinner />{/if}
+            Log in
+        </Button>
+
+        <p
+            class="mt-1 border-t pt-5 text-center text-sm text-muted-foreground"
+        >
+            New here?
+            <TextLink href={register()}>Create an account</TextLink>
+        </p>
     {/snippet}
 </Form>
