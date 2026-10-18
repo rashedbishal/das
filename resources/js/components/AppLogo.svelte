@@ -11,5 +11,8 @@
     <AppLogoIcon class="size-5" />
 </div>
 <div class="ml-1 grid flex-1 text-left text-sm">
-    <span class="mb-0.5 truncate leading-tight font-semibold">{name}</span>
+    <span class="truncate leading-tight font-semibold">{name}</span>
+    <span class="truncate text-[11px] leading-tight opacity-60">
+        Dental Accessories Supplies
+    </span>
 </div>
