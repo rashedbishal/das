@@ -276,9 +276,17 @@
     }
 }
 @media (max-width: 767px) {
+    /* About half the screen; the 4:5 mobile image is cropped to fit, keeping
+       its upper-middle (where the subject sits) in view. Never taller than
+       the image itself would be at full width. */
     .hero-banners {
-        aspect-ratio: 4 / 5;
-        max-height: none;
+        aspect-ratio: auto;
+        height: 50svh;
+        min-height: 340px;
+        max-height: calc(100vw * 1.25);
+    }
+    .hero-banner img {
+        object-position: center 35%;
     }
     .hero-banner-scrim {
         background: linear-gradient(
@@ -290,15 +298,23 @@
     }
     .hero-banner-inner {
         align-items: flex-end;
-        padding-bottom: 52px;
+        padding-bottom: 44px;
     }
     .hero-banner-title {
-        font-size: 28px;
+        font-size: 24px;
+        line-height: 1.2;
     }
     .hero-banner-subtitle {
-        margin-top: 8px;
-        font-size: 13px;
-        line-height: 1.6;
+        display: -webkit-box;
+        margin-top: 6px;
+        overflow: hidden;
+        font-size: 12.5px;
+        line-height: 1.55;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+    .hero-banner-dots {
+        bottom: 16px;
     }
     .hero-banner-arrow {
         display: none;

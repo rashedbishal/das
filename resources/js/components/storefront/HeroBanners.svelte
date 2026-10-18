@@ -149,7 +149,7 @@
                                     ? 'noopener'
                                     : undefined}
                                 class={buttonClass({
-                                    class: 'mt-6 h-11 px-6 text-xs shadow-none max-md:mt-4 max-md:h-10',
+                                    class: 'mt-6 h-11 px-6 text-xs shadow-none max-md:mt-3 max-md:h-9 max-md:px-4',
                                 })}
                             >
                                 {banner.link_label || 'Explore'}
