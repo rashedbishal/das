@@ -1,50 +1,50 @@
 /* Storefront palette for the signed-in app. Set on :root (not a wrapper) so portalled menus and sheets pick it up too. */
 :root:has(.dashboard-theme) {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.267 0.026 181);
+    --background: #ffffff;
+    --foreground: #1a1c35;
     --card: var(--background);
     --card-foreground: var(--foreground);
     --popover: var(--background);
     --popover-foreground: var(--foreground);
-    --primary: oklch(0.502 0.096 180);
-    --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.976 0.005 180);
+    --primary: #2f3190;
+    --primary-foreground: #ffffff;
+    --secondary: #eef1ff;
     --secondary-foreground: var(--foreground);
-    --muted: oklch(0.964 0.006 180);
-    --muted-foreground: oklch(0.52 0.021 175);
-    --accent: oklch(0.974 0.021 177);
-    --accent-foreground: oklch(0.29 0.052 182);
-    --border: oklch(0.919 0.012 176);
+    --muted: #f4f5fb;
+    --muted-foreground: #5b5f8f;
+    --accent: #fff1f2;
+    --accent-foreground: #d7262f;
+    --border: #e6e8f7;
     --input: var(--border);
     --ring: var(--primary);
     --radius: 6px;
-    --sidebar: oklch(0.985 0.004 180);
+    --sidebar: #f7f8ff;
     --sidebar-background: var(--sidebar);
-    --sidebar-foreground: oklch(0.35 0.03 181);
+    --sidebar-foreground: #2b2e63;
     --sidebar-primary: var(--primary);
     --sidebar-primary-foreground: var(--primary-foreground);
-    --sidebar-accent: oklch(0.955 0.018 178);
-    --sidebar-accent-foreground: oklch(0.29 0.052 182);
+    --sidebar-accent: #fff1f2;
+    --sidebar-accent-foreground: #d7262f;
     --sidebar-border: var(--border);
     --sidebar-ring: var(--primary);
 }
 
 :root.dark:has(.dashboard-theme) {
-    --background: oklch(0.18 0.012 185);
-    --foreground: oklch(0.96 0.012 178);
-    --primary: oklch(0.72 0.11 180);
-    --primary-foreground: oklch(0.2 0.03 182);
-    --secondary: oklch(0.25 0.015 182);
-    --muted: oklch(0.25 0.015 182);
-    --muted-foreground: oklch(0.7 0.02 178);
-    --accent: oklch(0.27 0.03 180);
-    --accent-foreground: var(--foreground);
-    --border: oklch(0.3 0.018 182);
-    --sidebar: oklch(0.21 0.03 183);
-    --sidebar-foreground: oklch(0.92 0.012 178);
-    --sidebar-accent: oklch(0.28 0.035 182);
-    --sidebar-accent-foreground: var(--foreground);
-    --sidebar-border: oklch(0.29 0.025 182);
+    --background: #171a2a;
+    --foreground: #f3f5ff;
+    --primary: #7d83d8;
+    --primary-foreground: #10142a;
+    --secondary: #232a4a;
+    --muted: #232a4a;
+    --muted-foreground: #d2d7ff;
+    --accent: #3a2430;
+    --accent-foreground: #ffd8dc;
+    --border: #363d75;
+    --sidebar: #1d2137;
+    --sidebar-foreground: #f4f5ff;
+    --sidebar-accent: #3a2430;
+    --sidebar-accent-foreground: #ffd8dc;
+    --sidebar-border: #2f3a70;
 }
 
 :root:has(.dashboard-theme) body {
