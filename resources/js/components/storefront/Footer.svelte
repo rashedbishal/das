@@ -18,8 +18,12 @@
             class="grid grid-cols-2 gap-x-8 gap-y-10 lg:grid-cols-[1.5fr_1fr_1fr_1.1fr]"
         >
             <div class="col-span-2 lg:col-span-1">
-                <Link href={home.url()}>
-                    <Wordmark />
+                <Link href={home.url()} class="footer-brand-link">
+                    <img
+                        src="/logo-transparent.png"
+                        alt="DAS logo"
+                        class="h-10 w-auto max-w-[220px] object-contain sm:h-12"
+                    />
                 </Link>
                 <p class="mt-6 max-w-[270px] text-xs leading-7 opacity-65">
                     Precision equipment. Professional guidance. A considered
@@ -71,7 +75,7 @@
             </div>
         </div>
         <div
-            class="mt-14 flex flex-col justify-between gap-4 border-t border-on-deep/15 pt-6 text-[10px] opacity-55 sm:flex-row"
+            class="mt-14 flex flex-col justify-between gap-4 border-t border-foreground/15 pt-6 text-[10px] opacity-55 sm:flex-row"
         >
             <span>
                 © {new Date().getFullYear()}

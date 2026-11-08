@@ -760,15 +760,23 @@
     opacity: 0.76;
 }
 .footer {
-    background: var(--deep);
-    color: var(--on-deep);
+    background: #f5f3ef;
+    color: #1f2438;
 }
 .footer a {
+    color: #1f2438;
+}
+.footer a:not(.footer-brand-link) {
     opacity: 0.72;
     transition: opacity 0.2s;
 }
-.footer a:hover {
+.footer a:not(.footer-brand-link):hover {
     opacity: 1;
+}
+.footer .footer-brand-link,
+.footer .footer-brand-link img {
+    opacity: 1;
+    transition: none;
 }
 .footer-links {
     display: flex;
