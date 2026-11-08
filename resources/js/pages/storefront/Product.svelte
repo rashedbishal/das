@@ -229,6 +229,10 @@
                         {p.shortDescription}
                     </p>
                 {/if}
+                <p class="mt-4 text-sm text-muted-foreground">
+                    <span class="font-medium text-foreground">Delivery:</span>
+                    {page.props.siteSettings.deliveryNote}
+                </p>
                 <div class="mt-6">
                     <div class="text-[27px] font-semibold">
                         {p.regularPrice !== null || p.salePrice !== null

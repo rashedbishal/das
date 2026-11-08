@@ -68,6 +68,9 @@ class SettingsController extends Controller
 
         $this->settings->set('catalog', 'page_size', $data['page_size']);
         $this->settings->set('catalog', 'featured_limit', $data['featured_limit']);
+        if (isset($data['delivery_note'])) {
+            $this->settings->set('catalog', 'delivery_note', $data['delivery_note']);
+        }
         $this->settings->set('seo', 'default_title', $data['default_title'] ?? null);
         $this->settings->set('seo', 'default_description', $data['default_description'] ?? null);
 

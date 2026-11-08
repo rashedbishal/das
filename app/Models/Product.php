@@ -27,7 +27,7 @@ use Illuminate\Support\Carbon;
  * @property array<int, string>|null $highlights
  * @property string $status
  * @property bool $is_featured
- * @property string $regular_price
+ * @property string|null $regular_price
  * @property string|null $sale_price
  * @property string $currency
  * @property int $stock_quantity
@@ -118,6 +118,14 @@ class Product extends Model
     }
 
     /**
+     * @return HasMany<ProductVariant, $this>
+     */
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class)->orderBy('sort_order');
+    }
+
+    /**
      * @return BelongsToMany<Product, $this>
      */
     public function relatedProducts(): BelongsToMany
@@ -147,8 +155,12 @@ class Product extends Model
             ?? $this->media->firstWhere('type', 'image');
     }
 
-    public function effectivePrice(): string
+    public function effectivePrice(): ?string
     {
+        if ($this->regular_price === null) {
+            return null;
+        }
+
         return $this->sale_price !== null && $this->sale_price < $this->regular_price
             ? $this->sale_price
             : $this->regular_price;

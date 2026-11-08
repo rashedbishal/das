@@ -48,7 +48,6 @@
 
     const links = [
         ['Home', home.url()],
-        ['Shop Equipment', catalogue.url()],
         ['Categories', categoriesIndex.url()],
         ['Brands', brands.url()],
         ['About Us', about.url()],

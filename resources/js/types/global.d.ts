@@ -27,6 +27,7 @@ declare module '@inertiajs/core' {
                 name: string;
                 logo: string | null;
                 currency: string;
+                deliveryNote: string;
             };
             [key: string]: unknown;
         };

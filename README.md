@@ -73,7 +73,7 @@ All settings live in one `settings` table (`group`, `key`, `value` as JSON) behi
 | `auth`      | login_mode (`email`\|`phone`\|`both`), registration_enabled                                                      |
 | `whatsapp`  | enabled, phone, message                                                                                          |
 | `messenger` | enabled, page_url                                                                                                |
-| `catalog`   | page_size, featured_limit                                                                                        |
+| `catalog`   | page_size, featured_limit, delivery_note (shown on all product detail pages)                                     |
 | `seo`       | default_title, default_description                                                                               |
 | `tracking`  | head_scripts, body_scripts (raw JS/HTML, e.g. Google Tag Manager — injected into every page's `<head>`/`<body>`) |
 

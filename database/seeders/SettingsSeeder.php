@@ -38,6 +38,7 @@ class SettingsSeeder extends Seeder
         'catalog' => [
             'page_size' => 24,
             'featured_limit' => 8,
+            'delivery_note' => 'Through courier all over Bangladesh',
         ],
         'seo' => [
             'default_title' => 'DAS — Dental Equipment & Supplies',

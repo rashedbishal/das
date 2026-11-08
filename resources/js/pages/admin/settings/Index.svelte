@@ -29,7 +29,7 @@
         authSettings: { login_mode?: string; registration_enabled?: boolean; require_email_verification?: boolean };
         whatsapp: { enabled?: boolean; phone?: string; message?: string };
         messenger: { enabled?: boolean; page_url?: string };
-        catalog: { page_size?: number; featured_limit?: number };
+        catalog: { page_size?: number; featured_limit?: number; delivery_note?: string };
         seo: { default_title?: string; default_description?: string };
         tracking: { head_scripts?: string; body_scripts?: string };
     } = $props();
@@ -205,7 +205,7 @@
         <Card>
             <CardHeader>
                 <CardTitle>Catalog & SEO</CardTitle>
-                <CardDescription>Default listing size, featured product limit, and fallback SEO metadata.</CardDescription>
+                <CardDescription>Default listing size, featured product limit, delivery note, and fallback SEO metadata.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Form {...SettingsController.updateCatalogSeo.form()} class="space-y-4">
@@ -221,6 +221,16 @@
                                 <Input id="featured_limit" name="featured_limit" type="number" required value={catalog.featured_limit ?? 8} />
                                 <InputError message={errors.featured_limit} />
                             </div>
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="delivery_note">Product delivery note</Label>
+                            <Input
+                                id="delivery_note"
+                                name="delivery_note"
+                                required
+                                value={catalog.delivery_note ?? 'Through courier all over Bangladesh'}
+                            />
+                            <InputError message={errors.delivery_note} />
                         </div>
                         <div class="grid gap-2">
                             <Label for="default_title">Default SEO title</Label>

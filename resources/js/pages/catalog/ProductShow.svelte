@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Link } from '@inertiajs/svelte';
+    import { Link, page } from '@inertiajs/svelte';
     import CirclePlay from '@lucide/svelte/icons/circle-play';
     import AppHead from '@/components/AppHead.svelte';
     import LoginModal from '@/components/LoginModal.svelte';
@@ -167,6 +167,10 @@
             {#if detail.short_description}
                 <p class="mt-4 text-muted-foreground">{detail.short_description}</p>
             {/if}
+            <p class="mt-4 text-sm text-muted-foreground">
+                <span class="font-medium text-foreground">Delivery:</span>
+                {page.props.siteSettings.deliveryNote}
+            </p>
 
             {#if detail.highlights?.length}
                 <ul class="mt-4 list-inside list-disc space-y-1 text-sm">

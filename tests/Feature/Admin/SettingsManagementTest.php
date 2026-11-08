@@ -2,6 +2,14 @@
 
 use App\Models\User;
 use App\Services\SettingsService;
+use Database\Seeders\SettingsSeeder;
+
+test('the catalog delivery note is seeded as a site-wide setting', function () {
+    $this->seed(SettingsSeeder::class);
+
+    expect(app(SettingsService::class)->get('catalog', 'delivery_note'))
+        ->toBe('Through courier all over Bangladesh');
+});
 
 test('an admin with settings.manage can update general settings', function () {
     $admin = adminUser(['settings.manage']);
@@ -81,11 +89,14 @@ test('a seo manager can update catalog and seo settings without settings.manage'
     $response = $this->actingAs($admin)->put(route('admin.settings.catalog-seo.update'), [
         'page_size' => 36,
         'featured_limit' => 6,
+        'delivery_note' => 'Courier delivery throughout Bangladesh',
         'default_title' => 'DAS Dental Catalog',
     ]);
 
     $response->assertRedirect();
-    expect(app(SettingsService::class)->get('catalog', 'page_size'))->toBe(36);
+    expect(app(SettingsService::class)->get('catalog', 'page_size'))->toBe(36)
+        ->and(app(SettingsService::class)->get('catalog', 'delivery_note'))
+        ->toBe('Courier delivery throughout Bangladesh');
 });
 
 test('guests cannot access the settings page', function () {

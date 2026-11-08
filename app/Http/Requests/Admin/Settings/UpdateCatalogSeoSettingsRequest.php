@@ -21,6 +21,7 @@ class UpdateCatalogSeoSettingsRequest extends FormRequest
         return [
             'page_size' => ['required', 'integer', 'min:1', 'max:100'],
             'featured_limit' => ['required', 'integer', 'min:1', 'max:50'],
+            'delivery_note' => ['sometimes', 'required', 'string', 'max:255'],
             'default_title' => ['nullable', 'string', 'max:255'],
             'default_description' => ['nullable', 'string', 'max:500'],
         ];
