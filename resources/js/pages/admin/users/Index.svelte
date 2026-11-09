@@ -11,6 +11,7 @@
     import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
+    import BulkActions from '@/components/dashboard/BulkActions.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
     import FormSelect from '@/components/dashboard/FormSelect.svelte';
     import ResponsiveTable from '@/components/dashboard/ResponsiveTable.svelte';
@@ -38,6 +39,15 @@
     let permissions = $state<Permission[]>([]);
     let customers = $state<Customer[]>([]);
     let error = $state<string | null>(null);
+    let success = $state<string | null>(null);
+    let selectedAdminIds = $state<number[]>([]);
+    let selectedRoleIds = $state<number[]>([]);
+    let selectedCustomerIds = $state<number[]>([]);
+    let bulkDeleteOpen = $state(false);
+    let pendingBulkAction = $state<{
+        type: 'admins' | 'roles' | 'customers';
+        action: 'delete' | 'deactivate' | 'reactivate';
+    } | null>(null);
 
     let adminSearch = $state('');
     let roleSearch = $state('');
@@ -74,6 +84,12 @@
     let editAdminForm = $state({ name: '', email: '', phone: '', role_id: '', password: '', password_confirmation: '' });
 
     const isEditingSelf = $derived(editingAdmin !== null && editingAdmin.id === currentUserId);
+    const selectableRoleIds = $derived(
+        filteredRoles.filter((role) => !role.is_system).map((role) => role.id).slice(0, 100),
+    );
+    const allRolesSelected = $derived(
+        selectableRoleIds.length > 0 && selectableRoleIds.every((id) => selectedRoleIds.includes(id)),
+    );
 
     async function loadAdmins() {
         const result = await apiFetch<{ data: AdminUser[] }>(adminsApi.index.url());
@@ -242,6 +258,65 @@
             error = e instanceof ApiError ? e.message : 'Action failed';
         }
     }
+
+    async function runBulkAction(
+        type: 'admins' | 'roles' | 'customers',
+        action: 'delete' | 'deactivate' | 'reactivate',
+    ) {
+        if (action === 'delete') {
+            pendingBulkAction = { type, action };
+            bulkDeleteOpen = true;
+            return;
+        }
+
+        await confirmBulkAction(type, action);
+    }
+
+    async function confirmBulkAction(
+        type = pendingBulkAction?.type,
+        action = pendingBulkAction?.action,
+    ) {
+        if (!type || !action) return;
+
+        const ids =
+            type === 'admins'
+                ? selectedAdminIds
+                : type === 'roles'
+                  ? selectedRoleIds
+                  : selectedCustomerIds;
+        const api =
+            type === 'admins'
+                ? adminsApi
+                : type === 'roles'
+                  ? rolesApi
+                  : customersApi;
+
+        error = null;
+        success = null;
+        try {
+            const result = await apiFetch<{ message: string }>(api.bulk.url(), {
+                method: 'POST',
+                body: JSON.stringify({ ids, action }),
+            });
+            success = result?.message ?? 'Bulk action completed.';
+
+            if (type === 'admins') {
+                selectedAdminIds = [];
+                await loadAdmins();
+            } else if (type === 'roles') {
+                selectedRoleIds = [];
+                await loadRoles();
+            } else {
+                selectedCustomerIds = [];
+                await loadCustomers();
+            }
+
+            pendingBulkAction = null;
+            bulkDeleteOpen = false;
+        } catch (e) {
+            error = e instanceof ApiError ? e.message : 'Bulk action failed';
+        }
+    }
 </script>
 
 <AppHead title="Users & Roles" />
@@ -251,7 +326,12 @@
         {#each [['admins', 'Admins'], ['roles', 'Roles'], ['customers', 'Customers']] as [value, label] (value)}
             <button
                 class="shrink-0 border-b-2 px-3 py-2 text-sm {tab === value ? 'border-primary font-medium' : 'border-transparent text-muted-foreground'}"
-                onclick={() => (tab = value as typeof tab)}
+                onclick={() => {
+                    tab = value as typeof tab;
+                    selectedAdminIds = [];
+                    selectedRoleIds = [];
+                    selectedCustomerIds = [];
+                }}
             >
                 {label}
             </button>
@@ -261,6 +341,9 @@
     {#if error}
         <p class="mb-4 rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</p>
     {/if}
+    {#if success}
+        <p class="mb-4 rounded-md bg-primary/10 p-3 text-sm text-primary" role="status">{success}</p>
+    {/if}
 
     {#if tab === 'admins'}
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -269,6 +352,14 @@
         </div>
 
         <Input bind:value={adminSearch} placeholder="Search admins..." class="mb-4 sm:max-w-sm" />
+
+        <BulkActions count={selectedAdminIds.length} onClear={() => (selectedAdminIds = [])}>
+            {#snippet children()}
+                <Button size="sm" onclick={() => runBulkAction('admins', 'deactivate')}>Deactivate</Button>
+                <Button size="sm" variant="outline" onclick={() => runBulkAction('admins', 'reactivate')}>Reactivate</Button>
+                <Button size="sm" variant="destructive" onclick={() => runBulkAction('admins', 'delete')}>Delete</Button>
+            {/snippet}
+        </BulkActions>
 
         <ResponsiveTable
             items={filteredAdmins}
@@ -280,6 +371,9 @@
                 { key: 'status', label: 'Status' },
             ]}
             empty="No admins found."
+            selectedKeys={selectedAdminIds}
+            disabledKeys={admins.filter((admin) => admin.id === currentUserId || admin.role?.is_system).map((admin) => admin.id)}
+            onSelectionChange={(keys) => (selectedAdminIds = keys.map(Number))}
         >
             {#snippet cell(admin, column)}
                 {#if column.key === 'name'}
@@ -331,15 +425,52 @@
 
         <Input bind:value={roleSearch} placeholder="Search roles..." class="mb-4 sm:max-w-sm" />
 
+        <BulkActions count={selectedRoleIds.length} onClear={() => (selectedRoleIds = [])}>
+            {#snippet children()}
+                <Button size="sm" variant="destructive" onclick={() => runBulkAction('roles', 'delete')}>Delete</Button>
+            {/snippet}
+        </BulkActions>
+
+        <label class="mb-3 flex items-center gap-2 text-sm">
+            <input
+                type="checkbox"
+                checked={allRolesSelected}
+                disabled={selectableRoleIds.length === 0}
+                onchange={(event) => {
+                    selectedRoleIds = event.currentTarget.checked
+                        ? selectableRoleIds
+                        : selectedRoleIds.filter((id) => !selectableRoleIds.includes(id));
+                }}
+                class="size-4 accent-primary"
+            />
+            Select up to 100 available roles
+        </label>
+
         <div class="space-y-3">
             {#each filteredRoles as role (role.id)}
                 <div class="rounded-lg border p-3">
                     <div class="flex items-center justify-between gap-3">
-                        <div class="min-w-0">
+                        <div class="flex min-w-0 items-start gap-3">
+                            {#if !role.is_system}
+                                <input
+                                    type="checkbox"
+                                    aria-label="Select {role.name}"
+                                    checked={selectedRoleIds.includes(role.id)}
+                                    disabled={!selectedRoleIds.includes(role.id) && selectedRoleIds.length >= 100}
+                                    onchange={(event) => {
+                                        selectedRoleIds = event.currentTarget.checked
+                                            ? [...selectedRoleIds, role.id]
+                                            : selectedRoleIds.filter((id) => id !== role.id);
+                                    }}
+                                    class="mt-1 size-4 shrink-0 accent-primary"
+                                />
+                            {/if}
+                            <div class="min-w-0">
                             <p class="font-medium">{role.name}</p>
                             <p class="text-xs text-muted-foreground">
                                 {role.permissions.map((p) => p.name).join(', ') || 'No permissions'}
                             </p>
+                            </div>
                         </div>
                         {#if !role.is_system}
                             <Button
@@ -362,6 +493,13 @@
 
         <Input bind:value={customerSearch} placeholder="Search customers..." class="mb-4 sm:max-w-sm" />
 
+        <BulkActions count={selectedCustomerIds.length} onClear={() => (selectedCustomerIds = [])}>
+            {#snippet children()}
+                <Button size="sm" onclick={() => runBulkAction('customers', 'deactivate')}>Deactivate</Button>
+                <Button size="sm" variant="outline" onclick={() => runBulkAction('customers', 'reactivate')}>Reactivate</Button>
+            {/snippet}
+        </BulkActions>
+
         <ResponsiveTable
             items={filteredCustomers}
             key={(customer) => customer.id}
@@ -372,6 +510,8 @@
                 { key: 'status', label: 'Status' },
             ]}
             empty="No customers found."
+            selectedKeys={selectedCustomerIds}
+            onSelectionChange={(keys) => (selectedCustomerIds = keys.map(Number))}
         >
             {#snippet cell(customer, column)}
                 {#if column.key === 'name'}
@@ -528,6 +668,13 @@
     title="Delete role?"
     description={deleteRoleTarget ? `This will permanently delete "${deleteRoleTarget.name}". This cannot be undone.` : ''}
     onConfirm={confirmDeleteRole}
+/>
+
+<ConfirmDialog
+    bind:open={bulkDeleteOpen}
+    title={pendingBulkAction?.type === 'roles' ? 'Delete selected roles?' : 'Delete selected admins?'}
+    description={`This will permanently delete the selected ${pendingBulkAction?.type === 'roles' ? 'roles' : 'administrators'}. Assigned roles and protected administrator accounts cannot be deleted.`}
+    onConfirm={() => confirmBulkAction()}
 />
 
 <ConfirmDialog

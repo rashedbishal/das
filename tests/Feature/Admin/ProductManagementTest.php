@@ -161,6 +161,35 @@ test('an admin without products.delete cannot delete a product', function () {
     expect(Product::query()->whereKey($product->id)->exists())->toBeTrue();
 });
 
+test('an admin can publish selected products in bulk', function () {
+    $admin = adminUser(['products.publish']);
+    $products = Product::factory()->count(2)->create(['status' => 'draft', 'published_at' => null]);
+
+    $response = $this->actingAs($admin)->post(route('admin.products.bulk'), [
+        'ids' => $products->modelKeys(),
+        'action' => 'publish',
+    ]);
+
+    $response->assertRedirect(route('admin.products.index'));
+    foreach ($products as $product) {
+        expect($product->fresh()->status)->toBe('published')
+            ->and($product->fresh()->published_at)->not->toBeNull();
+    }
+});
+
+test('bulk product deletion requires delete permission for every selected product', function () {
+    $admin = adminUser(['products.view']);
+    $products = Product::factory()->count(2)->create();
+
+    $response = $this->actingAs($admin)->post(route('admin.products.bulk'), [
+        'ids' => $products->modelKeys(),
+        'action' => 'delete',
+    ]);
+
+    $response->assertForbidden();
+    expect(Product::query()->whereKey($products->modelKeys())->count())->toBe(2);
+});
+
 test('the admin product listing can search, filter by status, and paginate', function () {
     $admin = adminUser(['products.view']);
     Product::factory()->create(['name' => 'Ultrasonic Scaler', 'status' => 'draft']);

@@ -52,6 +52,19 @@ test('an admin can delete a homepage section', function () {
     expect(HomepageSection::query()->whereKey($section->id)->exists())->toBeFalse();
 });
 
+test('an admin can activate homepage sections in bulk', function () {
+    $admin = adminUser(['content.manage']);
+    $sections = HomepageSection::factory()->count(2)->create(['is_active' => false]);
+
+    $response = $this->actingAs($admin)->post(route('admin.homepage-sections.bulk'), [
+        'ids' => $sections->modelKeys(),
+        'action' => 'activate',
+    ]);
+
+    $response->assertRedirect(route('admin.homepage-sections.index'));
+    expect(HomepageSection::query()->whereKey($sections->modelKeys())->where('is_active', false)->count())->toBe(0);
+});
+
 test('banner uploads are cropped and converted to desktop, tablet and mobile webp images', function () {
     Storage::fake('public');
     $admin = adminUser(['content.manage']);

@@ -8,7 +8,10 @@ use App\Http\Requests\Admin\Role\UpdateRoleRequest;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Services\RoleService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
@@ -56,5 +59,28 @@ class RoleController extends Controller
         $this->roles->delete($role);
 
         return response()->json(status: 204);
+    }
+
+    public function bulk(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:roles,id'],
+            'action' => ['required', Rule::in(['delete'])],
+        ]);
+
+        $roles = Role::query()->whereKey($data['ids'])->get();
+
+        foreach ($roles as $role) {
+            $this->authorize('delete', $role);
+
+            if ($role->users()->exists()) {
+                throw new AuthorizationException("The role \"{$role->name}\" is assigned to one or more admins and cannot be deleted.");
+            }
+        }
+
+        $roles->each(fn (Role $role) => $this->roles->delete($role));
+
+        return response()->json(['message' => count($roles).' roles deleted.']);
     }
 }

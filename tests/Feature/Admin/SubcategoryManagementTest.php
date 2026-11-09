@@ -89,6 +89,19 @@ test('an admin with categories.manage can delete an unused subcategory', functio
     expect(Subcategory::query()->whereKey($subcategory->id)->exists())->toBeFalse();
 });
 
+test('an admin can activate subcategories in bulk', function () {
+    $admin = adminUser(['categories.manage']);
+    $subcategories = Subcategory::factory()->count(2)->create(['is_active' => false]);
+
+    $response = $this->actingAs($admin)->post(route('admin.subcategories.bulk'), [
+        'ids' => $subcategories->modelKeys(),
+        'action' => 'activate',
+    ]);
+
+    $response->assertRedirect(route('admin.categories.index'));
+    expect(Subcategory::query()->whereKey($subcategories->modelKeys())->where('is_active', false)->count())->toBe(0);
+});
+
 test('guests cannot access subcategory management', function () {
     $subcategory = Subcategory::factory()->create();
 

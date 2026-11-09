@@ -79,6 +79,10 @@ All settings live in one `settings` table (`group`, `key`, `value` as JSON) behi
 
 WhatsApp/Messenger config is shared to every Inertia page as `contactWidgets` and exposed publicly at `GET /api/v1/settings/contact-widgets` (and the Inertia-side `GET /contact-widgets`) for the floating widget component — the frontend never hard-codes a phone number or page URL.
 
+## Admin Bulk Actions
+
+The CMS list screens support selecting visible rows (up to 100 per request). Products can be published, moved to draft, or deleted; categories and subcategories, brands, and homepage sections can be activated, deactivated, or deleted; tags can be deleted. In **Users & Roles**, admins can be deactivated, reactivated, or deleted, customers can be deactivated or reactivated, and non-system roles can be deleted. Existing permission, protected-account, and relationship constraints also apply to bulk actions.
+
 ## API Reference (`/api/v1`)
 
 All admin endpoints require the `auth:sanctum` + `admin` middleware and the policy-gated permission named in parentheses.
@@ -87,16 +91,14 @@ All admin endpoints require the `auth:sanctum` + `admin` middleware and the poli
 
 **Auth**: `POST auth/register`, `POST auth/login` (body: `identifier`, `password`), `POST auth/logout`, `GET auth/user`.
 
-**Admin**: `apiResource admin/products` (+ `POST`/`DELETE admin/products/{product}/media/{media}`), `admin/categories`, `admin/brands`, `admin/tags` (`*.manage`/`*.view`), `admin/roles` (+`GET admin/roles/permissions`) (`roles.manage`/`roles.view`), `admin/admins` (+ `POST .../deactivate|reactivate`) (`admins.manage`/`admins.view`), `admin/customers` (`customers.manage`/`customers.view`), `admin/settings` (`settings.manage`/`settings.view`, or `seo.manage` for the catalog/SEO group).
+**Admin**: `apiResource admin/products` (+ `POST`/`DELETE admin/products/{product}/media/{media}`), `admin/categories`, `admin/brands`, `admin/tags` (`*.manage`/`*.view`), `admin/roles` (+`GET admin/roles/permissions`, `POST admin/roles/bulk`), `admin/admins` (+ `POST .../deactivate|reactivate`, `POST admin/admins/bulk`), `admin/customers` (+ `POST admin/customers/bulk`), `admin/settings` (`settings.manage`/`settings.view`, or `seo.manage` for the catalog/SEO group).
 
 ## Known Gaps / Left for the Frontend Developer
 
 The backend and API for all of the following are complete and tested; only the Svelte UI is intentionally minimal or deferred, per the "minimal frontend" brief:
 
 - Product specifications and related-product editing have no dedicated UI yet (API/Inertia endpoints accept `specifications[]` and `related_product_ids[]` arrays already).
-- Homepage banner/section management has no admin UI yet (`admin/homepage-sections` Inertia routes exist and are tested).
 - Public brand browsing pages (`/api/v1/brands`, Inertia `Catalog\BrandController`) exist but have no Svelte pages; only category pages were built per the brief's explicit page list.
-- Admin category/brand editing (vs. create/delete) has no UI yet.
 - No image upload UI for brand images — these accept a plain URL string for now. (Category/subcategory images now support file upload, stored on the `public` disk via `CategoryService`/`SubcategoryService`, alongside the existing URL-string option.)
 
 ## Running Tests

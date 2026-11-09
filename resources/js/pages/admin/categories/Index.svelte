@@ -11,6 +11,7 @@
     import Pencil from '@lucide/svelte/icons/pencil';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
+    import BulkActions from '@/components/dashboard/BulkActions.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
     import FormSelect from '@/components/dashboard/FormSelect.svelte';
     import ResponsiveTable from '@/components/dashboard/ResponsiveTable.svelte';
@@ -20,8 +21,13 @@
     import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
-    import { destroy, store, update } from '@/routes/admin/categories';
-    import { destroy as destroySubcategory, store as storeSubcategory, update as updateSubcategory } from '@/routes/admin/subcategories';
+    import { bulk as bulkCategories, destroy, store, update } from '@/routes/admin/categories';
+    import {
+        bulk as bulkSubcategories,
+        destroy as destroySubcategory,
+        store as storeSubcategory,
+        update as updateSubcategory,
+    } from '@/routes/admin/subcategories';
 
     type CategoryRow = {
         id: number;
@@ -54,6 +60,10 @@
 
     let categorySearch = $state('');
     let subcategorySearch = $state('');
+    let selectedCategoryIds = $state<number[]>([]);
+    let selectedSubcategoryIds = $state<number[]>([]);
+    let bulkDeleteOpen = $state(false);
+    let bulkError = $state<string | null>(null);
 
     const filteredCategories = $derived(
         categories.filter((category) => category.name.toLowerCase().includes(categorySearch.toLowerCase())),
@@ -109,6 +119,26 @@
             router.delete(destroySubcategory.url(deleteSubcategoryTarget.id));
         }
     }
+
+    function runBulkAction(action: 'delete' | 'activate' | 'deactivate') {
+        const selectedIds = tab === 'categories' ? selectedCategoryIds : selectedSubcategoryIds;
+        const route = tab === 'categories' ? bulkCategories : bulkSubcategories;
+        router.post(
+            route.url(),
+            { ids: selectedIds, action },
+            {
+                onSuccess: () => {
+                    if (tab === 'categories') selectedCategoryIds = [];
+                    else selectedSubcategoryIds = [];
+                    bulkError = null;
+                },
+                onError: (errors) => {
+                    bulkError = Object.values(errors).join(' ');
+                    bulkDeleteOpen = false;
+                },
+            },
+        );
+    }
 </script>
 
 <AppHead title="Category Management" />
@@ -147,7 +177,11 @@
         {#each [['categories', 'Categories'], ['subcategories', 'Subcategories']] as [value, label] (value)}
             <button
                 class="shrink-0 border-b-2 px-3 py-2 text-sm {tab === value ? 'border-primary font-medium' : 'border-transparent text-muted-foreground'}"
-                onclick={() => (tab = value as typeof tab)}
+                onclick={() => {
+                    tab = value as typeof tab;
+                    selectedCategoryIds = [];
+                    selectedSubcategoryIds = [];
+                }}
             >
                 {label}
             </button>
@@ -162,6 +196,21 @@
 
         <Input bind:value={categorySearch} placeholder="Search categories..." class="mb-4 sm:max-w-sm" />
 
+        <BulkActions
+            count={selectedCategoryIds.length}
+            error={bulkError}
+            onClear={() => {
+                selectedCategoryIds = [];
+                bulkError = null;
+            }}
+        >
+            {#snippet children()}
+                <Button size="sm" onclick={() => runBulkAction('activate')}>Activate</Button>
+                <Button size="sm" variant="outline" onclick={() => runBulkAction('deactivate')}>Deactivate</Button>
+                <Button size="sm" variant="destructive" onclick={() => (bulkDeleteOpen = true)}>Delete</Button>
+            {/snippet}
+        </BulkActions>
+
         <ResponsiveTable
             items={filteredCategories}
             key={(category) => category.id}
@@ -173,6 +222,8 @@
                 { key: 'products', label: 'Products', class: 'text-right' },
             ]}
             empty="No categories found."
+            selectedKeys={selectedCategoryIds}
+            onSelectionChange={(keys) => (selectedCategoryIds = keys.map(Number))}
         >
             {#snippet cell(category, column)}
                 {#if column.key === 'image'}
@@ -203,6 +254,21 @@
 
         <Input bind:value={subcategorySearch} placeholder="Search subcategories..." class="mb-4 sm:max-w-sm" />
 
+        <BulkActions
+            count={selectedSubcategoryIds.length}
+            error={bulkError}
+            onClear={() => {
+                selectedSubcategoryIds = [];
+                bulkError = null;
+            }}
+        >
+            {#snippet children()}
+                <Button size="sm" onclick={() => runBulkAction('activate')}>Activate</Button>
+                <Button size="sm" variant="outline" onclick={() => runBulkAction('deactivate')}>Deactivate</Button>
+                <Button size="sm" variant="destructive" onclick={() => (bulkDeleteOpen = true)}>Delete</Button>
+            {/snippet}
+        </BulkActions>
+
         <ResponsiveTable
             items={filteredSubcategories}
             key={(subcategory) => subcategory.id}
@@ -214,6 +280,8 @@
                 { key: 'products', label: 'Products', class: 'text-right' },
             ]}
             empty="No subcategories found."
+            selectedKeys={selectedSubcategoryIds}
+            onSelectionChange={(keys) => (selectedSubcategoryIds = keys.map(Number))}
         >
             {#snippet cell(subcategory, column)}
                 {#if column.key === 'image'}
@@ -454,6 +522,15 @@
     title="Delete category?"
     description={deleteCategoryTarget ? `This will permanently delete "${deleteCategoryTarget.name}". This cannot be undone.` : ''}
     onConfirm={confirmDeleteCategory}
+/>
+
+<ConfirmDialog
+    bind:open={bulkDeleteOpen}
+    title={tab === 'categories' ? 'Delete selected categories?' : 'Delete selected subcategories?'}
+    description={tab === 'categories'
+        ? `This will permanently delete ${selectedCategoryIds.length} selected categories. Categories with subcategories or products cannot be deleted.`
+        : `This will permanently delete ${selectedSubcategoryIds.length} selected subcategories. Subcategories with products cannot be deleted.`}
+    onConfirm={() => runBulkAction('delete')}
 />
 
 <ConfirmDialog

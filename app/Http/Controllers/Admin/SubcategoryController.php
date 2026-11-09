@@ -8,6 +8,9 @@ use App\Http\Requests\Admin\Subcategory\UpdateSubcategoryRequest;
 use App\Models\Subcategory;
 use App\Services\SubcategoryService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class SubcategoryController extends Controller
@@ -39,6 +42,45 @@ class SubcategoryController extends Controller
         $this->subcategories->delete($subcategory);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Subcategory deleted.']);
+
+        return to_route('admin.categories.index');
+    }
+
+    public function bulk(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:subcategories,id'],
+            'action' => ['required', Rule::in(['delete', 'activate', 'deactivate'])],
+        ]);
+
+        $subcategories = Subcategory::query()->whereKey($data['ids'])->get();
+        if ($subcategories->count() !== count($data['ids'])) {
+            throw ValidationException::withMessages(['ids' => 'One or more selected subcategories are unavailable.']);
+        }
+
+        foreach ($subcategories as $subcategory) {
+            $this->authorize($data['action'] === 'delete' ? 'delete' : 'update', $subcategory);
+        }
+
+        if ($data['action'] === 'delete') {
+            if ($subcategories->contains(fn (Subcategory $subcategory) => $subcategory->products()->exists())) {
+                throw ValidationException::withMessages([
+                    'ids' => 'Subcategories with assigned products cannot be deleted.',
+                ]);
+            }
+
+            $subcategories->each(fn (Subcategory $subcategory) => $this->subcategories->delete($subcategory));
+        } else {
+            $subcategories->each(fn (Subcategory $subcategory) => $subcategory->update([
+                'is_active' => $data['action'] === 'activate',
+            ]));
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => count($subcategories).' subcategories '.($data['action'] === 'delete' ? 'deleted.' : 'updated.'),
+        ]);
 
         return to_route('admin.categories.index');
     }

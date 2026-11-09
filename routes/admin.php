@@ -30,18 +30,23 @@ Route::middleware('guest')->prefix('admin')->name('admin.')->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('categories', CategoryController::class)
         ->only(['index', 'store', 'update', 'destroy']);
+    Route::post('categories/bulk', [CategoryController::class, 'bulk'])->name('categories.bulk');
+    Route::post('subcategories/bulk', [SubcategoryController::class, 'bulk'])->name('subcategories.bulk');
 
     Route::resource('subcategories', SubcategoryController::class)
         ->only(['store', 'update', 'destroy']);
 
     Route::resource('brands', BrandController::class)
         ->only(['index', 'store', 'update', 'destroy']);
+    Route::post('brands/bulk', [BrandController::class, 'bulk'])->name('brands.bulk');
 
     Route::resource('tags', TagController::class)
         ->only(['index', 'store', 'update', 'destroy']);
+    Route::post('tags/bulk', [TagController::class, 'bulk'])->name('tags.bulk');
 
     Route::resource('products', ProductController::class)
         ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+    Route::post('products/bulk', [ProductController::class, 'bulk'])->name('products.bulk');
 
     Route::post('products/{product}/media', [ProductMediaController::class, 'store'])->name('products.media.store');
     Route::patch('products/{product}/media/{media}', [ProductMediaController::class, 'update'])->name('products.media.update');
@@ -49,6 +54,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::resource('homepage-sections', HomepageSectionController::class)
         ->only(['index', 'store', 'update', 'destroy']);
+    Route::post('homepage-sections/bulk', [HomepageSectionController::class, 'bulk'])->name('homepage-sections.bulk');
 
     Route::get('settings', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings/general', [SettingsController::class, 'updateGeneral'])->name('settings.general.update');

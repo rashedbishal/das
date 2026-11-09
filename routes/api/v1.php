@@ -55,14 +55,17 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->name('admin.')->g
     Route::apiResource('tags', AdminTagController::class)->except(['show']);
 
     Route::get('roles/permissions', [RoleController::class, 'permissions'])->name('roles.permissions');
+    Route::post('roles/bulk', [RoleController::class, 'bulk'])->name('roles.bulk');
     Route::apiResource('roles', RoleController::class);
 
+    Route::post('admins/bulk', [AdminUserController::class, 'bulk'])->name('admins.bulk');
     Route::apiResource('admins', AdminUserController::class);
     Route::post('admins/{admin}/deactivate', [AdminUserController::class, 'deactivate'])->name('admins.deactivate');
     Route::post('admins/{admin}/reactivate', [AdminUserController::class, 'reactivate'])->name('admins.reactivate');
     Route::post('admins/{admin}/transfer-mother-admin', [AdminUserController::class, 'transferMotherAdmin'])->name('admins.transfer-mother-admin');
 
     Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+    Route::post('customers/bulk', [CustomerController::class, 'bulk'])->name('customers.bulk');
     Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
     Route::post('customers/{customer}/deactivate', [CustomerController::class, 'deactivate'])->name('customers.deactivate');
     Route::post('customers/{customer}/reactivate', [CustomerController::class, 'reactivate'])->name('customers.reactivate');

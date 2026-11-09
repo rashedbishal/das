@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\AdminUserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AdminUserController extends Controller
 {
@@ -70,6 +71,38 @@ class AdminUserController extends Controller
         $this->admins->reactivateAdmin($request->user(), $admin);
 
         return response()->json(['data' => $admin->fresh()]);
+    }
+
+    public function bulk(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:users,id'],
+            'action' => ['required', Rule::in(['delete', 'deactivate', 'reactivate'])],
+        ]);
+
+        $admins = User::query()->admins()->whereKey($data['ids'])->get();
+        abort_if($admins->count() !== count($data['ids']), 422, 'One or more selected accounts are not administrators.');
+
+        foreach ($admins as $admin) {
+            $this->authorize($data['action'] === 'delete' || $data['action'] === 'deactivate' ? $data['action'] : 'update', $admin);
+
+            if ($request->user()->is($admin) || $admin->isMotherAdmin()) {
+                abort(403, 'Your selection includes a protected administrator account.');
+            }
+        }
+
+        foreach ($admins as $admin) {
+            if ($data['action'] === 'delete') {
+                $this->admins->deleteAdmin($request->user(), $admin);
+            } elseif ($data['action'] === 'deactivate') {
+                $this->admins->deactivateAdmin($request->user(), $admin);
+            } elseif ($data['action'] === 'reactivate') {
+                $this->admins->reactivateAdmin($request->user(), $admin);
+            }
+        }
+
+        return response()->json(['message' => count($admins).' administrators updated.']);
     }
 
     public function transferMotherAdmin(TransferMotherAdminRequest $request, User $admin): JsonResponse

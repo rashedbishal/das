@@ -16,6 +16,8 @@ use App\Services\ProductService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -92,6 +94,41 @@ class ProductController extends Controller
         $this->products->delete($product);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Product deleted.']);
+
+        return to_route('admin.products.index');
+    }
+
+    public function bulk(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:products,id'],
+            'action' => ['required', Rule::in(['delete', 'publish', 'draft'])],
+        ]);
+
+        $products = Product::query()->whereKey($data['ids'])->get();
+        if ($products->count() !== count($data['ids'])) {
+            throw ValidationException::withMessages(['ids' => 'One or more selected products are unavailable.']);
+        }
+
+        foreach ($products as $product) {
+            $this->authorize($data['action'] === 'delete' ? 'delete' : 'publish', $product);
+        }
+
+        if ($data['action'] === 'delete') {
+            $products->each(fn (Product $product) => $this->products->delete($product));
+        } else {
+            $products->each(fn (Product $product) => $this->products->update(
+                $request->user(),
+                $product,
+                ['status' => $data['action'] === 'publish' ? 'published' : 'draft'],
+            ));
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => count($products).' products '.($data['action'] === 'delete' ? 'deleted.' : 'updated.'),
+        ]);
 
         return to_route('admin.products.index');
     }

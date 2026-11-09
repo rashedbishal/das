@@ -125,3 +125,16 @@ test('customers cannot access category management', function () {
 
     $this->actingAs($customer)->get(route('admin.categories.index'))->assertForbidden();
 });
+
+test('an admin can deactivate categories in bulk', function () {
+    $admin = adminUser(['categories.manage']);
+    $categories = Category::factory()->count(2)->create(['is_active' => true]);
+
+    $response = $this->actingAs($admin)->post(route('admin.categories.bulk'), [
+        'ids' => $categories->modelKeys(),
+        'action' => 'deactivate',
+    ]);
+
+    $response->assertRedirect(route('admin.categories.index'));
+    expect(Category::query()->whereKey($categories->modelKeys())->where('is_active', true)->count())->toBe(0);
+});

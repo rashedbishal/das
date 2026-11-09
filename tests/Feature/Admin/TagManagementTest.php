@@ -29,3 +29,17 @@ test('a tag cannot be deleted while assigned to a product', function () {
 
     $response->assertSessionHasErrors('tag');
 });
+
+test('bulk tag deletion is blocked when any selected tag is assigned to a product', function () {
+    $admin = adminUser(['tags.manage']);
+    $tags = Tag::factory()->count(2)->create();
+    Product::factory()->create()->tags()->attach($tags[1]);
+
+    $response = $this->actingAs($admin)->post(route('admin.tags.bulk'), [
+        'ids' => $tags->modelKeys(),
+        'action' => 'delete',
+    ]);
+
+    $response->assertSessionHasErrors('ids');
+    expect(Tag::query()->whereKey($tags->modelKeys())->count())->toBe(2);
+});

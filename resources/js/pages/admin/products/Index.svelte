@@ -12,6 +12,7 @@
     import { untrack } from 'svelte';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
+    import BulkActions from '@/components/dashboard/BulkActions.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
     import ResponsiveTable from '@/components/dashboard/ResponsiveTable.svelte';
     import { Badge } from '@/components/ui/badge';
@@ -19,7 +20,7 @@
     import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
     import { Spinner } from '@/components/ui/spinner';
-    import { destroy, index as productsIndex, store, update } from '@/routes/admin/products';
+    import { bulk as bulkProducts, destroy, index as productsIndex, store, update } from '@/routes/admin/products';
     import FormFields from './FormFields.svelte';
     import MediaManager from './MediaManager.svelte';
 
@@ -108,6 +109,9 @@
 
     let deleteTarget = $state<ProductRow | null>(null);
     let deleteOpen = $state(false);
+    let selectedIds = $state<number[]>([]);
+    let bulkDeleteOpen = $state(false);
+    let bulkError = $state<string | null>(null);
 
     function applySearch(event: SubmitEvent) {
         event.preventDefault();
@@ -129,6 +133,23 @@
             router.delete(destroy.url(deleteTarget.id));
         }
     }
+
+    function runBulkAction(action: 'delete' | 'publish' | 'draft') {
+        router.post(
+            bulkProducts.url(),
+            { ids: selectedIds, action },
+            {
+                onSuccess: () => {
+                    selectedIds = [];
+                    bulkError = null;
+                },
+                onError: (errors) => {
+                    bulkError = Object.values(errors).join(' ');
+                    bulkDeleteOpen = false;
+                },
+            },
+        );
+    }
 </script>
 
 <AppHead title="Products" />
@@ -148,6 +169,25 @@
         <Button type="submit">Search</Button>
     </form>
 
+    <BulkActions
+        count={selectedIds.length}
+        error={bulkError}
+        onClear={() => {
+            selectedIds = [];
+            bulkError = null;
+        }}
+    >
+        {#snippet children()}
+            <Button size="sm" onclick={() => runBulkAction('publish')}>Publish</Button>
+            <Button size="sm" variant="outline" onclick={() => runBulkAction('draft')}>Move to draft</Button>
+            <Button
+                size="sm"
+                variant="destructive"
+                onclick={() => (bulkDeleteOpen = true)}
+            >Delete</Button>
+        {/snippet}
+    </BulkActions>
+
     <ResponsiveTable
         items={products.data}
         key={(product) => product.id}
@@ -159,6 +199,8 @@
             { key: 'stock', label: 'Stock', class: 'text-right' },
         ]}
         empty="No products found."
+        selectedKeys={selectedIds}
+        onSelectionChange={(keys) => (selectedIds = keys.map(Number))}
     >
         {#snippet cell(product, column)}
             {#if column.key === 'name'}
@@ -252,4 +294,11 @@
     title="Delete product?"
     description={deleteTarget ? `This will permanently delete "${deleteTarget.name}". This cannot be undone.` : ''}
     onConfirm={confirmDeleteProduct}
+/>
+
+<ConfirmDialog
+    bind:open={bulkDeleteOpen}
+    title="Delete selected products?"
+    description={`This will permanently delete ${selectedIds.length} selected products. This cannot be undone.`}
+    onConfirm={() => runBulkAction('delete')}
 />

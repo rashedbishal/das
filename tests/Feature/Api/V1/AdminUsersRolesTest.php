@@ -129,6 +129,46 @@ test('a customer manager can deactivate a customer through the api', function ()
     expect($customer->fresh()->is_active)->toBeFalse();
 });
 
+test('an admin can deactivate customers in bulk through the api', function () {
+    $admin = adminUser(['customers.manage']);
+    $customers = User::factory()->count(2)->create(['is_active' => true]);
+
+    $response = $this->actingAs($admin)->postJson(route('api.v1.admin.customers.bulk'), [
+        'ids' => $customers->modelKeys(),
+        'action' => 'deactivate',
+    ]);
+
+    $response->assertOk();
+    expect(User::query()->whereKey($customers->modelKeys())->where('is_active', true)->count())->toBe(0);
+});
+
+test('bulk admin deletion refuses to delete the current administrator', function () {
+    $admin = adminUser(['admins.manage']);
+    $target = User::factory()->admin(Role::factory()->create())->create();
+
+    $response = $this->actingAs($admin)->postJson(route('api.v1.admin.admins.bulk'), [
+        'ids' => [$admin->id, $target->id],
+        'action' => 'delete',
+    ]);
+
+    $response->assertForbidden();
+    expect(User::query()->whereKey([$admin->id, $target->id])->count())->toBe(2);
+});
+
+test('bulk role deletion refuses assigned roles without deleting any selected roles', function () {
+    $admin = adminUser(['roles.manage']);
+    $roles = Role::factory()->count(2)->create();
+    User::factory()->admin($roles[1])->create();
+
+    $response = $this->actingAs($admin)->postJson(route('api.v1.admin.roles.bulk'), [
+        'ids' => $roles->modelKeys(),
+        'action' => 'delete',
+    ]);
+
+    $response->assertForbidden();
+    expect(Role::query()->whereKey($roles->modelKeys())->count())->toBe(2);
+});
+
 test('a guest receives a 401 from the admin roles api', function () {
     $this->getJson(route('api.v1.admin.roles.index'))->assertUnauthorized();
 });

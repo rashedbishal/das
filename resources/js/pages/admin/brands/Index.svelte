@@ -11,6 +11,7 @@
     import Pencil from '@lucide/svelte/icons/pencil';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
+    import BulkActions from '@/components/dashboard/BulkActions.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
     import ResponsiveTable from '@/components/dashboard/ResponsiveTable.svelte';
     import InputError from '@/components/InputError.svelte';
@@ -19,7 +20,7 @@
     import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
-    import { destroy, store, update } from '@/routes/admin/brands';
+    import { bulk as bulkBrands, destroy, store, update } from '@/routes/admin/brands';
 
     type BrandRow = {
         id: number;
@@ -39,6 +40,9 @@
     let editOpen = $state(false);
     let deleteTarget = $state<BrandRow | null>(null);
     let deleteOpen = $state(false);
+    let selectedIds = $state<number[]>([]);
+    let bulkDeleteOpen = $state(false);
+    let bulkError = $state<string | null>(null);
 
     function editBrand(brand: BrandRow) {
         editingBrand = brand;
@@ -55,6 +59,23 @@
             router.delete(destroy.url(deleteTarget.id));
         }
     }
+
+    function runBulkAction(action: 'delete' | 'activate' | 'deactivate') {
+        router.post(
+            bulkBrands.url(),
+            { ids: selectedIds, action },
+            {
+                onSuccess: () => {
+                    selectedIds = [];
+                    bulkError = null;
+                },
+                onError: (errors) => {
+                    bulkError = Object.values(errors).join(' ');
+                    bulkDeleteOpen = false;
+                },
+            },
+        );
+    }
 </script>
 
 <AppHead title="Brands" />
@@ -67,6 +88,21 @@
 
     <Input bind:value={search} placeholder="Search brands..." class="mb-4 sm:max-w-sm" />
 
+    <BulkActions
+        count={selectedIds.length}
+        error={bulkError}
+        onClear={() => {
+            selectedIds = [];
+            bulkError = null;
+        }}
+    >
+        {#snippet children()}
+            <Button size="sm" onclick={() => runBulkAction('activate')}>Activate</Button>
+            <Button size="sm" variant="outline" onclick={() => runBulkAction('deactivate')}>Deactivate</Button>
+            <Button size="sm" variant="destructive" onclick={() => (bulkDeleteOpen = true)}>Delete</Button>
+        {/snippet}
+    </BulkActions>
+
     <ResponsiveTable
         items={filteredBrands}
         key={(brand) => brand.id}
@@ -76,6 +112,8 @@
             { key: 'products', label: 'Products' },
         ]}
         empty="No brands found."
+        selectedKeys={selectedIds}
+        onSelectionChange={(keys) => (selectedIds = keys.map(Number))}
     >
         {#snippet cell(brand, column)}
             {#if column.key === 'name'}
@@ -175,4 +213,11 @@
     title="Delete brand?"
     description={deleteTarget ? `This will permanently delete "${deleteTarget.name}". This cannot be undone.` : ''}
     onConfirm={confirmDeleteBrand}
+/>
+
+<ConfirmDialog
+    bind:open={bulkDeleteOpen}
+    title="Delete selected brands?"
+    description={`This will permanently delete ${selectedIds.length} selected brands. Brands with products cannot be deleted.`}
+    onConfirm={() => runBulkAction('delete')}
 />

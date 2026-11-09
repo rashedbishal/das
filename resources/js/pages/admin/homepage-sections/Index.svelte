@@ -12,6 +12,7 @@
     import Pencil from '@lucide/svelte/icons/pencil';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
+    import BulkActions from '@/components/dashboard/BulkActions.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
     import DatePicker from '@/components/dashboard/DatePicker.svelte';
     import ResponsiveTable from '@/components/dashboard/ResponsiveTable.svelte';
@@ -27,7 +28,7 @@
     } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
-    import { destroy, store, update } from '@/routes/admin/homepage-sections';
+    import { bulk as bulkSections, destroy, store, update } from '@/routes/admin/homepage-sections';
 
     type Section = {
         id: number;
@@ -57,6 +58,9 @@
     let editing = $state<Section | null>(null);
     let deleteTarget = $state<Section | null>(null);
     let deleteOpen = $state(false);
+    let selectedIds = $state<number[]>([]);
+    let bulkDeleteOpen = $state(false);
+    let bulkError = $state<string | null>(null);
     let landscapePreview = $state<string | null>(null);
     let portraitPreview = $state<string | null>(null);
 
@@ -87,6 +91,23 @@
         }
     }
 
+    function runBulkAction(action: 'delete' | 'activate' | 'deactivate') {
+        router.post(
+            bulkSections.url(),
+            { ids: selectedIds, action },
+            {
+                onSuccess: () => {
+                    selectedIds = [];
+                    bulkError = null;
+                },
+                onError: (errors) => {
+                    bulkError = Object.values(errors).join(' ');
+                    bulkDeleteOpen = false;
+                },
+            },
+        );
+    }
+
     function size(device: keyof Sizes) {
         return `${imageSizes[device][0]}×${imageSizes[device][1]}`;
     }
@@ -106,6 +127,21 @@
         )}), tablet ({size('tablet')}) and mobile ({size('mobile')}).
     </p>
 
+    <BulkActions
+        count={selectedIds.length}
+        error={bulkError}
+        onClear={() => {
+            selectedIds = [];
+            bulkError = null;
+        }}
+    >
+        {#snippet children()}
+            <Button size="sm" onclick={() => runBulkAction('activate')}>Activate</Button>
+            <Button size="sm" variant="outline" onclick={() => runBulkAction('deactivate')}>Deactivate</Button>
+            <Button size="sm" variant="destructive" onclick={() => (bulkDeleteOpen = true)}>Delete</Button>
+        {/snippet}
+    </BulkActions>
+
     <ResponsiveTable
         items={sections}
         key={(section) => section.id}
@@ -116,6 +152,8 @@
             { key: 'order', label: 'Order' },
         ]}
         empty="No banners yet. The storefront shows its default hero until you add one."
+        selectedKeys={selectedIds}
+        onSelectionChange={(keys) => (selectedIds = keys.map(Number))}
     >
         {#snippet cell(section, column)}
             {#if column.key === 'title'}
@@ -410,4 +448,11 @@
         ? `This will permanently delete "${deleteTarget.title}" and its images. This cannot be undone.`
         : ''}
     onConfirm={confirmDelete}
+/>
+
+<ConfirmDialog
+    bind:open={bulkDeleteOpen}
+    title="Delete selected banners?"
+    description={`This will permanently delete ${selectedIds.length} selected banners. This cannot be undone.`}
+    onConfirm={() => runBulkAction('delete')}
 />
