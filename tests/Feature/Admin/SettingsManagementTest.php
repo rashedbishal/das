@@ -8,7 +8,11 @@ test('the catalog delivery note is seeded as a site-wide setting', function () {
     $this->seed(SettingsSeeder::class);
 
     expect(app(SettingsService::class)->get('catalog', 'delivery_note'))
-        ->toBe('Through courier all over Bangladesh');
+        ->toBe('Through courier all over Bangladesh')
+        ->and(app(SettingsService::class)->get('general', 'contact_phone'))
+        ->toBe('01761158577')
+        ->and(app(SettingsService::class)->get('general', 'contact_email'))
+        ->toBe('afazad@gmail.com');
 });
 
 test('an admin with settings.manage can update general settings', function () {
@@ -16,12 +20,19 @@ test('an admin with settings.manage can update general settings', function () {
 
     $response = $this->actingAs($admin)->put(route('admin.settings.general.update'), [
         'site_name' => 'DAS Dental',
+        'contact_phone' => '01761158577',
+        'contact_email' => 'afazad@gmail.com',
         'currency' => 'BDT',
         'timezone' => 'Asia/Dhaka',
     ]);
 
     $response->assertRedirect();
     expect(app(SettingsService::class)->get('general', 'site_name'))->toBe('DAS Dental');
+
+    $this->actingAs($admin)->get(route('contact'))
+        ->assertInertia(fn ($page) => $page
+            ->where('siteSettings.contactPhone', '01761158577')
+            ->where('siteSettings.contactEmail', 'afazad@gmail.com'));
 });
 
 test('an admin without settings.manage cannot update settings', function () {

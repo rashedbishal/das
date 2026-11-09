@@ -9,7 +9,15 @@
 
     loadCategories();
 
-    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
+    const phone = $derived(
+        resolvePhone(
+            page.props.contactWidgets.whatsapp,
+            page.props.siteSettings.contactPhone,
+        ),
+    );
+    const email = $derived(
+        page.props.siteSettings.contactEmail || FALLBACK_CONTACT.email,
+    );
 </script>
 
 <footer class="footer">
@@ -66,11 +74,8 @@
                         <Phone class="size-3.5" />
                         {phone.display}
                     </a>
-                    <a href="mailto:{FALLBACK_CONTACT.email}">{FALLBACK_CONTACT.email}</a>
+                    <a href="mailto:{email}">{email}</a>
                     <span class="leading-6 opacity-65">{FALLBACK_CONTACT.hours}</span>
-                    <span class="text-[10px] opacity-50">
-                        Placeholder contact details · demo only
-                    </span>
                 </div>
             </div>
         </div>

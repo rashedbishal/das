@@ -26,6 +26,9 @@ declare module '@inertiajs/core' {
             siteSettings: {
                 name: string;
                 logo: string | null;
+                contactPhone: string | null;
+                contactEmail: string | null;
+                address: string | null;
                 currency: string;
                 deliveryNote: string;
             };

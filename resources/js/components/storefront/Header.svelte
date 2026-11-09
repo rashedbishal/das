@@ -42,7 +42,15 @@
 
     loadCategories();
 
-    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
+    const phone = $derived(
+        resolvePhone(
+            page.props.contactWidgets.whatsapp,
+            page.props.siteSettings.contactPhone,
+        ),
+    );
+    const email = $derived(
+        page.props.siteSettings.contactEmail || FALLBACK_CONTACT.email,
+    );
     const user = $derived(page.props.auth.user);
     const isAdmin = $derived(user?.user_type === 'admin');
 
@@ -157,7 +165,7 @@
             Professional Dental Equipment <span class="mx-2 opacity-40">|</span>
             Expert Product Assistance
         </span>
-        <a href="mailto:{FALLBACK_CONTACT.email}" class="hidden opacity-80 sm:block">
+        <a href="mailto:{email}" class="hidden opacity-80 sm:block">
             Let’s find the right equipment <ArrowUpRight
                 class="ml-1 inline size-3"
             />

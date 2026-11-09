@@ -10,7 +10,18 @@
     import PageMeta from '@/components/storefront/PageMeta.svelte';
     import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
 
-    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
+    const phone = $derived(
+        resolvePhone(
+            page.props.contactWidgets.whatsapp,
+            page.props.siteSettings.contactPhone,
+        ),
+    );
+    const email = $derived(
+        page.props.siteSettings.contactEmail || FALLBACK_CONTACT.email,
+    );
+    const address = $derived(
+        page.props.siteSettings.address || FALLBACK_CONTACT.address,
+    );
 
     const details = $derived([
         {
@@ -22,10 +33,10 @@
         {
             icon: Mail,
             label: 'Email us',
-            value: FALLBACK_CONTACT.email,
-            href: `mailto:${FALLBACK_CONTACT.email}`,
+            value: email,
+            href: `mailto:${email}`,
         },
-        { icon: MapPin, label: 'Visit us', value: FALLBACK_CONTACT.address },
+        { icon: MapPin, label: 'Visit us', value: address },
         { icon: Clock, label: 'Business hours', value: FALLBACK_CONTACT.hours },
     ]);
 </script>
@@ -76,11 +87,10 @@
                 {/each}
             </div>
             <div class="mt-9 rounded-md border bg-secondary p-5">
-                <p class="eyebrow mb-2">Demonstration details</p>
+                <p class="eyebrow mb-2">Contact information</p>
                 <p class="text-[11px] leading-7 text-muted-foreground">
-                    The phone number, email, address and hours are configurable
-                    placeholders, not verified business contact information. The
-                    .example email address does not receive mail.
+                    Phone and email are maintained in CMS settings. Address
+                    and business hours should be confirmed with the team.
                 </p>
             </div>
         </div>

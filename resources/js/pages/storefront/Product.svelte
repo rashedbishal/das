@@ -30,7 +30,12 @@
     let { loginMode = 'both' }: { loginMode?: 'email' | 'phone' | 'both' } = $props();
 
     const slug = $derived(pathSegment(page.url, 1));
-    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
+    const phone = $derived(
+        resolvePhone(
+            page.props.contactWidgets.whatsapp,
+            page.props.siteSettings.contactPhone,
+        ),
+    );
     const authed = $derived(!!page.props.auth.user);
 
     let product = $state<ProductDetail | null>(null);

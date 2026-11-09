@@ -12,7 +12,12 @@
     const href = $derived(show.url(p.slug));
     const priceLabel = $derived(formatPrice(p));
     const hasPrice = $derived(p.salePrice !== null || p.regularPrice !== null);
-    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
+    const phone = $derived(
+        resolvePhone(
+            page.props.contactWidgets.whatsapp,
+            page.props.siteSettings.contactPhone,
+        ),
+    );
 </script>
 
 <article class="product-card">

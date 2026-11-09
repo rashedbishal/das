@@ -6,7 +6,12 @@
     import { contact } from '@/routes';
     import { buttonClass } from './button';
 
-    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
+    const phone = $derived(
+        resolvePhone(
+            page.props.contactWidgets.whatsapp,
+            page.props.siteSettings.contactPhone,
+        ),
+    );
 </script>
 
 <section class="border-t border-primary/10 bg-accent">

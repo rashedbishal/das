@@ -52,6 +52,9 @@ class HandleInertiaRequests extends Middleware
             'siteSettings' => [
                 'name' => $settings->get('general', 'site_name', config('app.name')),
                 'logo' => $settings->get('general', 'logo'),
+                'contactPhone' => $settings->get('general', 'contact_phone', '01761158577'),
+                'contactEmail' => $settings->get('general', 'contact_email', 'afazad@gmail.com'),
+                'address' => $settings->get('general', 'address'),
                 'currency' => $settings->get('general', 'currency', 'BDT'),
                 'deliveryNote' => $settings->get('catalog', 'delivery_note', 'Through courier all over Bangladesh'),
             ],
