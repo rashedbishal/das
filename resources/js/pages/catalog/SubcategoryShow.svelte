@@ -9,7 +9,7 @@
         name: string;
         slug: string;
         main_image: string | null;
-        regular_price: string;
+        regular_price: string | null;
         sale_price: string | null;
         currency: string;
     };
@@ -62,8 +62,12 @@
                 </div>
                 <h3 class="font-medium">{product.name}</h3>
                 <p class="mt-1 text-sm font-semibold">
-                    {product.currency}
-                    {product.sale_price ?? product.regular_price}
+                    {#if product.sale_price ?? product.regular_price}
+                        {product.currency}
+                        {product.sale_price ?? product.regular_price}
+                    {:else}
+                        Contact for price
+                    {/if}
                 </p>
             </Link>
         {:else}

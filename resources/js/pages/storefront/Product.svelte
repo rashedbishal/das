@@ -289,6 +289,14 @@
                         {f}
                     </div>
                 {/each}
+                {#if p.variants.length}
+                    <h3 class="mt-8 mb-4 text-lg">Available options</h3>
+                    <ul class="flex flex-wrap gap-2">
+                        {#each p.variants as variant (variant.name)}
+                            <li class="rounded-md border px-3 py-1.5 text-sm">{variant.name}</li>
+                        {/each}
+                    </ul>
+                {/if}
             </div>
             <div>
                 <h2 class="mb-5 text-2xl">Technical specifications</h2>

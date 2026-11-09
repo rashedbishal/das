@@ -53,7 +53,15 @@ class ProductResource extends JsonResource
                 'is_main' => $media->is_main,
                 'alt_text' => $media->alt_text,
             ])),
-            'regular_price' => (string) $this->regular_price,
+            'variants' => $this->whenLoaded('variants', fn () => $this->variants
+                ->where('is_active', true)
+                ->values()
+                ->map(fn ($variant) => [
+                    'name' => $variant->name,
+                    'price' => $variant->price !== null ? (string) $variant->price : null,
+                    'stock_status' => $variant->stock_status,
+                ])),
+            'regular_price' => $this->regular_price !== null ? (string) $this->regular_price : null,
             'sale_price' => $this->sale_price !== null ? (string) $this->sale_price : null,
             'currency' => $this->currency,
             'stock_quantity' => $this->stock_quantity,

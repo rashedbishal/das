@@ -21,7 +21,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $model_number
  * @property int|null $brand_id
  * @property int $category_id
- * @property int $subcategory_id
+ * @property int|null $subcategory_id
  * @property string|null $short_description
  * @property string|null $full_description
  * @property array<int, string>|null $highlights

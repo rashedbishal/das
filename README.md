@@ -31,6 +31,12 @@ php artisan das:bootstrap-mother-admin
 npm run build                  # or `npm run dev` / `composer run dev` during development
 ```
 
+### Importing the Client Catalog
+
+After migrations, run `php artisan catalog:import-client-data` to replace the current products, categories, subcategories, brands, and tags with the reviewed client catalog. The command asks for confirmation because it deletes existing catalog records; `--force` skips that prompt for an intentional, unattended import. It preserves user accounts, homepage sections, and other settings, while setting the documented catalog delivery note.
+
+The import contains 15 products, 81 product options, and bundled photos under `public/images/client-catalog/`. Products are assigned to **Instrument** directly or to **Material** → **Porceline**, **Denture**, or **cad-cam-material**, as appropriate. Prices are left unset where the source documents do not provide them, so the storefront displays **Contact for price**. Documented sizes and shades are imported as product options with sequential `DAS-0001` variant SKUs and **On order** stock status. No products are marked as featured because the source documents do not identify a featured selection; admins can curate this in the CMS. The duplicate `Pro Porcelain.doc` document is not imported as a separate product.
+
 ### Bootstrapping the Mother Admin
 
 `php artisan das:bootstrap-mother-admin` creates the single highest-privilege account. It is idempotent — it refuses to run if a Mother Admin already exists. Credentials can be supplied via environment variables (`MOTHER_ADMIN_NAME`, `MOTHER_ADMIN_EMAIL`, `MOTHER_ADMIN_PASSWORD`) or entered interactively if left unset. The command also seeds the permission/role catalog automatically if it hasn't been seeded yet.

@@ -54,7 +54,7 @@ class ProductController extends Controller
 
         abort_unless(Gate::allows('view', $product), 404);
 
-        $product->load(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'relatedProducts.brand', 'relatedProducts.media']);
+        $product->load(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'variants', 'relatedProducts.brand', 'relatedProducts.media']);
 
         return Inertia::render('catalog/ProductShow', [
             'product' => new ProductResource($product),

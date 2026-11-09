@@ -19,7 +19,7 @@
         full_description: string | null;
         status: string;
         is_featured: boolean;
-        regular_price: string;
+        regular_price: string | null;
         sale_price: string | null;
         currency: string;
         stock_quantity: number;
@@ -27,7 +27,7 @@
         seo_title: string | null;
         seo_description: string | null;
         category_id: number;
-        subcategory_id: number;
+        subcategory_id: number | null;
         tags: { id: number }[];
     };
 
@@ -58,7 +58,7 @@
         }));
 
     let selectedCategoryId = $state(untrack(() => (product ? String(product.category_id) : '')));
-    let selectedSubcategoryId = $state(untrack(() => (product ? String(product.subcategory_id) : '')));
+    let selectedSubcategoryId = $state(untrack(() => (product?.subcategory_id ? String(product.subcategory_id) : '')));
     const availableSubcategories = $derived(
         subcategories.filter((subcategory) => String(subcategory.category_id) === selectedCategoryId),
     );
@@ -183,7 +183,8 @@
 <div class="grid gap-4 sm:grid-cols-3">
     <div class="grid gap-2">
         <Label for="regular_price">Regular price</Label>
-        <Input id="regular_price" name="regular_price" type="number" step="0.01" required value={product?.regular_price ?? ''} />
+        <Input id="regular_price" name="regular_price" type="number" step="0.01" value={product?.regular_price ?? ''} />
+        <p class="text-xs text-muted-foreground">Leave blank to show “Contact for price”.</p>
         <InputError message={errors.regular_price} />
     </div>
     <div class="grid gap-2">
@@ -210,7 +211,7 @@
             id="stock_status"
             name="stock_status"
             value={product?.stock_status ?? 'in_stock'}
-            options={labelled(['in_stock', 'out_of_stock', 'backorder'])}
+            options={labelled(['in_stock', 'out_of_stock', 'backorder', 'on_order'])}
         />
         <InputError message={errors.stock_status} />
     </div>
@@ -249,12 +250,14 @@
         <FormSelect
             id="subcategory_id"
             name="subcategory_id"
-            required
-            disabled={!selectedCategoryId}
+            disabled={!selectedCategoryId || availableSubcategories.length === 0}
             bind:value={selectedSubcategoryId}
-            placeholder="Select a subcategory"
+            placeholder={availableSubcategories.length === 0
+                ? 'No subcategories (directly in category)'
+                : 'Select a subcategory'}
             options={toOptions(availableSubcategories)}
         />
+        <p class="text-xs text-muted-foreground">Optional. Leave blank to assign the product directly to its category.</p>
         <InputError message={errors.subcategory_id} />
     </div>
 </div>

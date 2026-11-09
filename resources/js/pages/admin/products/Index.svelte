@@ -62,7 +62,7 @@
         full_description: string | null;
         status: string;
         is_featured: boolean;
-        regular_price: string;
+        regular_price: string | null;
         sale_price: string | null;
         currency: string;
         stock_quantity: number;
@@ -70,7 +70,7 @@
         seo_title: string | null;
         seo_description: string | null;
         category_id: number;
-        subcategory_id: number;
+        subcategory_id: number | null;
         tags: { id: number }[];
         media: MediaItem[];
     };
@@ -223,7 +223,7 @@
             {:else if column.key === 'status'}
                 <Badge variant="outline" class="capitalize">{product.status}</Badge>
             {:else if column.key === 'price'}
-                {product.regular_price}
+                {product.regular_price ?? 'Contact for price'}
             {:else}
                 {product.stock_quantity}
             {/if}

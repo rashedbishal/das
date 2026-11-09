@@ -57,7 +57,7 @@
         full_description: string | null;
         status: string;
         is_featured: boolean;
-        regular_price: string;
+        regular_price: string | null;
         sale_price: string | null;
         currency: string;
         stock_quantity: number;
@@ -67,7 +67,7 @@
         seo_keywords: string | null;
         canonical_url: string | null;
         category_id: number;
-        subcategory_id: number;
+        subcategory_id: number | null;
         tags: { id: number }[];
         media: MediaItem[];
     };

@@ -13,7 +13,7 @@
         short_description: string | null;
         brand: { name: string; slug: string } | null;
         main_image: string | null;
-        regular_price: string;
+        regular_price: string | null;
         sale_price: string | null;
         currency: string;
         stock_status: string;
@@ -95,9 +95,13 @@
                             >{product.currency} {product.regular_price}</span
                         >
                     {:else}
-                        <span class="font-semibold"
-                            >{product.currency} {product.regular_price}</span
-                        >
+                        {#if product.regular_price !== null}
+                            <span class="font-semibold"
+                                >{product.currency} {product.regular_price}</span
+                            >
+                        {:else}
+                            <span class="font-semibold">Contact for price</span>
+                        {/if}
                     {/if}
                 </p>
             </Link>

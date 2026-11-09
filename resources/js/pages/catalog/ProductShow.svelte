@@ -24,8 +24,9 @@
         full_description: string | null;
         highlights: string[] | null;
         specifications: { name: string; value: string }[];
+        variants: { name: string; price: string | null; stock_status: string }[];
         media: MediaItem[];
-        regular_price: string;
+        regular_price: string | null;
         sale_price: string | null;
         currency: string;
         stock_quantity: number;
@@ -159,8 +160,10 @@
                     <span class="ml-2 text-base font-normal text-muted-foreground line-through">
                         {detail.currency} {detail.regular_price}
                     </span>
-                {:else}
+                {:else if detail.regular_price !== null}
                     {detail.currency} {detail.regular_price}
+                {:else}
+                    Contact for price
                 {/if}
             </p>
 
@@ -178,6 +181,16 @@
                         <li>{highlight}</li>
                     {/each}
                 </ul>
+            {/if}
+            {#if detail.variants.length}
+                <section class="mt-6">
+                    <h2 class="mb-2 text-sm font-semibold">Available options</h2>
+                    <ul class="flex flex-wrap gap-2">
+                        {#each detail.variants as variant (variant.name)}
+                            <li class="rounded-md border px-3 py-1.5 text-sm">{variant.name}</li>
+                        {/each}
+                    </ul>
+                </section>
             {/if}
         </div>
     </div>

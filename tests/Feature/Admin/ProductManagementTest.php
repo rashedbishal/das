@@ -38,7 +38,7 @@ test('an admin with products.create can create a product with relations and spec
         ->and($product->specifications)->toHaveCount(1);
 });
 
-test('creating a product requires a category and subcategory', function () {
+test('creating a product requires a category', function () {
     $admin = adminUser(['products.create']);
 
     $response = $this->actingAs($admin)->post(route('admin.products.store'), [
@@ -50,8 +50,28 @@ test('creating a product requires a category and subcategory', function () {
         'stock_status' => 'in_stock',
     ]);
 
-    $response->assertSessionHasErrors(['category_id', 'subcategory_id']);
+    $response->assertSessionHasErrors('category_id');
     expect(Product::query()->where('sku', 'SKU-NOCAT')->exists())->toBeFalse();
+});
+
+test('an admin can create a product directly under a category without a price', function () {
+    $admin = adminUser(['products.create']);
+    $category = Category::factory()->create();
+
+    $response = $this->actingAs($admin)->post(route('admin.products.store'), [
+        'name' => 'Direct Category Product',
+        'sku' => 'SKU-DIRECT',
+        'status' => 'published',
+        'stock_quantity' => 0,
+        'stock_status' => 'on_order',
+        'category_id' => $category->id,
+    ]);
+
+    $response->assertRedirect();
+    $product = Product::query()->where('sku', 'SKU-DIRECT')->firstOrFail();
+    expect($product->category_id)->toBe($category->id)
+        ->and($product->subcategory_id)->toBeNull()
+        ->and($product->regular_price)->toBeNull();
 });
 
 test('creating a product rejects a subcategory that does not belong to the selected category', function () {

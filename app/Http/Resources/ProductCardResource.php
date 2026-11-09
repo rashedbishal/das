@@ -29,7 +29,7 @@ class ProductCardResource extends JsonResource
                 'slug' => $this->brand->slug,
             ] : null),
             'main_image' => $this->mainImage()?->resolvedUrl(),
-            'regular_price' => (string) $this->regular_price,
+            'regular_price' => $this->regular_price !== null ? (string) $this->regular_price : null,
             'sale_price' => $this->sale_price !== null ? (string) $this->sale_price : null,
             'currency' => $this->currency,
             'stock_status' => $this->stock_status,

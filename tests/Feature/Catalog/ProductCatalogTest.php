@@ -23,6 +23,14 @@ test('the public listing never exposes full description, specifications, or seo 
     $response->assertDontSee('SECRET INTERNAL DETAIL');
 });
 
+test('unpriced product cards serialize a null price instead of zero', function () {
+    Product::factory()->published()->create(['regular_price' => null]);
+
+    $response = $this->get(route('catalog.products.index'));
+
+    $response->assertInertia(fn ($page) => $page->where('products.data.0.regular_price', null));
+});
+
 test('guests see an inline login prompt instead of being redirected off a product detail page', function () {
     $product = Product::factory()->published()->create();
 
@@ -63,13 +71,22 @@ test('guests are redirected back to the product after logging in through the mod
 });
 
 test('an authenticated customer can view a published product detail', function () {
-    $product = Product::factory()->published()->create();
+    $product = Product::factory()->published()->create(['regular_price' => null]);
+    $product->variants()->create([
+        'name' => 'SS Pins',
+        'sku' => 'DAS-0001',
+        'price' => null,
+    ]);
     $customer = User::factory()->create();
 
     $response = $this->actingAs($customer)->get(route('catalog.products.show', $product->slug));
 
     $response->assertOk();
-    $response->assertInertia(fn ($page) => $page->where('product.data.sku', $product->sku));
+    $response->assertInertia(fn ($page) => $page
+        ->where('product.data.sku', $product->sku)
+        ->where('product.data.regular_price', null)
+        ->where('product.data.variants.0.name', 'SS Pins')
+        ->where('product.data.variants.0.price', null));
 });
 
 test('an authenticated customer cannot view a draft product detail', function () {

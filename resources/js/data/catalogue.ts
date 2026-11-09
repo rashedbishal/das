@@ -33,6 +33,11 @@ export type ProductMedia = {
 };
 
 export type ProductSpecification = { name: string; value: string };
+export type ProductVariant = {
+    name: string;
+    price: string | null;
+    stockStatus: string;
+};
 
 export type ProductDetail = ProductCard & {
     sku: string | null;
@@ -43,6 +48,7 @@ export type ProductDetail = ProductCard & {
     fullDescription: string | null;
     highlights: string[];
     specifications: ProductSpecification[];
+    variants: ProductVariant[];
     media: ProductMedia[];
     stockQuantity: number | null;
     relatedProducts: ProductCard[];
@@ -89,7 +95,7 @@ type RawProductCard = {
     short_description: string | null;
     brand: ProductBrand | null;
     main_image: string | null;
-    regular_price: string;
+    regular_price: string | null;
     sale_price: string | null;
     currency: string;
     stock_status: string;
@@ -106,6 +112,11 @@ type RawProductDetail = RawProductCard & {
     full_description: string | null;
     highlights: string[] | null;
     specifications: ProductSpecification[];
+    variants: {
+        name: string;
+        price: string | null;
+        stock_status: string;
+    }[];
     media: {
         type: string;
         url: string;
@@ -153,6 +164,11 @@ function mapProductDetail(raw: RawProductDetail): ProductDetail {
         fullDescription: raw.full_description,
         highlights: raw.highlights ?? [],
         specifications: raw.specifications ?? [],
+        variants: (raw.variants ?? []).map((variant) => ({
+            name: variant.name,
+            price: variant.price,
+            stockStatus: variant.stock_status,
+        })),
         media: (raw.media ?? []).map((m) => ({
             type: m.type,
             url: m.url,
@@ -326,7 +342,7 @@ export function formatPrice(product: ProductCard): string {
     const amount = product.salePrice ?? product.regularPrice;
 
     if (amount === null) {
-        return 'Request price';
+        return 'Contact for price';
     }
 
     return new Intl.NumberFormat('en-US', {
@@ -340,6 +356,7 @@ const stockLabels: Record<string, string> = {
     in_stock: 'In stock',
     out_of_stock: 'Out of stock',
     backorder: 'Available on backorder',
+    on_order: 'On order',
 };
 
 export function stockLabel(status: string): string {
