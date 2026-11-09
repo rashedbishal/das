@@ -4,6 +4,8 @@ A CMS-driven product catalog for dental equipment, instruments, and supplies. Th
 
 Built on Laravel 13 + Inertia v3 + Svelte 5 (the `laravel/svelte-starter-kit`), with a versioned JSON API (`/api/v1`) alongside the Inertia-rendered pages for headless/mobile consumption.
 
+For a concise technical handoff and next-phase planning brief, see [docs/current-state-and-next-phase.md](docs/current-state-and-next-phase.md).
+
 ## Stack
 
 - PHP 8.3, Laravel 13.36

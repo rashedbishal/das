@@ -223,6 +223,9 @@
                     {#if p.showStock && p.stockStatus}
                         <span>{stockLabel(p.stockStatus)}</span>
                     {/if}
+                    {#if p.showStock && p.stockQuantity !== null}
+                        <span>Stock: {p.stockQuantity}</span>
+                    {/if}
                 </div>
                 {#if p.shortDescription}
                     <p

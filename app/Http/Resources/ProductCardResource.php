@@ -35,6 +35,7 @@ class ProductCardResource extends JsonResource
             'sale_price' => $this->show_price && $this->sale_price !== null ? (string) $this->sale_price : null,
             'currency' => $this->currency,
             'stock_status' => $this->show_stock ? $this->stock_status : null,
+            'stock_quantity' => $this->show_stock ? $this->stock_quantity : null,
             'is_featured' => $this->is_featured,
         ];
     }

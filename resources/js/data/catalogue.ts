@@ -24,6 +24,7 @@ export type ProductCard = {
     showStock: boolean;
     currency: string;
     stockStatus: string | null;
+    stockQuantity: number | null;
     featured: boolean;
 };
 
@@ -101,6 +102,7 @@ type RawProductCard = {
     sale_price: string | null;
     currency: string;
     stock_status: string | null;
+    stock_quantity: number | null;
     show_price: boolean;
     show_stock: boolean;
     is_featured: boolean;
@@ -127,7 +129,6 @@ type RawProductDetail = RawProductCard & {
         is_main: boolean;
         alt_text: string | null;
     }[];
-    stock_quantity: number | null;
     related_products: RawProductCard[];
 };
 
@@ -155,6 +156,7 @@ function mapProductCard(raw: RawProductCard): ProductCard {
         showStock: raw.show_stock,
         currency: raw.currency,
         stockStatus: raw.stock_status,
+        stockQuantity: raw.stock_quantity,
         featured: raw.is_featured,
     };
 }
@@ -181,7 +183,6 @@ function mapProductDetail(raw: RawProductDetail): ProductDetail {
             isMain: m.is_main,
             altText: m.alt_text,
         })),
-        stockQuantity: raw.stock_quantity,
         relatedProducts: (raw.related_products ?? []).map(mapProductCard),
     };
 }

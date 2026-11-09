@@ -36,6 +36,11 @@
             <h3 class="product-title">{p.name}</h3>
         </Link>
         <p class="product-spec">{p.shortDescription}</p>
+        {#if p.showStock && p.stockQuantity !== null}
+            <p class="mt-2 text-[10px] text-muted-foreground">
+                Stock: {p.stockQuantity}
+            </p>
+        {/if}
         <div
             class="mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-4"
         >

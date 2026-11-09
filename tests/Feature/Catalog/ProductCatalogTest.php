@@ -31,10 +31,24 @@ test('unpriced product cards serialize a null price instead of zero', function (
     $response->assertInertia(fn ($page) => $page->where('products.data.0.regular_price', null));
 });
 
+test('public product cards include the stock count when stock is visible', function () {
+    Product::factory()->published()->create([
+        'stock_quantity' => 9,
+        'show_stock' => true,
+    ]);
+
+    $response = $this->get(route('catalog.products.index'));
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('products.data.0.show_stock', true)
+        ->where('products.data.0.stock_quantity', 9));
+});
+
 test('public product cards do not expose hidden prices or stock status', function () {
     Product::factory()->published()->create([
         'regular_price' => 2500,
         'sale_price' => 2200,
+        'stock_quantity' => 9,
         'stock_status' => 'in_stock',
         'show_price' => false,
         'show_stock' => false,
@@ -47,7 +61,8 @@ test('public product cards do not expose hidden prices or stock status', functio
         ->where('products.data.0.show_stock', false)
         ->where('products.data.0.regular_price', null)
         ->where('products.data.0.sale_price', null)
-        ->where('products.data.0.stock_status', null));
+        ->where('products.data.0.stock_status', null)
+        ->where('products.data.0.stock_quantity', null));
 });
 
 test('public filters do not match hidden price or stock values', function () {
