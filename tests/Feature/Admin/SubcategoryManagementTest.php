@@ -117,3 +117,14 @@ test('customers cannot manage subcategories', function () {
         'name' => 'Electric Handpieces',
     ])->assertForbidden();
 });
+
+test('the admin subcategory page opens the subcategory management tab', function () {
+    $admin = adminUser(['categories.view']);
+
+    $this->actingAs($admin)
+        ->get(route('admin.subcategories.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('admin/categories/Index')
+            ->where('initialTab', 'subcategories'));
+});

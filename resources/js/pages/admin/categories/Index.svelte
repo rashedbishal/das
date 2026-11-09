@@ -50,13 +50,25 @@
         products_count: number;
     };
 
-    let { categories, subcategories }: { categories: CategoryRow[]; subcategories: SubcategoryRow[] } = $props();
+    let {
+        categories,
+        subcategories,
+        initialTab = 'categories',
+    }: {
+        categories: CategoryRow[];
+        subcategories: SubcategoryRow[];
+        initialTab?: 'categories' | 'subcategories';
+    } = $props();
 
     const categoryOptions = $derived(
         categories.map((category) => ({ value: String(category.id), label: category.name })),
     );
 
     let tab = $state<'categories' | 'subcategories'>('categories');
+
+    $effect(() => {
+        tab = initialTab;
+    });
 
     let categorySearch = $state('');
     let subcategorySearch = $state('');
@@ -141,7 +153,7 @@
     }
 </script>
 
-<AppHead title="Category Management" />
+<AppHead title={tab === 'categories' ? 'Category Management' : 'Subcategory Management'} />
 
 {#snippet rowActions(name: string, onEdit: () => void, onDelete: () => void)}
     <Button variant="ghost" size="sm" aria-label="Edit {name}" onclick={onEdit}>

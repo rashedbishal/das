@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Subcategory\StoreSubcategoryRequest;
 use App\Http\Requests\Admin\Subcategory\UpdateSubcategoryRequest;
+use App\Models\Category;
 use App\Models\Subcategory;
 use App\Services\SubcategoryService;
 use Illuminate\Http\RedirectResponse;
@@ -12,10 +13,31 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class SubcategoryController extends Controller
 {
     public function __construct(private readonly SubcategoryService $subcategories) {}
+
+    public function index(): Response
+    {
+        $this->authorize('viewAny', Subcategory::class);
+
+        return Inertia::render('admin/categories/Index', [
+            'categories' => Category::query()
+                ->withCount(['subcategories', 'products'])
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(),
+            'subcategories' => Subcategory::query()
+                ->with('category:id,name')
+                ->withCount('products')
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(),
+            'initialTab' => 'subcategories',
+        ]);
+    }
 
     public function store(StoreSubcategoryRequest $request): RedirectResponse
     {

@@ -31,6 +31,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('categories', CategoryController::class)
         ->only(['index', 'store', 'update', 'destroy']);
     Route::post('categories/bulk', [CategoryController::class, 'bulk'])->name('categories.bulk');
+    Route::get('subcategories', [SubcategoryController::class, 'index'])->name('subcategories.index');
     Route::post('subcategories/bulk', [SubcategoryController::class, 'bulk'])->name('subcategories.bulk');
 
     Route::resource('subcategories', SubcategoryController::class)

@@ -47,6 +47,7 @@
             ? [
                   { title: 'Products', href: '/admin/products', icon: Package },
                   { title: 'Category Management', href: '/admin/categories', icon: Tags },
+                  { title: 'Subcategories', href: '/admin/subcategories', icon: Tags },
                   { title: 'Brands', href: '/admin/brands', icon: Tags },
                   { title: 'Tags', href: '/admin/tags', icon: Tags },
                   { title: 'Homepage Banners', href: '/admin/homepage-sections', icon: Images },

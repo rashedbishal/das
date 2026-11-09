@@ -10,6 +10,7 @@
     import { Form, Link, router } from '@inertiajs/svelte';
     import Pencil from '@lucide/svelte/icons/pencil';
     import { untrack } from 'svelte';
+    import ImageIcon from '@lucide/svelte/icons/image';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
     import BulkActions from '@/components/dashboard/BulkActions.svelte';
@@ -204,7 +205,19 @@
     >
         {#snippet cell(product, column)}
             {#if column.key === 'name'}
-                {product.name}
+                {@const image =
+                    product.media.find((item) => item.type === 'image' && item.is_main) ??
+                    product.media.find((item) => item.type === 'image')}
+                <div class="flex min-w-0 items-center gap-3">
+                    <div class="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
+                        {#if image?.url}
+                            <img src={image.url} alt={product.name} class="size-full object-cover" />
+                        {:else}
+                            <ImageIcon class="size-4 text-muted-foreground" />
+                        {/if}
+                    </div>
+                    <span class="min-w-0 break-words">{product.name}</span>
+                </div>
             {:else if column.key === 'sku'}
                 <span class="font-mono text-xs">{product.sku}</span>
             {:else if column.key === 'status'}
