@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ContactEnquirySubmissionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PublicSettingsController;
@@ -36,6 +37,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::get('contact-widgets', [PublicSettingsController::class, 'widgets'])->name('contact-widgets');
+Route::post('contact/enquiries', [ContactEnquirySubmissionController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('contact.enquiries.store');
 
 // Prefixed so the real catalog doesn't collide with the storefront demo's /products and /categories URLs.
 Route::prefix('catalog')->name('catalog.')->group(function () {

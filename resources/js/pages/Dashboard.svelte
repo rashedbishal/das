@@ -17,6 +17,7 @@
     import Building2 from '@lucide/svelte/icons/building-2';
     import ClipboardList from '@lucide/svelte/icons/clipboard-list';
     import LayoutGrid from '@lucide/svelte/icons/layout-grid';
+    import Mail from '@lucide/svelte/icons/mail';
     import Package from '@lucide/svelte/icons/package';
     import PackageSearch from '@lucide/svelte/icons/package-search';
     import Settings from '@lucide/svelte/icons/settings';
@@ -33,6 +34,7 @@
     import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
     import { index as adminBrands } from '@/routes/admin/brands';
     import { index as adminCategories } from '@/routes/admin/categories';
+    import { index as adminEnquiries } from '@/routes/admin/enquiries';
     import { create as createProduct, index as adminProducts } from '@/routes/admin/products';
     import { edit as adminSettings } from '@/routes/admin/settings';
     import { index as adminTags } from '@/routes/admin/tags';
@@ -234,6 +236,11 @@
                     {#if permissions?.tags}
                         <Link href={adminTags().url} class={buttonVariants({ variant: 'ghost', class: 'justify-start' })}>
                             <Tags class="size-4" /> Manage tags
+                        </Link>
+                    {/if}
+                    {#if permissions?.enquiries}
+                        <Link href={adminEnquiries().url} class={buttonVariants({ variant: 'ghost', class: 'justify-start' })}>
+                            <Mail class="size-4" /> Contact enquiries
                         </Link>
                     {/if}
                     {#if permissions?.admins || permissions?.customers}

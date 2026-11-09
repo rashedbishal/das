@@ -16,7 +16,7 @@
 <Modal
     bind:open
     title="Let’s talk about your equipment."
-    description="Enquire about {product}. This is a disconnected demonstration form."
+    description="Send our team an enquiry about {product}."
     class="max-h-[90dvh] max-w-xl overflow-y-auto"
 >
     <EnquiryForm {product} />

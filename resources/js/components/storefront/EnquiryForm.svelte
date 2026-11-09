@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { page } from '@inertiajs/svelte';
+    import { Form } from '@inertiajs/svelte';
     import ArrowRight from '@lucide/svelte/icons/arrow-right';
     import MessageSquare from '@lucide/svelte/icons/message-square';
-    import Phone from '@lucide/svelte/icons/phone';
     import { fetchProducts, type ProductCard } from '@/data/catalogue';
-    import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
+    import InputError from '@/components/InputError.svelte';
     import Button from './Button.svelte';
+    import { store as storeEnquiry } from '@/routes/contact/enquiries';
 
     let { product = '' }: { product?: string } = $props();
 
@@ -14,110 +14,109 @@
 
     fetchProducts({}, 1, 100).then((result) => (products = result.items));
 
-    const phone = $derived(resolvePhone(page.props.contactWidgets.whatsapp));
 </script>
 
 {#if submitted}
     <div role="status" class="rounded-md border border-primary/20 bg-accent p-6">
         <MessageSquare class="mb-4 size-7 text-primary" />
-        <h3 class="text-lg">This demo enquiry has not been sent.</h3>
+        <h3 class="text-lg">Thank you for reaching out.</h3>
         <p class="mt-3 text-xs leading-7 text-muted-foreground">
-            No information has been saved or delivered. To contact a real
-            business, replace these demo details first.
+            Your enquiry has been received. Our team will be in touch using the
+            contact details you provided.
         </p>
-        <div class="mt-5 flex flex-col gap-3 text-sm">
-            <a
-                class="flex items-center gap-2 text-primary"
-                href="tel:{phone.tel}"
-            >
-                <Phone class="size-4" />
-                {phone.display}
-            </a>
-            <a class="text-primary" href="mailto:{FALLBACK_CONTACT.email}">
-                {FALLBACK_CONTACT.email}
-            </a>
-        </div>
-        <Button variant="outline" class="mt-6" onclick={() => (submitted = false)}>
-            Back to enquiry
+        <Button
+            variant="outline"
+            class="mt-6"
+            onclick={() => (submitted = false)}
+        >
+            Send another enquiry
         </Button>
     </div>
 {:else}
-    <form
-        onsubmit={(event) => {
-            event.preventDefault();
-            submitted = true;
-        }}
+    <Form
+        {...storeEnquiry.form()}
         class="space-y-5"
+        onSuccess={() => (submitted = true)}
     >
-        <div class="grid gap-5 sm:grid-cols-2">
-            <label>
-                <span class="form-label">Your name *</span>
-                <input
-                    name="name"
-                    required
-                    autocomplete="name"
-                    class="field"
-                    placeholder="Full name"
-                />
+        {#snippet children({ errors: formErrors, processing })}
+            <div class="grid gap-5 sm:grid-cols-2">
+                <label>
+                    <span class="form-label">Your name *</span>
+                    <input
+                        name="name"
+                        required
+                        maxlength="120"
+                        autocomplete="name"
+                        class="field"
+                        placeholder="Full name"
+                    />
+                    <InputError message={formErrors.name} />
+                </label>
+                <label>
+                    <span class="form-label">Clinic or business</span>
+                    <input
+                        name="business_name"
+                        maxlength="255"
+                        autocomplete="organization"
+                        class="field"
+                        placeholder="Business name (optional)"
+                    />
+                    <InputError message={formErrors.business_name} />
+                </label>
+                <label>
+                    <span class="form-label">Phone number *</span>
+                    <input
+                        name="phone"
+                        required
+                        type="tel"
+                        maxlength="40"
+                        autocomplete="tel"
+                        class="field"
+                        placeholder="Your phone number"
+                    />
+                    <InputError message={formErrors.phone} />
+                </label>
+                <label>
+                    <span class="form-label">Email address</span>
+                    <input
+                        name="email"
+                        type="email"
+                        maxlength="255"
+                        autocomplete="email"
+                        class="field"
+                        placeholder="Email (optional)"
+                    />
+                    <InputError message={formErrors.email} />
+                </label>
+            </div>
+            <label class="block">
+                <span class="form-label">Product of interest</span>
+                <select name="product_name" class="field" value={product}>
+                    <option value="">General equipment enquiry</option>
+                    {#each products as p (p.id)}
+                        <option value={p.name}>{p.name}</option>
+                    {/each}
+                </select>
+                <InputError message={formErrors.product_name} />
             </label>
-            <label>
-                <span class="form-label">Clinic or business</span>
-                <input
-                    name="clinic"
-                    autocomplete="organization"
-                    class="field"
-                    placeholder="Business name (optional)"
-                />
+            <label class="block">
+                <span class="form-label">How can we help?</span>
+                <textarea
+                    name="message"
+                    maxlength="5000"
+                    class="field min-h-24"
+                    placeholder="Tell us a little about your equipment needs…"
+                    rows={3}
+                ></textarea>
+                <InputError message={formErrors.message} />
             </label>
-            <label>
-                <span class="form-label">Phone number *</span>
-                <input
-                    name="phone"
-                    required
-                    type="tel"
-                    autocomplete="tel"
-                    class="field"
-                    placeholder="Your phone number"
-                />
-            </label>
-            <label>
-                <span class="form-label">Email address</span>
-                <input
-                    name="email"
-                    type="email"
-                    autocomplete="email"
-                    class="field"
-                    placeholder="Email (optional)"
-                />
-            </label>
-        </div>
-        <label class="block">
-            <span class="form-label">Product of interest</span>
-            <select name="product" class="field" value={product}>
-                <option value="">General equipment enquiry</option>
-                {#each products as p (p.id)}
-                    <option value={p.name}>{p.name}</option>
-                {/each}
-            </select>
-        </label>
-        <label class="block">
-            <span class="form-label">How can we help?</span>
-            <textarea
-                name="message"
-                class="field min-h-24"
-                placeholder="Tell us a little about your equipment needs…"
-                rows={3}
-            ></textarea>
-        </label>
-        <div
-            class="border-l-2 border-primary pl-3 text-[11px] leading-6 text-muted-foreground"
-        >
-            Demo form only. Your information will not be sent or stored. Contact
-            details shown are placeholders.
-        </div>
-        <Button type="submit" class="h-11 px-6">
-            Preview enquiry
-            <ArrowRight class="size-4" />
-        </Button>
-    </form>
+            <p class="text-[11px] leading-6 text-muted-foreground">
+                Your details and enquiry will be stored for the team to review.
+            </p>
+            <Button type="submit" class="h-11 px-6" disabled={processing}>
+                {processing ? 'Sending…' : 'Send enquiry'}
+                <ArrowRight class="size-4" />
+            </Button>
+        {/snippet}
+    </Form>
 {/if}

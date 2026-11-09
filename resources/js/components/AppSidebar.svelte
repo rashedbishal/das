@@ -2,6 +2,7 @@
     import { Link, page, router } from '@inertiajs/svelte';
     import Images from '@lucide/svelte/icons/images';
     import LayoutGrid from '@lucide/svelte/icons/layout-grid';
+    import Mail from '@lucide/svelte/icons/mail';
     import Package from '@lucide/svelte/icons/package';
     import Settings from '@lucide/svelte/icons/settings';
     import Tags from '@lucide/svelte/icons/tags';
@@ -51,6 +52,7 @@
                   { title: 'Brands', href: '/admin/brands', icon: Tags },
                   { title: 'Tags', href: '/admin/tags', icon: Tags },
                   { title: 'Homepage Banners', href: '/admin/homepage-sections', icon: Images },
+                  { title: 'Enquiries', href: '/admin/enquiries', icon: Mail },
                   { title: 'Users & Roles', href: '/admin/users', icon: Users },
                   { title: 'Settings', href: '/admin/settings', icon: Settings },
               ]

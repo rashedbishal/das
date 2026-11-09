@@ -31,6 +31,7 @@ class DashboardController extends Controller
             'categories' => $user->hasPermission('categories.view'),
             'brands' => $user->hasPermission('brands.view'),
             'tags' => $user->hasPermission('tags.view'),
+            'enquiries' => $user->hasPermission('enquiries.view') || $user->hasPermission('enquiries.manage'),
             'customers' => $user->hasPermission('customers.view'),
             'admins' => $user->hasPermission('admins.view'),
             'settings' => $user->hasPermission('settings.view'),

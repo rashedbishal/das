@@ -32,7 +32,7 @@
 
 <PageMeta
     title="Contact & Product Enquiries"
-    description="Talk to DENTORA about your dental equipment requirements. Explore demonstration contact details and a disconnected enquiry form."
+    description="Talk to DENTORA about your dental equipment requirements and send a product enquiry."
 />
 
 <section class="container-wide pt-10 pb-20">
@@ -87,7 +87,7 @@
         <div class="lg:border-l lg:pl-12">
             <h2 class="mb-3 text-xl">Tell us what you’re looking for.</h2>
             <p class="mb-7 text-xs leading-7 text-muted-foreground">
-                Preview a product enquiry below. Nothing is sent or saved.
+                Send us your details and our team will follow up about your requirements.
             </p>
             <EnquiryForm />
         </div>

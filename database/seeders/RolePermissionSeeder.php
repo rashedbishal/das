@@ -18,6 +18,7 @@ class RolePermissionSeeder extends Seeder
         'tags' => ['tags.view', 'tags.manage'],
         'media' => ['media.manage'],
         'customers' => ['customers.view', 'customers.manage'],
+        'enquiries' => ['enquiries.view', 'enquiries.manage'],
         'admins' => ['admins.view', 'admins.manage'],
         'roles' => ['roles.view', 'roles.manage'],
         'settings' => ['settings.view', 'settings.manage'],
@@ -38,12 +39,12 @@ class RolePermissionSeeder extends Seeder
             'products.view', 'products.update', 'categories.view', 'categories.manage',
             'brands.view', 'brands.manage', 'tags.view', 'tags.manage', 'media.manage',
         ],
-        'content-manager' => ['content.manage', 'seo.manage', 'settings.view'],
-        'customer-manager' => ['customers.view', 'customers.manage'],
+        'content-manager' => ['content.manage', 'seo.manage', 'settings.view', 'enquiries.view', 'enquiries.manage'],
+        'customer-manager' => ['customers.view', 'customers.manage', 'enquiries.view', 'enquiries.manage'],
         'seo-manager' => ['seo.manage', 'products.view', 'categories.view'],
         'read-only-admin' => [
             'products.view', 'categories.view', 'brands.view', 'tags.view',
-            'customers.view', 'admins.view', 'roles.view', 'settings.view', 'activity_logs.view',
+            'customers.view', 'enquiries.view', 'admins.view', 'roles.view', 'settings.view', 'activity_logs.view',
         ],
     ];
 

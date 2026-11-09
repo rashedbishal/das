@@ -30,13 +30,13 @@ Customers are expected to contact the business directly.
 
 ## 3. Data model
 
-| Area | Main records and relationships |
-|---|---|
-| Identity and access | `users` (admin/customer, active flag, optional phone and role), `roles`, `permissions`, and role-permission assignments |
-| Catalog taxonomy | `categories` → optional `subcategories`; products belong to one category and can optionally belong to a subcategory |
-| Products | `products` with SKU, slug, brand, descriptions, highlights, draft/published/archived status, featured flag, nullable regular/sale prices, currency, stock quantity/status, and SEO fields |
-| Product content | `product_variants` (options such as shade or size), `product_specifications` (name/value rows), `product_media` (uploaded or URL media), tags, and related-product links |
-| Site content/config | `homepage_sections` (including scheduled banners), grouped JSON `settings`, and `admin_activity_logs` table |
+| Area                | Main records and relationships                                                                                                                                                            |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity and access | `users` (admin/customer, active flag, optional phone and role), `roles`, `permissions`, and role-permission assignments                                                                   |
+| Catalog taxonomy    | `categories` → optional `subcategories`; products belong to one category and can optionally belong to a subcategory                                                                       |
+| Products            | `products` with SKU, slug, brand, descriptions, highlights, draft/published/archived status, featured flag, nullable regular/sale prices, currency, stock quantity/status, and SEO fields |
+| Product content     | `product_variants` (options such as shade or size), `product_specifications` (name/value rows), `product_media` (uploaded or URL media), tags, and related-product links                  |
+| Site content/config | `homepage_sections` (including scheduled banners), grouped JSON `settings`, and `admin_activity_logs` table                                                                               |
 
 Product price and stock visibility are independent product-level booleans.
 Hidden values remain stored but are omitted from public product data and
@@ -61,8 +61,11 @@ quantity visibility and storefront display are currently product-level.
   `/catalog`. These are parallel implementations and should be considered for
   consolidation or clearly assigned responsibilities.
 - Contact widgets, phone links, and quote/enquiry UI are present. **The quote
-  enquiry is explicitly a disconnected demo and does not send or persist a
-  lead.** No checkout or order workflow is implemented.
+  and contact forms now persist submissions for CMS review in a paginated
+  enquiry inbox. Admins with the appropriate permission can mark messages
+  read/unread or permanently delete them, individually or in bulk. Submissions
+  are rate-limited; they are not automatically emailed or sent to a CRM. No
+  checkout or order workflow is implemented.
 
 ## 5. CMS and security capabilities
 
@@ -113,9 +116,9 @@ are configured in the app.
 
 ### Confirm before implementation
 
-1. **Sales workflow:** remain a catalog with phone/WhatsApp contact, or capture
-   enquiries as leads? If leads are needed, decide delivery (email/CRM), storage,
-   notifications, assignment, consent, spam protection, and retention.
+1. **Sales workflow:** basic enquiry capture and a CMS inbox are implemented.
+   Decide whether to add email/CRM delivery, assignment, response tracking,
+   consent/privacy language, stronger spam protection, and a retention policy.
 2. **Inventory semantics:** is stock count authoritative and current? Should
    stock be tracked per variant, or only per product? Should public users see
    exact counts, availability labels, or both?
@@ -134,8 +137,9 @@ are configured in the app.
   support these data, but ongoing maintenance needs a defined workflow.
 - The two public catalog implementations can diverge. Decide which is canonical
   before adding substantial features.
-- Quote/enquiry is a non-functional demo. There is no lead inbox, CRM handoff,
-  or persisted enquiry record.
+- There is no email notification, CRM integration, assignment workflow, or
+  retention policy for enquiries. Admins need to check the inbox and respond
+  directly via the submitted phone/email details.
 - Confirm production infrastructure and operations: hosting, database choice,
   image storage/backups, mail delivery, queue worker, cache, monitoring,
   deployment/migration rollback, and database/media restore tests.

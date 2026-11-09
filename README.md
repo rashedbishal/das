@@ -91,6 +91,10 @@ WhatsApp/Messenger config is shared to every Inertia page as `contactWidgets` an
 
 The CMS list screens support selecting visible rows (up to 100 per request). Products can be published, moved to draft, have customer-facing price or stock visibility toggled, or be deleted. Hidden price and stock fields are omitted from public product responses and filters while their values remain stored for later display. Categories and subcategories, brands, and homepage sections can be activated, deactivated, or deleted; tags can be deleted. In **Users & Roles**, admins can be deactivated, reactivated, or deleted, customers can be deactivated or reactivated, and non-system roles can be deleted. Existing permission, protected-account, and relationship constraints also apply to bulk actions.
 
+## Contact Enquiries
+
+The public contact and product-enquiry forms save submissions in the `contact_enquiries` table. Admins with `enquiries.view` can review the paginated inbox; admins with `enquiries.manage` can mark submissions read/unread and permanently delete them, individually or in bulk (up to 100 selected records). The default content/customer manager roles receive manage access, while read-only admins can view. The public submission endpoint is throttled to five requests per minute per client. Submissions are stored for CMS review; automatic email or CRM delivery is not configured.
+
 ## API Reference (`/api/v1`)
 
 All admin endpoints require the `auth:sanctum` + `admin` middleware and the policy-gated permission named in parentheses.

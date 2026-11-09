@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ContactEnquiryController;
 use App\Http\Controllers\Admin\HomepageSectionController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductMediaController;
@@ -28,6 +29,10 @@ Route::middleware('guest')->prefix('admin')->name('admin.')->group(function () {
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::post('enquiries/bulk', [ContactEnquiryController::class, 'bulk'])->name('enquiries.bulk');
+    Route::resource('enquiries', ContactEnquiryController::class)
+        ->only(['index', 'update', 'destroy']);
+
     Route::resource('categories', CategoryController::class)
         ->only(['index', 'store', 'update', 'destroy']);
     Route::post('categories/bulk', [CategoryController::class, 'bulk'])->name('categories.bulk');
