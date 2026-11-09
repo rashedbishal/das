@@ -220,7 +220,9 @@
                         <span>Model: {p.modelNumber}</span>
                         <span>•</span>
                     {/if}
-                    <span>{stockLabel(p.stockStatus)}</span>
+                    {#if p.showStock && p.stockStatus}
+                        <span>{stockLabel(p.stockStatus)}</span>
+                    {/if}
                 </div>
                 {#if p.shortDescription}
                     <p
@@ -233,7 +235,8 @@
                     <span class="font-medium text-foreground">Delivery:</span>
                     {page.props.siteSettings.deliveryNote}
                 </p>
-                <div class="mt-6">
+                {#if p.showPrice}
+                    <div class="mt-6">
                     <div class="text-[27px] font-semibold">
                         {p.regularPrice !== null || p.salePrice !== null
                             ? formatPrice(p)
@@ -252,7 +255,8 @@
                             practice.
                         </span>
                     {/if}
-                </div>
+                    </div>
+                {/if}
                 <ul class="my-7 space-y-3">
                     {#each p.highlights as f (f)}
                         <li class="flex items-center gap-3 text-xs">

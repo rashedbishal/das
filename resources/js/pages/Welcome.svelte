@@ -14,6 +14,7 @@
         main_image: string | null;
         regular_price: string | null;
         sale_price: string | null;
+        show_price: boolean;
         currency: string;
     };
 
@@ -102,13 +103,15 @@
                         {/if}
                     </div>
                     <h3 class="font-medium group-hover:underline">{product.name}</h3>
-                    <p class="mt-1 text-sm font-semibold">
+                    {#if product.show_price}
+                        <p class="mt-1 text-sm font-semibold">
                         {#if product.sale_price ?? product.regular_price}
                             {product.currency} {product.sale_price ?? product.regular_price}
                         {:else}
                             Contact for price
                         {/if}
-                    </p>
+                        </p>
+                    {/if}
                 </Link>
             {:else}
                 <p class="col-span-full text-muted-foreground">

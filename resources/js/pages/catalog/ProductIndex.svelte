@@ -15,6 +15,8 @@
         main_image: string | null;
         regular_price: string | null;
         sale_price: string | null;
+        show_price: boolean;
+        show_stock: boolean;
         currency: string;
         stock_status: string;
         is_featured: boolean;
@@ -86,7 +88,8 @@
                 <h3 class="font-medium group-hover:underline">
                     {product.name}
                 </h3>
-                <p class="mt-1 text-sm">
+                {#if product.show_price}
+                    <p class="mt-1 text-sm">
                     {#if product.sale_price}
                         <span class="font-semibold"
                             >{product.currency} {product.sale_price}</span
@@ -103,7 +106,8 @@
                             <span class="font-semibold">Contact for price</span>
                         {/if}
                     {/if}
-                </p>
+                    </p>
+                {/if}
             </Link>
         {:else}
             <p class="col-span-full text-muted-foreground">

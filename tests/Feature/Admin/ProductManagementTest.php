@@ -34,8 +34,34 @@ test('an admin with products.create can create a product with relations and spec
     expect($product->created_by)->toBe($admin->id)
         ->and($product->category_id)->toBe($category->id)
         ->and($product->subcategory_id)->toBe($subcategory->id)
+        ->and($product->show_price)->toBeTrue()
+        ->and($product->show_stock)->toBeTrue()
         ->and($product->tags->pluck('id'))->toContain($tag->id)
         ->and($product->specifications)->toHaveCount(1);
+});
+
+test('an admin can save product price and stock visibility settings', function () {
+    $admin = adminUser(['products.create']);
+    $category = Category::factory()->create();
+
+    $response = $this->actingAs($admin)->post(route('admin.products.store'), [
+        'name' => 'Hidden Price and Stock Product',
+        'sku' => 'SKU-HIDDEN',
+        'status' => 'published',
+        'regular_price' => 1000,
+        'stock_quantity' => 7,
+        'stock_status' => 'in_stock',
+        'show_price' => '0',
+        'show_stock' => '0',
+        'category_id' => $category->id,
+    ]);
+
+    $response->assertRedirect();
+    $product = Product::query()->where('sku', 'SKU-HIDDEN')->firstOrFail();
+    expect($product->show_price)->toBeFalse()
+        ->and($product->show_stock)->toBeFalse()
+        ->and($product->regular_price)->toBe('1000.00')
+        ->and($product->stock_quantity)->toBe(7);
 });
 
 test('creating a product requires a category', function () {
@@ -195,6 +221,56 @@ test('an admin can publish selected products in bulk', function () {
         expect($product->fresh()->status)->toBe('published')
             ->and($product->fresh()->published_at)->not->toBeNull();
     }
+});
+
+test('an admin can change selected products price and stock visibility in bulk', function () {
+    $admin = adminUser(['products.update']);
+    $products = Product::factory()->count(2)->create([
+        'regular_price' => 1200,
+        'stock_quantity' => 8,
+        'show_price' => true,
+        'show_stock' => true,
+    ]);
+
+    foreach (['hide_price', 'hide_stock'] as $action) {
+        $response = $this->actingAs($admin)->post(route('admin.products.bulk'), [
+            'ids' => $products->modelKeys(),
+            'action' => $action,
+        ]);
+        $response->assertRedirect(route('admin.products.index'));
+    }
+
+    foreach ($products as $product) {
+        expect($product->fresh()->show_price)->toBeFalse()
+            ->and($product->fresh()->show_stock)->toBeFalse()
+            ->and($product->fresh()->regular_price)->toBe('1200.00')
+            ->and($product->fresh()->stock_quantity)->toBe(8);
+    }
+
+    foreach (['show_price', 'show_stock'] as $action) {
+        $this->actingAs($admin)->post(route('admin.products.bulk'), [
+            'ids' => $products->modelKeys(),
+            'action' => $action,
+        ])->assertRedirect(route('admin.products.index'));
+    }
+
+    foreach ($products as $product) {
+        expect($product->fresh()->show_price)->toBeTrue()
+            ->and($product->fresh()->show_stock)->toBeTrue();
+    }
+});
+
+test('bulk product visibility changes require products.update permission', function () {
+    $admin = adminUser(['products.publish']);
+    $product = Product::factory()->create(['show_price' => true]);
+
+    $response = $this->actingAs($admin)->post(route('admin.products.bulk'), [
+        'ids' => [$product->id],
+        'action' => 'hide_price',
+    ]);
+
+    $response->assertForbidden();
+    expect($product->fresh()->show_price)->toBeTrue();
 });
 
 test('bulk product deletion requires delete permission for every selected product', function () {

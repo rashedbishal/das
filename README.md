@@ -87,7 +87,7 @@ WhatsApp/Messenger config is shared to every Inertia page as `contactWidgets` an
 
 ## Admin Bulk Actions
 
-The CMS list screens support selecting visible rows (up to 100 per request). Products can be published, moved to draft, or deleted; categories and subcategories, brands, and homepage sections can be activated, deactivated, or deleted; tags can be deleted. In **Users & Roles**, admins can be deactivated, reactivated, or deleted, customers can be deactivated or reactivated, and non-system roles can be deleted. Existing permission, protected-account, and relationship constraints also apply to bulk actions.
+The CMS list screens support selecting visible rows (up to 100 per request). Products can be published, moved to draft, have customer-facing price or stock visibility toggled, or be deleted. Hidden price and stock fields are omitted from public product responses and filters while their values remain stored for later display. Categories and subcategories, brands, and homepage sections can be activated, deactivated, or deleted; tags can be deleted. In **Users & Roles**, admins can be deactivated, reactivated, or deleted, customers can be deactivated or reactivated, and non-system roles can be deleted. Existing permission, protected-account, and relationship constraints also apply to bulk actions.
 
 ## API Reference (`/api/v1`)
 

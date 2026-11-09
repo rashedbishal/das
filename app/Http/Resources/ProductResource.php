@@ -27,6 +27,8 @@ class ProductResource extends JsonResource
             'model_number' => $this->model_number,
             'status' => $this->status,
             'is_featured' => $this->is_featured,
+            'show_price' => $this->show_price,
+            'show_stock' => $this->show_stock,
             'brand' => $this->whenLoaded('brand', fn () => $this->brand ? [
                 'name' => $this->brand->name,
                 'slug' => $this->brand->slug,
@@ -58,14 +60,14 @@ class ProductResource extends JsonResource
                 ->values()
                 ->map(fn ($variant) => [
                     'name' => $variant->name,
-                    'price' => $variant->price !== null ? (string) $variant->price : null,
-                    'stock_status' => $variant->stock_status,
+                    'price' => $this->show_price && $variant->price !== null ? (string) $variant->price : null,
+                    'stock_status' => $this->show_stock ? $variant->stock_status : null,
                 ])),
-            'regular_price' => $this->regular_price !== null ? (string) $this->regular_price : null,
-            'sale_price' => $this->sale_price !== null ? (string) $this->sale_price : null,
+            'regular_price' => $this->show_price && $this->regular_price !== null ? (string) $this->regular_price : null,
+            'sale_price' => $this->show_price && $this->sale_price !== null ? (string) $this->sale_price : null,
             'currency' => $this->currency,
-            'stock_quantity' => $this->stock_quantity,
-            'stock_status' => $this->stock_status,
+            'stock_quantity' => $this->show_stock ? $this->stock_quantity : null,
+            'stock_status' => $this->show_stock ? $this->stock_status : null,
             'seo' => [
                 'title' => $this->seo_title,
                 'description' => $this->seo_description,

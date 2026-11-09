@@ -19,6 +19,8 @@
         full_description: string | null;
         status: string;
         is_featured: boolean;
+        show_price: boolean;
+        show_stock: boolean;
         regular_price: string | null;
         sale_price: string | null;
         currency: string;
@@ -59,6 +61,8 @@
 
     let selectedCategoryId = $state(untrack(() => (product ? String(product.category_id) : '')));
     let selectedSubcategoryId = $state(untrack(() => (product?.subcategory_id ? String(product.subcategory_id) : '')));
+    let showPrice = $state(untrack(() => product?.show_price ?? true));
+    let showStock = $state(untrack(() => product?.show_stock ?? true));
     const availableSubcategories = $derived(
         subcategories.filter((subcategory) => String(subcategory.category_id) === selectedCategoryId),
     );
@@ -226,6 +230,30 @@
         <InputError message={errors.status} />
     </div>
 </div>
+
+<fieldset class="grid gap-3 rounded-md border p-4">
+    <legend class="px-1 text-sm font-medium">Storefront visibility</legend>
+    <input type="hidden" name="show_price" value={showPrice ? '1' : '0'} />
+    <label class="flex items-center gap-2 text-sm">
+        <input
+            type="checkbox"
+            class="accent-primary"
+            checked={showPrice}
+            onchange={(event) => (showPrice = event.currentTarget.checked)}
+        />
+        Show price to customers
+    </label>
+    <input type="hidden" name="show_stock" value={showStock ? '1' : '0'} />
+    <label class="flex items-center gap-2 text-sm">
+        <input
+            type="checkbox"
+            class="accent-primary"
+            checked={showStock}
+            onchange={(event) => (showStock = event.currentTarget.checked)}
+        />
+        Show stock status and quantity to customers
+    </label>
+</fieldset>
 
 <label class="flex items-center gap-2 text-sm">
     <input type="checkbox" name="is_featured" value="1" checked={product?.is_featured ?? false} />

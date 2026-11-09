@@ -31,6 +31,46 @@ test('unpriced product cards serialize a null price instead of zero', function (
     $response->assertInertia(fn ($page) => $page->where('products.data.0.regular_price', null));
 });
 
+test('public product cards do not expose hidden prices or stock status', function () {
+    Product::factory()->published()->create([
+        'regular_price' => 2500,
+        'sale_price' => 2200,
+        'stock_status' => 'in_stock',
+        'show_price' => false,
+        'show_stock' => false,
+    ]);
+
+    $response = $this->get(route('catalog.products.index'));
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('products.data.0.show_price', false)
+        ->where('products.data.0.show_stock', false)
+        ->where('products.data.0.regular_price', null)
+        ->where('products.data.0.sale_price', null)
+        ->where('products.data.0.stock_status', null));
+});
+
+test('public filters do not match hidden price or stock values', function () {
+    Product::factory()->published()->create([
+        'name' => 'Hidden values',
+        'regular_price' => 100,
+        'stock_status' => 'in_stock',
+        'show_price' => false,
+        'show_stock' => false,
+    ]);
+    Product::factory()->published()->create([
+        'name' => 'Visible values',
+        'regular_price' => 100,
+        'stock_status' => 'in_stock',
+    ]);
+
+    $byPrice = $this->get(route('catalog.products.index', ['max_price' => 100]));
+    $byPrice->assertInertia(fn ($page) => $page->where('products.total', 1));
+
+    $byStock = $this->get(route('catalog.products.index', ['stock_status' => 'in_stock']));
+    $byStock->assertInertia(fn ($page) => $page->where('products.total', 1));
+});
+
 test('guests see an inline login prompt instead of being redirected off a product detail page', function () {
     $product = Product::factory()->published()->create();
 
@@ -71,7 +111,14 @@ test('guests are redirected back to the product after logging in through the mod
 });
 
 test('an authenticated customer can view a published product detail', function () {
-    $product = Product::factory()->published()->create(['regular_price' => null]);
+    $product = Product::factory()->published()->create([
+        'regular_price' => 2500,
+        'sale_price' => 2200,
+        'stock_quantity' => 9,
+        'stock_status' => 'in_stock',
+        'show_price' => false,
+        'show_stock' => false,
+    ]);
     $product->variants()->create([
         'name' => 'SS Pins',
         'sku' => 'DAS-0001',
@@ -85,8 +132,14 @@ test('an authenticated customer can view a published product detail', function (
     $response->assertInertia(fn ($page) => $page
         ->where('product.data.sku', $product->sku)
         ->where('product.data.regular_price', null)
+        ->where('product.data.sale_price', null)
+        ->where('product.data.stock_quantity', null)
+        ->where('product.data.stock_status', null)
+        ->where('product.data.show_price', false)
+        ->where('product.data.show_stock', false)
         ->where('product.data.variants.0.name', 'SS Pins')
-        ->where('product.data.variants.0.price', null));
+        ->where('product.data.variants.0.price', null)
+        ->where('product.data.variants.0.stock_status', null));
 });
 
 test('an authenticated customer cannot view a draft product detail', function () {

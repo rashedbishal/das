@@ -57,15 +57,15 @@ class ProductService
         }
 
         if (array_key_exists('min_price', $filters) && $filters['min_price'] !== null) {
-            $query->where('regular_price', '>=', $filters['min_price']);
+            $query->where('show_price', true)->where('regular_price', '>=', $filters['min_price']);
         }
 
         if (array_key_exists('max_price', $filters) && $filters['max_price'] !== null) {
-            $query->where('regular_price', '<=', $filters['max_price']);
+            $query->where('show_price', true)->where('regular_price', '<=', $filters['max_price']);
         }
 
         if (! empty($filters['stock_status'])) {
-            $query->where('stock_status', $filters['stock_status']);
+            $query->where('show_stock', true)->where('stock_status', $filters['stock_status']);
         }
 
         if (! empty($filters['model_number'])) {
@@ -77,8 +77,8 @@ class ProductService
         }
 
         match ($filters['sort'] ?? 'newest') {
-            'price_asc' => $query->orderBy('regular_price')->orderBy('id'),
-            'price_desc' => $query->orderByDesc('regular_price')->orderBy('id'),
+            'price_asc' => $query->orderByRaw('CASE WHEN show_price THEN regular_price END ASC')->orderBy('id'),
+            'price_desc' => $query->orderByRaw('CASE WHEN show_price THEN regular_price END DESC')->orderBy('id'),
             'name' => $query->orderBy('name')->orderBy('id'),
             default => $query->orderByDesc('created_at')->orderBy('id'),
         };

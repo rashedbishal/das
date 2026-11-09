@@ -62,6 +62,8 @@
         full_description: string | null;
         status: string;
         is_featured: boolean;
+        show_price: boolean;
+        show_stock: boolean;
         regular_price: string | null;
         sale_price: string | null;
         currency: string;
@@ -135,7 +137,9 @@
         }
     }
 
-    function runBulkAction(action: 'delete' | 'publish' | 'draft') {
+    function runBulkAction(
+        action: 'delete' | 'publish' | 'draft' | 'show_price' | 'hide_price' | 'show_stock' | 'hide_stock',
+    ) {
         router.post(
             bulkProducts.url(),
             { ids: selectedIds, action },
@@ -181,6 +185,10 @@
         {#snippet children()}
             <Button size="sm" onclick={() => runBulkAction('publish')}>Publish</Button>
             <Button size="sm" variant="outline" onclick={() => runBulkAction('draft')}>Move to draft</Button>
+            <Button size="sm" variant="outline" onclick={() => runBulkAction('show_price')}>Show price</Button>
+            <Button size="sm" variant="outline" onclick={() => runBulkAction('hide_price')}>Hide price</Button>
+            <Button size="sm" variant="outline" onclick={() => runBulkAction('show_stock')}>Show stock</Button>
+            <Button size="sm" variant="outline" onclick={() => runBulkAction('hide_stock')}>Hide stock</Button>
             <Button
                 size="sm"
                 variant="destructive"

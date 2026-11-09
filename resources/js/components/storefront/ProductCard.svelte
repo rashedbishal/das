@@ -39,14 +39,16 @@
         <div
             class="mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-4"
         >
-            <div>
-                <div class="product-price">{priceLabel}</div>
-                {#if hasPrice}
-                    <span class="text-[8px] text-muted-foreground"
-                        >Illustrative price</span
-                    >
-                {/if}
-            </div>
+            {#if p.showPrice}
+                <div>
+                    <div class="product-price">{priceLabel}</div>
+                    {#if hasPrice}
+                        <span class="text-[8px] text-muted-foreground"
+                            >Illustrative price</span
+                        >
+                    {/if}
+                </div>
+            {/if}
             <Link
                 {href}
                 class="detail-link flex items-center gap-1.5 text-[10px] font-semibold text-primary"

@@ -24,13 +24,15 @@
         full_description: string | null;
         highlights: string[] | null;
         specifications: { name: string; value: string }[];
-        variants: { name: string; price: string | null; stock_status: string }[];
+        variants: { name: string; price: string | null; stock_status: string | null }[];
         media: MediaItem[];
         regular_price: string | null;
         sale_price: string | null;
+        show_price: boolean;
+        show_stock: boolean;
         currency: string;
-        stock_quantity: number;
-        stock_status: string;
+        stock_quantity: number | null;
+        stock_status: string | null;
         seo: { title: string | null; description: string | null };
         related_products: { id: number; name: string; slug: string; main_image: string | null }[];
     };
@@ -143,9 +145,11 @@
             </p>
 
             <div class="mt-4 flex items-center gap-2">
-                <Badge variant={detail.stock_status === 'in_stock' ? 'default' : 'secondary'}>
-                    {detail.stock_status.replace('_', ' ')}
-                </Badge>
+                {#if detail.show_stock && detail.stock_status}
+                    <Badge variant={detail.stock_status === 'in_stock' ? 'default' : 'secondary'}>
+                        {detail.stock_status.replace('_', ' ')}
+                    </Badge>
+                {/if}
                 {#if detail.category}
                     <Badge variant="outline">{detail.category.name}</Badge>
                 {/if}
@@ -154,7 +158,8 @@
                 {/if}
             </div>
 
-            <p class="mt-4 text-2xl font-bold">
+            {#if detail.show_price}
+                <p class="mt-4 text-2xl font-bold">
                 {#if detail.sale_price}
                     {detail.currency} {detail.sale_price}
                     <span class="ml-2 text-base font-normal text-muted-foreground line-through">
@@ -165,7 +170,8 @@
                 {:else}
                     Contact for price
                 {/if}
-            </p>
+                </p>
+            {/if}
 
             {#if detail.short_description}
                 <p class="mt-4 text-muted-foreground">{detail.short_description}</p>

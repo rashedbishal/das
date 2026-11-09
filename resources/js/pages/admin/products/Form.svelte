@@ -57,6 +57,8 @@
         full_description: string | null;
         status: string;
         is_featured: boolean;
+        show_price: boolean;
+        show_stock: boolean;
         regular_price: string | null;
         sale_price: string | null;
         currency: string;

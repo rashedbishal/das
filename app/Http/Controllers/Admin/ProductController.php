@@ -103,7 +103,15 @@ class ProductController extends Controller
         $data = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:100'],
             'ids.*' => ['required', 'integer', 'distinct', 'exists:products,id'],
-            'action' => ['required', Rule::in(['delete', 'publish', 'draft'])],
+            'action' => ['required', Rule::in([
+                'delete',
+                'publish',
+                'draft',
+                'show_price',
+                'hide_price',
+                'show_stock',
+                'hide_stock',
+            ])],
         ]);
 
         $products = Product::query()->whereKey($data['ids'])->get();
@@ -111,23 +119,47 @@ class ProductController extends Controller
             throw ValidationException::withMessages(['ids' => 'One or more selected products are unavailable.']);
         }
 
+        $ability = match ($data['action']) {
+            'delete' => 'delete',
+            'publish', 'draft' => 'publish',
+            default => 'update',
+        };
         foreach ($products as $product) {
-            $this->authorize($data['action'] === 'delete' ? 'delete' : 'publish', $product);
+            $this->authorize($ability, $product);
         }
 
         if ($data['action'] === 'delete') {
             $products->each(fn (Product $product) => $this->products->delete($product));
         } else {
+            $updates = match ($data['action']) {
+                'publish' => ['status' => 'published'],
+                'draft' => ['status' => 'draft'],
+                'show_price' => ['show_price' => true],
+                'hide_price' => ['show_price' => false],
+                'show_stock' => ['show_stock' => true],
+                'hide_stock' => ['show_stock' => false],
+                default => throw new \LogicException('Unsupported bulk product action.'),
+            };
             $products->each(fn (Product $product) => $this->products->update(
                 $request->user(),
                 $product,
-                ['status' => $data['action'] === 'publish' ? 'published' : 'draft'],
+                $updates,
             ));
         }
 
+        $message = match ($data['action']) {
+            'delete' => 'deleted.',
+            'publish' => 'published.',
+            'draft' => 'moved to draft.',
+            'show_price' => 'updated to show price.',
+            'hide_price' => 'updated to hide price.',
+            'show_stock' => 'updated to show stock.',
+            'hide_stock' => 'updated to hide stock.',
+        };
+
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => count($products).' products '.($data['action'] === 'delete' ? 'deleted.' : 'updated.'),
+            'message' => count($products).' products '.$message,
         ]);
 
         return to_route('admin.products.index');

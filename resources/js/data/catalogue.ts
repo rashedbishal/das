@@ -20,8 +20,10 @@ export type ProductCard = {
     image: string | null;
     regularPrice: number | null;
     salePrice: number | null;
+    showPrice: boolean;
+    showStock: boolean;
     currency: string;
-    stockStatus: string;
+    stockStatus: string | null;
     featured: boolean;
 };
 
@@ -36,7 +38,7 @@ export type ProductSpecification = { name: string; value: string };
 export type ProductVariant = {
     name: string;
     price: string | null;
-    stockStatus: string;
+    stockStatus: string | null;
 };
 
 export type ProductDetail = ProductCard & {
@@ -98,7 +100,9 @@ type RawProductCard = {
     regular_price: string | null;
     sale_price: string | null;
     currency: string;
-    stock_status: string;
+    stock_status: string | null;
+    show_price: boolean;
+    show_stock: boolean;
     is_featured: boolean;
 };
 
@@ -115,7 +119,7 @@ type RawProductDetail = RawProductCard & {
     variants: {
         name: string;
         price: string | null;
-        stock_status: string;
+        stock_status: string | null;
     }[];
     media: {
         type: string;
@@ -147,6 +151,8 @@ function mapProductCard(raw: RawProductCard): ProductCard {
         image: raw.main_image,
         regularPrice: toNumber(raw.regular_price),
         salePrice: toNumber(raw.sale_price),
+        showPrice: raw.show_price,
+        showStock: raw.show_stock,
         currency: raw.currency,
         stockStatus: raw.stock_status,
         featured: raw.is_featured,

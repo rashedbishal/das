@@ -32,6 +32,8 @@ class UpdateProductRequest extends FormRequest
             'highlights.*' => ['string', 'max:255'],
             'status' => ['required', Rule::in(['draft', 'published', 'archived'])],
             'is_featured' => ['boolean'],
+            'show_price' => ['sometimes', 'boolean'],
+            'show_stock' => ['sometimes', 'boolean'],
             'regular_price' => ['nullable', 'numeric', 'min:0'],
             'sale_price' => ['nullable', 'numeric', 'min:0', 'lt:regular_price'],
             'currency' => ['nullable', 'string', 'size:3'],

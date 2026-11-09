@@ -29,10 +29,12 @@ class ProductCardResource extends JsonResource
                 'slug' => $this->brand->slug,
             ] : null),
             'main_image' => $this->mainImage()?->resolvedUrl(),
-            'regular_price' => $this->regular_price !== null ? (string) $this->regular_price : null,
-            'sale_price' => $this->sale_price !== null ? (string) $this->sale_price : null,
+            'show_price' => $this->show_price,
+            'show_stock' => $this->show_stock,
+            'regular_price' => $this->show_price && $this->regular_price !== null ? (string) $this->regular_price : null,
+            'sale_price' => $this->show_price && $this->sale_price !== null ? (string) $this->sale_price : null,
             'currency' => $this->currency,
-            'stock_status' => $this->stock_status,
+            'stock_status' => $this->show_stock ? $this->stock_status : null,
             'is_featured' => $this->is_featured,
         ];
     }

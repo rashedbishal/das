@@ -27,6 +27,8 @@ use Illuminate\Support\Carbon;
  * @property array<int, string>|null $highlights
  * @property string $status
  * @property bool $is_featured
+ * @property bool $show_price
+ * @property bool $show_stock
  * @property string|null $regular_price
  * @property string|null $sale_price
  * @property string $currency
@@ -46,7 +48,7 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'name', 'slug', 'sku', 'model_number', 'brand_id', 'category_id', 'subcategory_id',
     'short_description', 'full_description',
-    'highlights', 'status', 'is_featured', 'regular_price', 'sale_price', 'currency',
+    'highlights', 'status', 'is_featured', 'show_price', 'show_stock', 'regular_price', 'sale_price', 'currency',
     'stock_quantity', 'stock_status', 'seo_title', 'seo_description', 'seo_keywords',
     'canonical_url', 'created_by', 'updated_by', 'published_at',
 ])]
@@ -63,6 +65,8 @@ class Product extends Model
         return [
             'highlights' => 'array',
             'is_featured' => 'boolean',
+            'show_price' => 'boolean',
+            'show_stock' => 'boolean',
             'regular_price' => 'decimal:2',
             'sale_price' => 'decimal:2',
             'published_at' => 'datetime',
