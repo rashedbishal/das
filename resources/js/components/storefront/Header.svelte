@@ -311,7 +311,7 @@
                                     <img
                                         src={c.image}
                                         alt=""
-                                        class="h-14 w-14 rounded bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
+                                        class="h-14 w-14 rounded-md bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
                                     />
                                     <span class="text-xs">{c.name}</span>
                                     {#if c.subcategories.length}
@@ -349,7 +349,7 @@
                                             <img
                                                 src={s.image}
                                                 alt=""
-                                                class="h-14 w-14 rounded bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
+                                                class="h-14 w-14 rounded-md bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
                                             />
                                             <span class="text-xs">{s.name}</span>
                                         </Link>

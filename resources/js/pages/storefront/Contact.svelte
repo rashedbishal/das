@@ -61,7 +61,7 @@
                 {#each details as { icon: Icon, label, value, href } (label)}
                     <div class="flex gap-4">
                         <span
-                            class="flex size-10 shrink-0 items-center justify-center rounded bg-accent"
+                            class="flex size-10 shrink-0 items-center justify-center rounded-md bg-accent"
                         >
                             <Icon class="size-4 text-primary" />
                         </span>

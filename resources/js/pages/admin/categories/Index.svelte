@@ -178,9 +178,9 @@
 
 {#snippet thumbnail(image: string | null, name: string)}
     {#if image}
-        <img src={image} alt={name} class="h-10 w-10 rounded object-cover" />
+        <img src={image} alt={name} class="h-10 w-10 rounded-md object-cover" />
     {:else}
-        <div class="h-10 w-10 rounded bg-muted"></div>
+        <div class="h-10 w-10 rounded-md bg-muted"></div>
     {/if}
 {/snippet}
 
@@ -377,7 +377,7 @@
                     <div class="grid gap-2">
                         <Label for="edit_category_image_file">Image</Label>
                         {#if category.image}
-                            <img src={category.image} alt={category.name} class="h-16 w-16 rounded object-cover" />
+                            <img src={category.image} alt={category.name} class="h-16 w-16 rounded-md object-cover" />
                         {/if}
                         <input
                             id="edit_category_image_file"
@@ -494,7 +494,7 @@
                     <div class="grid gap-2">
                         <Label for="edit_subcategory_image_file">Image</Label>
                         {#if subcategory.image}
-                            <img src={subcategory.image} alt={subcategory.name} class="h-16 w-16 rounded object-cover" />
+                            <img src={subcategory.image} alt={subcategory.name} class="h-16 w-16 rounded-md object-cover" />
                         {/if}
                         <input
                             id="edit_subcategory_image_file"

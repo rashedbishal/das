@@ -163,7 +163,7 @@
                                 type="button"
                                 onclick={() => (activeIndex = i)}
                                 class={[
-                                    'relative h-16 w-16 shrink-0 overflow-hidden rounded border bg-photo',
+                                    'relative h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-photo',
                                     i === activeIndex
                                         ? 'border-primary'
                                         : 'border-transparent',

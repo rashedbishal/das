@@ -17,7 +17,7 @@
     --border: #e6e8f7;
     --input: var(--border);
     --ring: var(--primary);
-    --radius: 6px;
+    --radius: 12px;
     --sidebar: #f7f8ff;
     --sidebar-background: var(--sidebar);
     --sidebar-foreground: #2b2e63;
