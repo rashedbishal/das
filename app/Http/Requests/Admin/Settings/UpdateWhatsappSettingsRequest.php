@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin\Settings;
 
 use App\Models\Setting;
 use App\Rules\BangladeshiPhoneNumber;
+use App\Support\FieldLimits;
 use App\Support\PhoneNumber;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,7 +31,7 @@ class UpdateWhatsappSettingsRequest extends FormRequest
         return [
             'enabled' => ['required', 'boolean'],
             'phone' => ['required_if:enabled,true', 'nullable', new BangladeshiPhoneNumber],
-            'message' => ['nullable', 'string', 'max:500'],
+            'message' => ['nullable', 'string', FieldLimits::max('settings.whatsapp_message')],
         ];
     }
 }

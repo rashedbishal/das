@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\Tag;
 
 use App\Models\Tag;
+use App\Support\FieldLimits;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -19,7 +20,7 @@ class StoreTagRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', FieldLimits::max('tag.name')],
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin\Role;
 
+use App\Support\FieldLimits;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -19,8 +20,8 @@ class UpdateRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('roles', 'slug')->ignore($this->route('role'))],
+            'name' => ['required', 'string', FieldLimits::max('role.name')],
+            'slug' => ['nullable', 'string', FieldLimits::max('role.slug'), Rule::unique('roles', 'slug')->ignore($this->route('role'))],
             'permissions' => ['array'],
             'permissions.*' => ['string', 'exists:permissions,slug'],
         ];

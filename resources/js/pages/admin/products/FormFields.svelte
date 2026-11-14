@@ -2,7 +2,10 @@
     import { untrack } from 'svelte';
     import FormSelect from '@/components/dashboard/FormSelect.svelte';
     import InputError from '@/components/InputError.svelte';
+    import LimitedInput from '@/components/dashboard/LimitedInput.svelte';
+    import LimitedTextarea from '@/components/dashboard/LimitedTextarea.svelte';
     import { Input } from '@/components/ui/input';
+    import { fieldLimits } from '@/lib/field-limits';
     import { Label } from '@/components/ui/label';
 
     type Option = { id: number; name: string };
@@ -100,15 +103,23 @@
 
 <div class="grid gap-2">
     <Label for="name">Name</Label>
-    <Input id="name" name="name" required bind:value={name} oninput={onNameInput} />
+    <LimitedInput
+        id="name"
+        name="name"
+        required
+        limit={fieldLimits.product.name}
+        bind:value={name}
+        oninput={onNameInput}
+    />
     <InputError message={errors.name} />
 </div>
 
 <div class="grid gap-2">
     <Label for="slug">URL slug</Label>
-    <Input
+    <LimitedInput
         id="slug"
         name="slug"
+        limit={fieldLimits.product.slug}
         bind:value={slug}
         oninput={() => (slugEdited = true)}
         onblur={() => (slug = slugify(slug))}
@@ -137,15 +148,20 @@
     <InputError message={errors.slug} />
 </div>
 
-<div class="grid gap-4 sm:grid-cols-2">
+<div class="grid items-start gap-4 sm:grid-cols-2">
     <div class="grid gap-2">
         <Label for="sku">SKU</Label>
-        <Input id="sku" name="sku" required value={product?.sku ?? ''} />
+        <LimitedInput id="sku" name="sku" required limit={fieldLimits.product.sku} value={product?.sku ?? ''} />
         <InputError message={errors.sku} />
     </div>
     <div class="grid gap-2">
         <Label for="model_number">Model number</Label>
-        <Input id="model_number" name="model_number" value={product?.model_number ?? ''} />
+        <LimitedInput
+            id="model_number"
+            name="model_number"
+            limit={fieldLimits.product.model_number}
+            value={product?.model_number ?? ''}
+        />
         <InputError message={errors.model_number} />
     </div>
 </div>
@@ -164,49 +180,85 @@
 
 <div class="grid gap-2">
     <Label for="short_description">Short description</Label>
-    <textarea
+    <LimitedTextarea
         id="short_description"
         name="short_description"
-        rows="2"
-        class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
-    >{product?.short_description ?? ''}</textarea>
+        rows={3}
+        limit={fieldLimits.product.short_description}
+        value={product?.short_description ?? ''}
+    />
+    <p class="text-xs text-muted-foreground">Shown under the name on product cards (first two lines) and on the product page.</p>
     <InputError message={errors.short_description} />
 </div>
 
 <div class="grid gap-2">
     <Label for="full_description">Full description</Label>
-    <textarea
+    <LimitedTextarea
         id="full_description"
         name="full_description"
-        rows="6"
-        class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
-    >{product?.full_description ?? ''}</textarea>
+        rows={6}
+        limit={fieldLimits.product.full_description}
+        value={product?.full_description ?? ''}
+    />
     <InputError message={errors.full_description} />
 </div>
 
-<div class="grid gap-4 sm:grid-cols-3">
+<div class="grid items-start gap-4 sm:grid-cols-3">
     <div class="grid gap-2">
         <Label for="regular_price">Regular price</Label>
-        <Input id="regular_price" name="regular_price" type="number" step="0.01" value={product?.regular_price ?? ''} />
+        <Input
+            id="regular_price"
+            name="regular_price"
+            type="number"
+            step="0.01"
+            min="0"
+            max={fieldLimits.number.price}
+            value={product?.regular_price ?? ''}
+        />
         <p class="text-xs text-muted-foreground">Leave blank to show “Contact for price”.</p>
         <InputError message={errors.regular_price} />
     </div>
     <div class="grid gap-2">
         <Label for="sale_price">Sale price</Label>
-        <Input id="sale_price" name="sale_price" type="number" step="0.01" value={product?.sale_price ?? ''} />
+        <Input
+            id="sale_price"
+            name="sale_price"
+            type="number"
+            step="0.01"
+            min="0"
+            max={fieldLimits.number.price}
+            value={product?.sale_price ?? ''}
+        />
         <InputError message={errors.sale_price} />
     </div>
     <div class="grid gap-2">
         <Label for="currency">Currency</Label>
-        <Input id="currency" name="currency" value={product?.currency ?? 'BDT'} />
+        <Input
+            id="currency"
+            name="currency"
+            maxlength={3}
+            minlength={3}
+            class="uppercase"
+            placeholder="BDT"
+            value={product?.currency ?? 'BDT'}
+        />
+        <p class="text-xs text-muted-foreground">3-letter code, e.g. BDT or USD.</p>
         <InputError message={errors.currency} />
     </div>
 </div>
 
-<div class="grid gap-4 sm:grid-cols-3">
+<div class="grid items-start gap-4 sm:grid-cols-3">
     <div class="grid gap-2">
         <Label for="stock_quantity">Stock quantity</Label>
-        <Input id="stock_quantity" name="stock_quantity" type="number" required value={product?.stock_quantity ?? 0} />
+        <Input
+            id="stock_quantity"
+            name="stock_quantity"
+            type="number"
+            required
+            min="0"
+            max={fieldLimits.number.stock_quantity}
+            value={product?.stock_quantity ?? 0}
+        />
         <InputError message={errors.stock_quantity} />
     </div>
     <div class="grid gap-2">
@@ -260,7 +312,7 @@
     Featured product
 </label>
 
-<div class="grid gap-4 sm:grid-cols-2">
+<div class="grid items-start gap-4 sm:grid-cols-2">
     <div class="grid gap-2">
         <Label for="category_id">Category</Label>
         <FormSelect
@@ -304,9 +356,18 @@
 
 <div class="grid gap-2">
     <Label for="seo_title">SEO title</Label>
-    <Input id="seo_title" name="seo_title" value={product?.seo_title ?? ''} />
+    <LimitedInput id="seo_title" name="seo_title" limit={fieldLimits.product.seo_title} value={product?.seo_title ?? ''} />
+    <InputError message={errors.seo_title} />
 </div>
 <div class="grid gap-2">
     <Label for="seo_description">SEO description</Label>
-    <Input id="seo_description" name="seo_description" value={product?.seo_description ?? ''} />
+    <LimitedTextarea
+        id="seo_description"
+        name="seo_description"
+        rows={2}
+        class="min-h-16"
+        limit={fieldLimits.product.seo_description}
+        value={product?.seo_description ?? ''}
+    />
+    <InputError message={errors.seo_description} />
 </div>

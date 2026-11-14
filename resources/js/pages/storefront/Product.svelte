@@ -204,7 +204,7 @@
                 <div class="eyebrow mb-4">
                     {p.brand?.name}
                 </div>
-                <h1 class="text-[31px] leading-tight font-semibold lg:text-[38px]">
+                <h1 class="text-[31px] leading-tight font-semibold [overflow-wrap:anywhere] lg:text-[38px]">
                     {p.name}
                 </h1>
                 {#if p.category}
@@ -216,7 +216,7 @@
                         <ArrowUpRight class="size-3" />
                     </Link>
                 {/if}
-                <div class="mt-5 flex gap-4 text-[10px] text-muted-foreground">
+                <div class="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground [overflow-wrap:anywhere]">
                     {#if p.sku}
                         <span>SKU: {p.sku}</span>
                         <span>•</span>

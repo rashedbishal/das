@@ -13,8 +13,10 @@
     import { Button } from '@/components/ui/button';
     import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
     import { Input } from '@/components/ui/input';
+    import LimitedInput from '@/components/dashboard/LimitedInput.svelte';
+    import LimitedTextarea from '@/components/dashboard/LimitedTextarea.svelte';
+    import { fieldLimits } from '@/lib/field-limits';
     import { Label } from '@/components/ui/label';
-    import { Textarea } from '@/components/ui/textarea';
 
     let {
         general,
@@ -73,31 +75,74 @@
                     {#snippet children({ errors, processing })}
                         <div class="grid gap-2">
                             <Label for="site_name">Site name</Label>
-                            <Input id="site_name" name="site_name" required value={general.site_name ?? ''} />
+                            <LimitedInput
+                                id="site_name"
+                                name="site_name"
+                                required
+                                limit={fieldLimits.settings.site_name}
+                                value={general.site_name ?? ''}
+                            />
                             <InputError message={errors.site_name} />
                         </div>
                         <div class="grid gap-2">
                             <Label for="contact_email">Contact email</Label>
-                            <Input id="contact_email" name="contact_email" type="email" value={general.contact_email ?? ''} />
+                            <LimitedInput
+                                id="contact_email"
+                                name="contact_email"
+                                type="email"
+                                limit={fieldLimits.settings.contact_email}
+                                value={general.contact_email ?? ''}
+                            />
                             <InputError message={errors.contact_email} />
                         </div>
                         <div class="grid gap-2">
                             <Label for="contact_phone">Contact phone</Label>
-                            <Input id="contact_phone" name="contact_phone" value={general.contact_phone ?? ''} />
+                            <LimitedInput
+                                id="contact_phone"
+                                name="contact_phone"
+                                type="tel"
+                                limit={fieldLimits.settings.contact_phone}
+                                value={general.contact_phone ?? ''}
+                            />
+                            <InputError message={errors.contact_phone} />
                         </div>
                         <div class="grid gap-2">
                             <Label for="address">Address</Label>
-                            <Input id="address" name="address" value={general.address ?? ''} />
+                            <LimitedTextarea
+                                id="address"
+                                name="address"
+                                rows={2}
+                                class="min-h-16"
+                                limit={fieldLimits.settings.address}
+                                value={general.address ?? ''}
+                            />
+                            <InputError message={errors.address} />
                         </div>
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid items-start gap-4 sm:grid-cols-2">
                             <div class="grid gap-2">
                                 <Label for="currency">Currency</Label>
-                                <Input id="currency" name="currency" required value={general.currency ?? 'BDT'} />
+                                <Input
+                                id="currency"
+                                name="currency"
+                                required
+                                maxlength={3}
+                                minlength={3}
+                                class="uppercase"
+                                value={general.currency ?? 'BDT'}
+                            />
+                            <p class="text-xs text-muted-foreground">3-letter code, e.g. BDT.</p>
                                 <InputError message={errors.currency} />
                             </div>
                             <div class="grid gap-2">
                                 <Label for="timezone">Timezone</Label>
-                                <Input id="timezone" name="timezone" required value={general.timezone ?? 'Asia/Dhaka'} />
+                                <Input
+                                id="timezone"
+                                name="timezone"
+                                required
+                                maxlength={fieldLimits.settings.timezone}
+                                value={general.timezone ?? 'Asia/Dhaka'}
+                            />
+                            <p class="text-xs text-muted-foreground">e.g. Asia/Dhaka.</p>
                                 <InputError message={errors.timezone} />
                             </div>
                         </div>
@@ -165,12 +210,27 @@
                         </label>
                         <div class="grid gap-2">
                             <Label for="whatsapp_phone">Phone number</Label>
-                            <Input id="whatsapp_phone" name="phone" placeholder="01XXXXXXXXX" value={whatsapp.phone ?? ''} />
+                            <LimitedInput
+                                id="whatsapp_phone"
+                                name="phone"
+                                type="tel"
+                                placeholder="01XXXXXXXXX"
+                                limit={fieldLimits.settings.whatsapp_phone}
+                                value={whatsapp.phone ?? ''}
+                            />
                             <InputError message={errors.phone} />
                         </div>
                         <div class="grid gap-2">
                             <Label for="whatsapp_message">Default message</Label>
-                            <Input id="whatsapp_message" name="message" value={whatsapp.message ?? ''} />
+                            <LimitedTextarea
+                                id="whatsapp_message"
+                                name="message"
+                                rows={2}
+                                class="min-h-16"
+                                limit={fieldLimits.settings.whatsapp_message}
+                                value={whatsapp.message ?? ''}
+                            />
+                            <InputError message={errors.message} />
                         </div>
                         <Button type="submit" disabled={processing}>Save WhatsApp settings</Button>
                     {/snippet}
@@ -193,7 +253,13 @@
                         </label>
                         <div class="grid gap-2">
                             <Label for="page_url">Messenger page URL</Label>
-                            <Input id="page_url" name="page_url" type="url" value={messenger.page_url ?? ''} />
+                            <LimitedInput
+                                id="page_url"
+                                name="page_url"
+                                type="url"
+                                limit={fieldLimits.settings.messenger_url}
+                                value={messenger.page_url ?? ''}
+                            />
                             <InputError message={errors.page_url} />
                         </div>
                         <Button type="submit" disabled={processing}>Save Messenger settings</Button>
@@ -210,35 +276,66 @@
             <CardContent>
                 <Form {...SettingsController.updateCatalogSeo.form()} class="space-y-4">
                     {#snippet children({ errors, processing })}
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid items-start gap-4 sm:grid-cols-2">
                             <div class="grid gap-2">
                                 <Label for="page_size">Products per page</Label>
-                                <Input id="page_size" name="page_size" type="number" required value={catalog.page_size ?? 24} />
+                                <Input
+                                    id="page_size"
+                                    name="page_size"
+                                    type="number"
+                                    required
+                                    min="1"
+                                    max="100"
+                                    value={catalog.page_size ?? 24}
+                                />
                                 <InputError message={errors.page_size} />
                             </div>
                             <div class="grid gap-2">
                                 <Label for="featured_limit">Featured products limit</Label>
-                                <Input id="featured_limit" name="featured_limit" type="number" required value={catalog.featured_limit ?? 8} />
+                                <Input
+                                    id="featured_limit"
+                                    name="featured_limit"
+                                    type="number"
+                                    required
+                                    min="1"
+                                    max="50"
+                                    value={catalog.featured_limit ?? 8}
+                                />
                                 <InputError message={errors.featured_limit} />
                             </div>
                         </div>
                         <div class="grid gap-2">
                             <Label for="delivery_note">Product delivery note</Label>
-                            <Input
+                            <LimitedInput
                                 id="delivery_note"
                                 name="delivery_note"
                                 required
+                                limit={fieldLimits.settings.delivery_note}
                                 value={catalog.delivery_note ?? 'Through courier all over Bangladesh'}
                             />
                             <InputError message={errors.delivery_note} />
                         </div>
                         <div class="grid gap-2">
                             <Label for="default_title">Default SEO title</Label>
-                            <Input id="default_title" name="default_title" value={seo.default_title ?? ''} />
+                            <LimitedInput
+                                id="default_title"
+                                name="default_title"
+                                limit={fieldLimits.settings.default_title}
+                                value={seo.default_title ?? ''}
+                            />
+                            <InputError message={errors.default_title} />
                         </div>
                         <div class="grid gap-2">
                             <Label for="default_description">Default SEO description</Label>
-                            <Input id="default_description" name="default_description" value={seo.default_description ?? ''} />
+                            <LimitedTextarea
+                                id="default_description"
+                                name="default_description"
+                                rows={2}
+                                class="min-h-16"
+                                limit={fieldLimits.settings.default_description}
+                                value={seo.default_description ?? ''}
+                            />
+                            <InputError message={errors.default_description} />
                         </div>
                         <Button type="submit" disabled={processing}>Save catalog &amp; SEO settings</Button>
                     {/snippet}
@@ -261,9 +358,10 @@
                     {#snippet children({ errors, processing })}
                         <div class="grid gap-2">
                             <Label for="head_scripts">Head code</Label>
-                            <Textarea
+                            <LimitedTextarea
                                 id="head_scripts"
                                 name="head_scripts"
+                                limit={fieldLimits.settings.scripts}
                                 rows={8}
                                 class="font-mono text-xs"
                                 placeholder={'<!-- Google Tag Manager -->\n<script>\n  ...\n<' + '/script>'}
@@ -273,9 +371,10 @@
                         </div>
                         <div class="grid gap-2">
                             <Label for="body_scripts">Body code</Label>
-                            <Textarea
+                            <LimitedTextarea
                                 id="body_scripts"
                                 name="body_scripts"
+                                limit={fieldLimits.settings.scripts}
                                 rows={8}
                                 class="font-mono text-xs"
                                 placeholder={'<!-- Google Tag Manager (noscript) -->\n<noscript>...</noscript>'}

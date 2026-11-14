@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\Settings;
 
 use App\Models\Setting;
+use App\Support\FieldLimits;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -21,9 +22,9 @@ class UpdateCatalogSeoSettingsRequest extends FormRequest
         return [
             'page_size' => ['required', 'integer', 'min:1', 'max:100'],
             'featured_limit' => ['required', 'integer', 'min:1', 'max:50'],
-            'delivery_note' => ['sometimes', 'required', 'string', 'max:255'],
-            'default_title' => ['nullable', 'string', 'max:255'],
-            'default_description' => ['nullable', 'string', 'max:500'],
+            'delivery_note' => ['sometimes', 'required', 'string', FieldLimits::max('settings.delivery_note')],
+            'default_title' => ['nullable', 'string', FieldLimits::max('settings.default_title')],
+            'default_description' => ['nullable', 'string', FieldLimits::max('settings.default_description')],
         ];
     }
 }

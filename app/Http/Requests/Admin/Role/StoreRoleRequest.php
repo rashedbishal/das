@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\Role;
 
 use App\Models\Role;
+use App\Support\FieldLimits;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -20,8 +21,8 @@ class StoreRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('roles', 'slug')],
+            'name' => ['required', 'string', FieldLimits::max('role.name')],
+            'slug' => ['nullable', 'string', FieldLimits::max('role.slug'), Rule::unique('roles', 'slug')],
             'permissions' => ['array'],
             'permissions.*' => ['string', 'exists:permissions,slug'],
         ];

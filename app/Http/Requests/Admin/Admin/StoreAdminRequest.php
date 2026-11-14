@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin\Admin;
 
 use App\Models\User;
 use App\Rules\BangladeshiPhoneNumber;
+use App\Support\FieldLimits;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -22,10 +23,10 @@ class StoreAdminRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
+            'name' => ['required', 'string', FieldLimits::max('admin.name')],
+            'email' => ['required', 'string', 'email', FieldLimits::max('admin.email'), Rule::unique('users', 'email')],
             'phone' => ['nullable', new BangladeshiPhoneNumber, Rule::unique('users', 'phone')],
-            'password' => ['required', 'string', Password::default()],
+            'password' => ['required', 'string', FieldLimits::max('admin.password'), Password::default()],
             'role_id' => ['required', 'integer', 'exists:roles,id'],
         ];
     }

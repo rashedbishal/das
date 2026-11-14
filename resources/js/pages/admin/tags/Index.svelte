@@ -17,6 +17,8 @@
     import { Button } from '@/components/ui/button';
     import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
+    import LimitedInput from '@/components/dashboard/LimitedInput.svelte';
+    import { fieldLimits } from '@/lib/field-limits';
     import { Label } from '@/components/ui/label';
     import { bulk as bulkTags, destroy, store } from '@/routes/admin/tags';
 
@@ -125,7 +127,7 @@
             {#snippet children({ errors, processing })}
                 <div class="grid gap-2">
                     <Label for="name">Name</Label>
-                    <Input id="name" name="name" required />
+                    <LimitedInput id="name" name="name" required limit={fieldLimits.tag.name} />
                     <InputError message={errors.name} />
                 </div>
 

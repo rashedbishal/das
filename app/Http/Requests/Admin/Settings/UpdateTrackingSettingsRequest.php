@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\Settings;
 
 use App\Models\Setting;
+use App\Support\FieldLimits;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -19,8 +20,8 @@ class UpdateTrackingSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'head_scripts' => ['nullable', 'string', 'max:20000'],
-            'body_scripts' => ['nullable', 'string', 'max:20000'],
+            'head_scripts' => ['nullable', 'string', FieldLimits::max('settings.scripts')],
+            'body_scripts' => ['nullable', 'string', FieldLimits::max('settings.scripts')],
         ];
     }
 }

@@ -37,7 +37,7 @@
             >
         </div>
         <Link {href}>
-            <h3 class="product-title">{p.name}</h3>
+            <h3 class="product-title" title={p.name}>{p.name}</h3>
         </Link>
         <p class="product-spec">{p.shortDescription}</p>
         {#if p.showStock && p.stockQuantity !== null}
