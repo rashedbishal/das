@@ -60,10 +60,10 @@ quantity visibility and storefront display are currently product-level.
   `/products`, and `/brands`. `/catalogue` is the single canonical product
   listing; product details are at `/products/{slug}`.
 - Contact widgets, phone links, and quote/enquiry UI are present. **The quote
-  and contact forms now persist submissions for CMS review in a paginated
-  enquiry inbox. Admins with the appropriate permission can mark messages
-  read/unread or permanently delete them, individually or in bulk. Submissions
-  are rate-limited; they are not automatically emailed or sent to a CRM. No
+  and contact forms persist submissions for client handling in a paginated CMS
+  enquiry inbox.** Authorized client admins can mark messages read/unread or
+  permanently delete them, individually or in bulk. Submissions are
+  rate-limited; they are not automatically emailed or sent to a CRM. No
   checkout or order workflow is implemented.
 
 ## 5. CMS and security capabilities
@@ -115,17 +115,18 @@ are configured in the app.
 
 ### Confirm before implementation
 
-1. **Sales workflow:** basic enquiry capture and a CMS inbox are implemented.
-   Decide whether to add email/CRM delivery, assignment, response tracking,
-   consent/privacy language, stronger spam protection, and a retention policy.
+1. **Sales workflow:** enquiries are retained in the CMS inbox and handled by
+   the client. Future enhancements such as email/CRM delivery, assignment,
+   response tracking, stronger spam protection, and a retention policy remain
+   optional.
 2. **Inventory semantics:** is stock count authoritative and current? Should
    stock be tracked per variant, or only per product? Should public users see
    exact counts, availability labels, or both?
 3. **Pricing:** who maintains prices, which currencies/discount rules apply,
    and what should “Contact for price” mean operationally?
-4. **Catalog ownership:** confirm the imported products, labels, images,
-   category placement, specifications, and “On order” status with the client;
-   decide who maintains future updates and imports.
+4. **Catalog ownership:** the client owns future catalog updates and imports.
+   Confirm the imported products, labels, images, category placement,
+   specifications, and “On order” status with them.
 5. **Customer access:** should all full product details require sign-in, or
    should public visitors see descriptions/specifications/options?
 
@@ -135,7 +136,7 @@ are configured in the app.
   specifications, or related products; the imported records and public views
   support these data, but ongoing maintenance needs a defined workflow.
 - There is no email notification, CRM integration, assignment workflow, or
-  retention policy for enquiries. Admins need to check the inbox and respond
+  retention policy for enquiries. The client checks the inbox and responds
   directly via the submitted phone/email details.
 - Confirm production infrastructure and operations: hosting, database choice,
   image storage/backups, mail delivery, queue worker, cache, monitoring,

@@ -6,10 +6,13 @@ export const FALLBACK_CONTACT = {
     hours: 'Business hours available on request',
 };
 
-export function resolvePhone(whatsapp: {
-    enabled: boolean;
-    phone: string | null;
-}, contactPhone: string | null = null): { display: string; tel: string } {
+export function resolvePhone(
+    whatsapp: {
+        enabled: boolean;
+        phone: string | null;
+    },
+    contactPhone: string | null = null,
+): { display: string; tel: string } {
     if (contactPhone?.trim()) {
         return {
             display: contactPhone,

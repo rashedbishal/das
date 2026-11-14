@@ -31,8 +31,9 @@ class StoreProductMediaRequest extends FormRequest
                     [
                         'image',
                         'mimes:'.implode(',', ProductMediaService::IMAGE_FORMATS),
-                        'max:'.ProductMediaService::MAX_IMAGE_SIZE_KB,
-                        'dimensions:width='.ProductMediaService::REQUIRED_IMAGE_DIMENSION.',height='.ProductMediaService::REQUIRED_IMAGE_DIMENSION,
+                        'max:'.ProductMediaService::MAX_IMAGE_UPLOAD_SIZE_KB,
+                        'dimensions:max_width='.ProductMediaService::MAX_IMAGE_SOURCE_DIMENSION
+                            .',max_height='.ProductMediaService::MAX_IMAGE_SOURCE_DIMENSION,
                     ],
                 ),
             ],
@@ -48,13 +49,14 @@ class StoreProductMediaRequest extends FormRequest
      */
     public function messages(): array
     {
-        $size = ProductMediaService::REQUIRED_IMAGE_DIMENSION;
-
         return [
-            'file.dimensions' => "Images must be exactly {$size}×{$size}px.",
             'file.mimes' => $this->input('type') === 'video'
                 ? 'Videos must be '.implode(' or ', ProductMediaService::VIDEO_FORMATS).'.'
-                : 'Images must be WebP.',
+                : 'Images must be WebP, JPG or PNG.',
+            'file.max' => $this->input('type') === 'video'
+                ? 'Videos must be '.(ProductMediaService::MAX_VIDEO_SIZE_KB / 1024).' MB or smaller.'
+                : 'Images must be '.(ProductMediaService::MAX_IMAGE_UPLOAD_SIZE_KB / 1024).' MB or smaller.',
+            'file.dimensions' => 'Images can be at most '.ProductMediaService::MAX_IMAGE_SOURCE_DIMENSION.'px on either side.',
         ];
     }
 }

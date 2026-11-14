@@ -51,7 +51,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('tags/bulk', [TagController::class, 'bulk'])->name('tags.bulk');
 
     Route::resource('products', ProductController::class)
-        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+        ->only(['index', 'store', 'update', 'destroy']);
     Route::post('products/bulk', [ProductController::class, 'bulk'])->name('products.bulk');
 
     Route::post('products/{product}/media', [ProductMediaController::class, 'store'])->name('products.media.store');

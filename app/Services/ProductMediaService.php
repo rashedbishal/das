@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Models\Product;
 use App\Models\ProductMedia;
+use GdImage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ProductMediaService
 {
@@ -13,14 +16,26 @@ class ProductMediaService
 
     public const MAX_VIDEOS = 2;
 
-    public const MAX_IMAGE_SIZE_KB = 500;
+    /**
+     * Largest source image accepted from an admin. Anything above the target
+     * size is resized and re-encoded server-side, so this only guards against
+     * absurd uploads (e.g. camera originals), not against "large" ones.
+     */
+    public const MAX_IMAGE_UPLOAD_SIZE_KB = 10240;
 
-    public const MAX_VIDEO_SIZE_KB = 20480;
+    /** Longest side accepted for a source image, to bound GD's memory use when decoding. */
+    public const MAX_IMAGE_SOURCE_DIMENSION = 8000;
+
+    /** Target size for images stored and served by the catalog. */
+    public const TARGET_IMAGE_SIZE_KB = 50;
+
+    public const MAX_VIDEO_SIZE_KB = 10240;
 
     public const REQUIRED_IMAGE_DIMENSION = 1200;
 
     /** @var array<int, string> */
-    public const IMAGE_FORMATS = ['webp'];
+    /** Accepted image formats; anything that isn't already WebP is converted to WebP. */
+    public const IMAGE_FORMATS = ['webp', 'jpg', 'jpeg', 'png'];
 
     /** @var array<int, string> */
     public const VIDEO_FORMATS = ['mp4', 'mov'];
@@ -38,7 +53,8 @@ class ProductMediaService
         return [
             'image' => [
                 'max' => self::MAX_IMAGES,
-                'maxSizeKb' => self::MAX_IMAGE_SIZE_KB,
+                'maxSizeKb' => self::MAX_IMAGE_UPLOAD_SIZE_KB,
+                'targetSizeKb' => self::TARGET_IMAGE_SIZE_KB,
                 'requiredDimension' => self::REQUIRED_IMAGE_DIMENSION,
                 'formats' => self::IMAGE_FORMATS,
             ],
@@ -54,9 +70,16 @@ class ProductMediaService
     /**
      * @param  array<string, mixed>  $meta
      */
-    public function addUpload(Product $product, UploadedFile $file, string $type, array $meta = []): ProductMedia
-    {
-        $path = $file->store("products/{$product->id}", 'public');
+    public function addUpload(
+        Product $product,
+        UploadedFile $file,
+        string $type,
+        array $meta = [],
+        string $errorKey = 'file',
+    ): ProductMedia {
+        $path = $type === 'image' && $this->needsProcessing($file)
+            ? $this->storeProcessedImage($product, $file, $errorKey)
+            : $file->store("products/{$product->id}", 'public');
 
         $media = $product->media()->create([
             'type' => $type,
@@ -140,5 +163,110 @@ class ProductMediaService
         if (! $media->is_main) {
             $media->update(['is_main' => true]);
         }
+    }
+
+    /**
+     * An image is stored as-is only when it is already a WebP of the required
+     * square size within the target file size; anything else is re-encoded.
+     */
+    private function needsProcessing(UploadedFile $file): bool
+    {
+        if ($file->getSize() > self::TARGET_IMAGE_SIZE_KB * 1024 || $file->getMimeType() !== 'image/webp') {
+            return true;
+        }
+
+        $size = @getimagesize($file->getRealPath());
+
+        return $size === false
+            || $size[0] !== self::REQUIRED_IMAGE_DIMENSION
+            || $size[1] !== self::REQUIRED_IMAGE_DIMENSION;
+    }
+
+    /**
+     * Resize to the required square (stretching if the aspect ratio differs),
+     * then re-encode as WebP until it fits the target file size.
+     */
+    private function storeProcessedImage(Product $product, UploadedFile $file, string $errorKey): string
+    {
+        // GD holds the decoded bitmap in memory (~4 bytes per pixel), so an
+        // 8000px photo needs ~256 MB; lift low limits for this request only.
+        $limit = ini_get('memory_limit');
+        if ($limit !== '-1' && $this->bytes($limit) < 512 * 1024 * 1024) {
+            ini_set('memory_limit', '512M');
+        }
+
+        $original = @imagecreatefromstring((string) file_get_contents($file->getRealPath()));
+
+        if (! $original instanceof GdImage) {
+            throw ValidationException::withMessages([
+                $errorKey => 'This image could not be read. Please upload another image.',
+            ]);
+        }
+
+        $dimension = self::REQUIRED_IMAGE_DIMENSION;
+
+        if (imagesx($original) === $dimension && imagesy($original) === $dimension) {
+            $source = $original;
+        } else {
+            $source = imagecreatetruecolor($dimension, $dimension);
+            imagealphablending($source, false);
+            imagesavealpha($source, true);
+            imagecopyresampled($source, $original, 0, 0, 0, 0, $dimension, $dimension, imagesx($original), imagesy($original));
+            imagedestroy($original);
+        }
+
+        $targetBytes = self::TARGET_IMAGE_SIZE_KB * 1024;
+        $sourceWidth = imagesx($source);
+        $sourceHeight = imagesy($source);
+        $data = null;
+
+        foreach ([1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4] as $scale) {
+            $width = max(1, (int) round($sourceWidth * $scale));
+            $height = max(1, (int) round($sourceHeight * $scale));
+            $canvas = imagecreatetruecolor($width, $height);
+            imagealphablending($canvas, false);
+            imagesavealpha($canvas, true);
+            imagecopyresampled($canvas, $source, 0, 0, 0, 0, $width, $height, $sourceWidth, $sourceHeight);
+
+            foreach ([82, 74, 66, 58, 50, 42, 35, 30] as $quality) {
+                ob_start();
+                imagewebp($canvas, null, $quality);
+                $candidate = (string) ob_get_clean();
+
+                if (strlen($candidate) <= $targetBytes) {
+                    $data = $candidate;
+                    imagedestroy($canvas);
+                    break 2;
+                }
+            }
+
+            imagedestroy($canvas);
+        }
+
+        imagedestroy($source);
+
+        if ($data === null) {
+            throw ValidationException::withMessages([
+                $errorKey => 'This image could not be compressed below '.self::TARGET_IMAGE_SIZE_KB.' KB. Please upload a simpler image.',
+            ]);
+        }
+
+        $path = "products/{$product->id}/".Str::uuid().'.webp';
+        Storage::disk('public')->put($path, $data);
+
+        return $path;
+    }
+
+    /** Converts a php.ini size such as "128M" to bytes. */
+    private function bytes(string $value): int
+    {
+        $number = (int) $value;
+
+        return match (strtolower(substr(trim($value), -1))) {
+            'g' => $number * 1024 ** 3,
+            'm' => $number * 1024 ** 2,
+            'k' => $number * 1024,
+            default => $number,
+        };
     }
 }

@@ -35,7 +35,7 @@
     import { index as adminBrands } from '@/routes/admin/brands';
     import { index as adminCategories } from '@/routes/admin/categories';
     import { index as adminEnquiries } from '@/routes/admin/enquiries';
-    import { create as createProduct, index as adminProducts } from '@/routes/admin/products';
+    import { index as adminProducts } from '@/routes/admin/products';
     import { edit as adminSettings } from '@/routes/admin/settings';
     import { index as adminTags } from '@/routes/admin/tags';
     import { index as adminUsers } from '@/routes/admin/users';
@@ -219,8 +219,8 @@
                 </CardHeader>
                 <CardContent class="flex flex-col gap-1.5">
                     {#if permissions?.products}
-                        <Link href={createProduct().url} class={buttonVariants({ variant: 'outline', class: 'justify-start' })}>
-                            <PackageSearch class="size-4" /> Add a product
+                        <Link href={adminProducts().url} class={buttonVariants({ variant: 'outline', class: 'justify-start' })}>
+                            <PackageSearch class="size-4" /> Manage products
                         </Link>
                     {/if}
                     {#if permissions?.categories}

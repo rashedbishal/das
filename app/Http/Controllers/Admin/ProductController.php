@@ -16,6 +16,8 @@ use App\Services\ProductService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -23,7 +25,10 @@ use Inertia\Response;
 
 class ProductController extends Controller
 {
-    public function __construct(private readonly ProductService $products) {}
+    public function __construct(
+        private readonly ProductService $products,
+        private readonly ProductMediaService $media,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -48,34 +53,35 @@ class ProductController extends Controller
         ]);
     }
 
-    public function create(): Response
-    {
-        $this->authorize('create', Product::class);
-
-        return Inertia::render('admin/products/Form', $this->formOptions());
-    }
-
     public function store(StoreProductRequest $request): RedirectResponse
     {
-        $product = $this->products->create($request->user(), $request->validated());
+        $data = $request->validated();
+        unset($data['images']);
+
+        DB::transaction(function () use ($request, $data) {
+            $product = $this->products->create($request->user(), $data);
+
+            try {
+                // Empty file slots (an untouched picker) arrive as nulls.
+                $images = array_values(array_filter((array) $request->file('images', [])));
+
+                foreach ($images as $index => $image) {
+                    $this->media->addUpload($product, $image, 'image', [
+                        'is_main' => $index === 0,
+                        'sort_order' => $index,
+                    ], "images.{$index}");
+                }
+            } catch (\Throwable $e) {
+                // The product row is rolled back; remove any files already stored for it.
+                Storage::disk('public')->deleteDirectory("products/{$product->id}");
+
+                throw $e;
+            }
+        });
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Product created.']);
 
-        return to_route('admin.products.edit', $product);
-    }
-
-    public function edit(Product $product): Response
-    {
-        $this->authorize('manage', $product);
-
-        $product->load(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'relatedProducts']);
-        $product->media->each(fn (ProductMedia $media) => $media->url = $media->resolvedUrl());
-
-        return Inertia::render('admin/products/Form', [
-            'product' => $product,
-            'mediaLimits' => ProductMediaService::limits(),
-            ...$this->formOptions(),
-        ]);
+        return to_route('admin.products.index');
     }
 
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse

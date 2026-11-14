@@ -8,20 +8,20 @@ Analysis only. Nothing in the codebase was changed.
 
 The same layout appears in every file:
 
-| Doc field | Example | Maps to |
-|---|---|---|
-| Title line | "SHOFU VINTAGE PRO BODY 50G" | `name` |
-| Sub-title / description line | "Dental Circular Ceramic Honeycomb Firing Tray…" | `short_description` / `full_description` |
-| Material | Porcelain, Ceramic | spec row |
-| Key Features (numbered, Shofu only) | "Excellent Firing Stability" | `highlights` |
-| Warranty | "Not applicable" | spec row |
-| After-sale Service | "Online Technical Support" | spec row |
-| Place of Origin | China / Japan | spec row |
-| Delivery (some files) | "Through courier all over Bangladesh" | spec row, or one global setting |
-| Model Name | shade list (A1…D4), sizes (45/65/85/100mm), Silver/Golden | **variants, with no home in the schema** |
-| Size / weight in the text | "3 g", "128mm", "25 mm" | spec row |
-| Stock | always blank | `stock_quantity` / `stock_status` |
-| One embedded photo | | `product_media` |
+| Doc field                           | Example                                                   | Maps to                                  |
+| ----------------------------------- | --------------------------------------------------------- | ---------------------------------------- |
+| Title line                          | "SHOFU VINTAGE PRO BODY 50G"                              | `name`                                   |
+| Sub-title / description line        | "Dental Circular Ceramic Honeycomb Firing Tray…"          | `short_description` / `full_description` |
+| Material                            | Porcelain, Ceramic                                        | spec row                                 |
+| Key Features (numbered, Shofu only) | "Excellent Firing Stability"                              | `highlights`                             |
+| Warranty                            | "Not applicable"                                          | spec row                                 |
+| After-sale Service                  | "Online Technical Support"                                | spec row                                 |
+| Place of Origin                     | China / Japan                                             | spec row                                 |
+| Delivery (some files)               | "Through courier all over Bangladesh"                     | spec row, or one global setting          |
+| Model Name                          | shade list (A1…D4), sizes (45/65/85/100mm), Silver/Golden | **variants, with no home in the schema** |
+| Size / weight in the text           | "3 g", "128mm", "25 mm"                                   | spec row                                 |
+| Stock                               | always blank                                              | `stock_quantity` / `stock_status`        |
+| One embedded photo                  |                                                           | `product_media`                          |
 
 ### Where they don't match the schema
 
@@ -43,13 +43,13 @@ The same layout appears in every file:
 - The Shofu Art shade list mixes names and codes ("Gr (GR)", "DR-Br (DRBR)").
 - Each document has one photo, and they vary a lot:
 
-| Photo | Size |
-|---|---|
-| Firing Tray | 4636×4415, 1.2 MB |
-| hanging motor | 1920×1920, 263 KB |
-| Crucible Large | 479×455 |
-| Shofu Opaque 50G | 500×500 |
-| Most others | 650 to 1280 px, square |
+| Photo            | Size                   |
+| ---------------- | ---------------------- |
+| Firing Tray      | 4636×4415, 1.2 MB      |
+| hanging motor    | 1920×1920, 263 KB      |
+| Crucible Large   | 479×455                |
+| Shofu Opaque 50G | 500×500                |
+| Most others      | 650 to 1280 px, square |
 
 They are JPG or PNG, not WebP. All but Crucible Large are square.
 
@@ -65,32 +65,32 @@ What needs to change:
 - **Instrument has no sub-categories.** `subcategory_id` is required, so Instrument products can't be saved. Either make it nullable (recommended), or add a hidden "General" sub-category.
 - **Frontend and API.** Not verified: how the catalogue filters, breadcrumbs and category pages handle a category with no sub-categories.
 - **Suggested mapping (client to confirm):**
-  - Shofu Vintage Pro products: Material → Porcelain.
-  - Empty Cartridges (Flexible Denture): Material → Denture.
-  - Crucibles, Firing Tray, Saw handles, hanging motor, hand piece, Polishing Brush: Instrument or accessory items. Crucibles and the Firing Tray could arguably be Material → Porcelain.
+    - Shofu Vintage Pro products: Material → Porcelain.
+    - Empty Cartridges (Flexible Denture): Material → Denture.
+    - Crucibles, Firing Tray, Saw handles, hanging motor, hand piece, Polishing Brush: Instrument or accessory items. Crucibles and the Firing Tray could arguably be Material → Porcelain.
 
 ## 3. Image slots and recommended specs
 
 **Proposed CMS rule for all images:** WebP only, under 100 KB for large images and under 50 KB for everything else.
 
-| Slot | Where it shows | Today's rule | Recommended |
-|---|---|---|---|
-| **Home banner, desktop** | Hero (`<picture>`, above 1100px) | Auto-cropped to **1920×640** (3:1), WebP quality 82 | Keep. Upload a landscape file of at least 1920×640. Output is ~75–90 KB, so this is the one slot needing the 100 KB cap. |
-| **Home banner, tablet** | 768–1100px | Auto-cropped to **1536×768** (2:1) | Keep. Output is ~13 KB. |
-| **Home banner, mobile** | Under 767px | Auto-cropped to **1080×1350** (4:5) | Keep. Output is ~16 KB. |
-| **Product images** (card, detail, gallery, zoom) | Card has a 5:4 box with object-contain. Detail is a square. Thumbnails are small squares. | WebP only, exactly **1200×1200**, ≤500 KB, max 10 images | Square **1000×1000**, ≤100 KB. Use a white or transparent background, because the storefront blends images into the page with `mix-blend-multiply`. |
-| **Category image** | 4:3 category card, 256 px category page header, 56 px mega-menu tile | JPG/PNG/WebP, ≤5 MB, no size check, not converted | **800×600 (4:3)**, ≤50 KB, white or transparent background |
-| **Sub-category image** | 56 px square in the mega menu (admin shows 64 px) | Same loose rule as categories | **600×600**, ≤40 KB |
-| **Brand logo** | 56 px (Brands page) and 48 px (header) squares | Plain text field, no upload | **400×400**, transparent WebP, ≤30 KB |
-| **Site logo** (settings) | Setting `logo` | Plain text field, no upload | Needs a decision. The header seems to show text and an icon, so confirm where this logo actually appears. |
-| **Favicon and touch icon** | `favicon.ico`, `favicon.svg`, `apple-touch-icon.png` | The touch icon is 166×166, but Apple expects 180×180 | `apple-touch-icon.png` at 180×180. These stay PNG/SVG/ICO. |
-| **Social share image** | `twitter:card = summary_large_image` | No image set | Add one at 1200×630, if the client wants it. |
-| **Static page images** | `dental-suite.jpg` (1920×1024) is the fallback hero, the About hero and the editorial banner. 27 other demo JPGs in `resources/js/assets/storefront/` | Hard-coded JPGs in the code | Remove, or make them editable slots. Not editable from the CMS today. |
-| **Existing uploads** | `public/storage/categories/22` is 348 KB | | Re-upload under the new rules. |
+| Slot                                             | Where it shows                                                                                                                                        | Today's rule                                             | Recommended                                                                                                                                         |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Home banner, desktop**                         | Hero (`<picture>`, above 1100px)                                                                                                                      | Auto-cropped to **1920×640** (3:1), WebP quality 82      | Keep. Upload a landscape file of at least 1920×640. Output is ~75–90 KB, so this is the one slot needing the 100 KB cap.                            |
+| **Home banner, tablet**                          | 768–1100px                                                                                                                                            | Auto-cropped to **1536×768** (2:1)                       | Keep. Output is ~13 KB.                                                                                                                             |
+| **Home banner, mobile**                          | Under 767px                                                                                                                                           | Auto-cropped to **1080×1350** (4:5)                      | Keep. Output is ~16 KB.                                                                                                                             |
+| **Product images** (card, detail, gallery, zoom) | Card has a 5:4 box with object-contain. Detail is a square. Thumbnails are small squares.                                                             | WebP/JPG/PNG up to 10 MB (≤8000 px a side), re-encoded server-side to **1200×1200** WebP ≤50 KB, max 10 images | Square **1000×1000**, ≤100 KB. Use a white or transparent background, because the storefront blends images into the page with `mix-blend-multiply`. |
+| **Category image**                               | 4:3 category card, 256 px category page header, 56 px mega-menu tile                                                                                  | JPG/PNG/WebP, ≤5 MB, no size check, not converted        | **800×600 (4:3)**, ≤50 KB, white or transparent background                                                                                          |
+| **Sub-category image**                           | 56 px square in the mega menu (admin shows 64 px)                                                                                                     | Same loose rule as categories                            | **600×600**, ≤40 KB                                                                                                                                 |
+| **Brand logo**                                   | 56 px (Brands page) and 48 px (header) squares                                                                                                        | Plain text field, no upload                              | **400×400**, transparent WebP, ≤30 KB                                                                                                               |
+| **Site logo** (settings)                         | Setting `logo`                                                                                                                                        | Plain text field, no upload                              | Needs a decision. The header seems to show text and an icon, so confirm where this logo actually appears.                                           |
+| **Favicon and touch icon**                       | `favicon.ico`, `favicon.svg`, `apple-touch-icon.png`                                                                                                  | The touch icon is 166×166, but Apple expects 180×180     | `apple-touch-icon.png` at 180×180. These stay PNG/SVG/ICO.                                                                                          |
+| **Social share image**                           | `twitter:card = summary_large_image`                                                                                                                  | No image set                                             | Add one at 1200×630, if the client wants it.                                                                                                        |
+| **Static page images**                           | `dental-suite.jpg` (1920×1024) is the fallback hero, the About hero and the editorial banner. 27 other demo JPGs in `resources/js/assets/storefront/` | Hard-coded JPGs in the code                              | Remove, or make them editable slots. Not editable from the CMS today.                                                                               |
+| **Existing uploads**                             | `public/storage/categories/22` is 348 KB                                                                                                              |                                                          | Re-upload under the new rules.                                                                                                                      |
 
 ### Gaps in the current CMS rules
 
-- Only product images enforce a format, dimensions and size, and even those at 500 KB and 1200 px.
+- Only product images enforce a format, dimensions and size, and even those are normalised server-side (10 MB upload cap, stored as 1200 px WebP ≤50 KB).
 - Category, sub-category, brand and logo images have no WebP, dimension or small size limit.
 - Brand and logo don't have an upload at all.
 - Server-side conversion to WebP at fixed sizes, as banners already have, would be the most reliable way to apply the rules.

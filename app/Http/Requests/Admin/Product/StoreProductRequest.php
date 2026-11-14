@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\Product;
 
 use App\Models\Product;
+use App\Services\ProductMediaService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -52,6 +53,45 @@ class StoreProductRequest extends FormRequest
             'specifications.*.name' => ['required_with:specifications', 'string', 'max:255'],
             'specifications.*.value' => ['required_with:specifications', 'string', 'max:255'],
             'specifications.*.sort_order' => ['nullable', 'integer'],
+            'images' => ['nullable', 'array', 'max:'.ProductMediaService::MAX_IMAGES],
+            'images.*' => [
+                'nullable',
+                'file',
+                'image',
+                'mimes:'.implode(',', ProductMediaService::IMAGE_FORMATS),
+                'max:'.ProductMediaService::MAX_IMAGE_UPLOAD_SIZE_KB,
+                'dimensions:max_width='.ProductMediaService::MAX_IMAGE_SOURCE_DIMENSION
+                    .',max_height='.ProductMediaService::MAX_IMAGE_SOURCE_DIMENSION,
+            ],
+        ];
+    }
+
+    /**
+     * Name the offending image by position instead of "images.2".
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        $attributes = [];
+
+        foreach (array_keys((array) $this->file('images', [])) as $index) {
+            $attributes["images.{$index}"] = 'image '.($index + 1);
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'images.*.mimes' => ':Attribute must be WebP, JPG or PNG.',
+            'images.*.image' => ':Attribute must be WebP, JPG or PNG.',
+            'images.*.max' => ':Attribute must be '.(ProductMediaService::MAX_IMAGE_UPLOAD_SIZE_KB / 1024).' MB or smaller.',
+            'images.*.dimensions' => ':Attribute can be at most '.ProductMediaService::MAX_IMAGE_SOURCE_DIMENSION.'px on either side.',
         ];
     }
 }

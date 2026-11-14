@@ -75,7 +75,7 @@ export default defineConfig({
             typeAware: true,
         },
     },
-    
+
     fmt: {
         printWidth: 80,
         tabWidth: 4,

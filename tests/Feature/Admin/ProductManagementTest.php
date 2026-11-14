@@ -5,6 +5,8 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Subcategory;
 use App\Models\Tag;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 test('an admin with products.create can create a product with relations and specifications', function () {
     $admin = adminUser(['products.create', 'products.view']);
@@ -98,6 +100,27 @@ test('an admin can create a product directly under a category without a price', 
     expect($product->category_id)->toBe($category->id)
         ->and($product->subcategory_id)->toBeNull()
         ->and($product->regular_price)->toBeNull();
+});
+
+test('an admin can create a product with images and returns to the product list', function () {
+    Storage::fake('public');
+    $admin = adminUser(['products.create']);
+    $category = Category::factory()->create();
+
+    $response = $this->actingAs($admin)->post(route('admin.products.store'), [
+        'name' => 'Product with images',
+        'sku' => 'SKU-WITH-IMAGES',
+        'status' => 'draft',
+        'stock_quantity' => 0,
+        'stock_status' => 'on_order',
+        'category_id' => $category->id,
+        'images' => [UploadedFile::fake()->image('product.webp', 1200, 1200)],
+    ]);
+
+    $response->assertRedirect(route('admin.products.index'));
+    $product = Product::query()->where('sku', 'SKU-WITH-IMAGES')->firstOrFail();
+    expect($product->media)->toHaveCount(1)
+        ->and($product->media->first()->is_main)->toBeTrue();
 });
 
 test('creating a product rejects a subcategory that does not belong to the selected category', function () {
@@ -297,4 +320,21 @@ test('the admin product listing can search, filter by status, and paginate', fun
     $response->assertInertia(fn ($page) => $page
         ->where('products.data.0.name', 'Ultrasonic Scaler')
         ->where('products.total', 1));
+});
+
+test('an empty image slot does not block creating a product', function () {
+    $admin = adminUser(['products.create']);
+    $category = Category::factory()->create();
+
+    $this->actingAs($admin)->post(route('admin.products.store'), [
+        'name' => 'No images',
+        'sku' => 'SKU-NO-IMAGES',
+        'status' => 'draft',
+        'stock_quantity' => 0,
+        'stock_status' => 'on_order',
+        'category_id' => $category->id,
+        'images' => [null],
+    ])->assertSessionHasNoErrors()->assertRedirect(route('admin.products.index'));
+
+    expect(Product::query()->where('sku', 'SKU-NO-IMAGES')->firstOrFail()->media)->toBeEmpty();
 });

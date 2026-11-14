@@ -1,5 +1,6 @@
 <script lang="ts">
     import { router } from '@inertiajs/svelte';
+    import { toast } from 'svelte-sonner';
     import ImageOff from '@lucide/svelte/icons/image-off';
     import Info from '@lucide/svelte/icons/info';
     import Link from '@lucide/svelte/icons/link';
@@ -10,6 +11,7 @@
     import UploadCloud from '@lucide/svelte/icons/upload-cloud';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
     import FormSelect from '@/components/dashboard/FormSelect.svelte';
+    import { imageDimensions, imageWarnings } from './media';
     import { Alert, AlertDescription } from '@/components/ui/alert';
     import { Button } from '@/components/ui/button';
     import { Input } from '@/components/ui/input';
@@ -33,6 +35,7 @@
         image: {
             max: number;
             maxSizeKb: number;
+            targetSizeKb: number;
             requiredDimension: number;
             formats: string[];
         };
@@ -57,6 +60,7 @@
     let { productId, media, limits }: { productId: number; media: MediaItem[]; limits: MediaLimits } = $props();
 
     let queue = $state<QueueItem[]>([]);
+    let queueSeq = 0;
     let dragOver = $state(false);
     let fileInput: HTMLInputElement | undefined = $state(undefined);
     let deleteTarget = $state<MediaItem | null>(null);
@@ -77,16 +81,7 @@
         return file.name.split('.').pop()?.toLowerCase() ?? '';
     }
 
-    function imageDimensions(previewUrl: string): Promise<{ width: number; height: number }> {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-            img.onerror = () => reject(new Error('Could not read the image.'));
-            img.src = previewUrl;
-        });
-    }
-
-    async function validate(file: File, previewUrl: string): Promise<{ type: 'image' | 'video'; error?: string }> {
+    async function validate(file: File): Promise<{ type: 'image' | 'video'; error?: string }> {
         const type: 'image' | 'video' = file.type.startsWith('video/') ? 'video' : 'image';
         const rules = limits[type];
         const ext = extensionOf(file);
@@ -107,12 +102,8 @@
         }
 
         if (type === 'image') {
-            const size = limits.image.requiredDimension;
             try {
-                const { width, height } = await imageDimensions(previewUrl);
-                if (width !== size || height !== size) {
-                    return { type, error: `Must be exactly ${size}×${size}px (this is ${width}×${height}px).` };
-                }
+                await imageDimensions(file);
             } catch {
                 return { type, error: 'Could not read the image.' };
             }
@@ -124,11 +115,19 @@
     async function handleFiles(files: FileList | null) {
         if (!files) return;
 
+        const accepted: File[] = [];
+
         for (const file of Array.from(files)) {
             const previewUrl = URL.createObjectURL(file);
-            const { type, error } = await validate(file, previewUrl);
+            const { type, error } = await validate(file);
+            if (!error && type === 'image') {
+                accepted.push(file);
+            }
             const item: QueueItem = {
-                id: crypto.randomUUID(),
+                // Not crypto.randomUUID(): it only exists in secure contexts
+                // (HTTPS/localhost), so it threw on http://<LAN IP> and
+                // silently killed every upload.
+                id: `${Date.now()}-${++queueSeq}`,
                 file,
                 type,
                 previewUrl,
@@ -138,6 +137,10 @@
             };
             queue.push(item);
             uploadNext();
+        }
+
+        for (const warning of await imageWarnings(accepted, limits.image)) {
+            toast.warning(warning);
         }
     }
 
@@ -157,6 +160,9 @@
         router.post(storeMedia.url(productId), data, {
             forceFormData: true,
             preserveScroll: true,
+            // Without this Inertia remounts the page after every upload, which
+            // closes the edit modal and drops the rest of the queue.
+            preserveState: true,
             onProgress: (event) => {
                 item.progress = Math.round(event?.percentage ?? 0);
             },
@@ -186,7 +192,11 @@
     }
 
     function setMain(item: MediaItem) {
-        router.patch(updateMedia.url({ product: productId, media: item.id }), {}, { preserveScroll: true });
+        router.patch(
+            updateMedia.url({ product: productId, media: item.id }),
+            {},
+            { preserveScroll: true, preserveState: true },
+        );
     }
 
     function confirmDelete(item: MediaItem) {
@@ -196,7 +206,10 @@
 
     function removeMedia() {
         if (!deleteTarget) return;
-        router.delete(destroyMedia.url({ product: productId, media: deleteTarget.id }), { preserveScroll: true });
+        router.delete(destroyMedia.url({ product: productId, media: deleteTarget.id }), {
+            preserveScroll: true,
+            preserveState: true,
+        });
     }
 
     function submitUrl(event: SubmitEvent) {
@@ -211,6 +224,7 @@
         router.post(storeMedia.url(productId), data, {
             forceFormData: true,
             preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
                 urlValue = '';
                 showUrlForm = false;
@@ -231,8 +245,10 @@
         <Info />
         <AlertDescription>
             <p>
-                <strong>Images:</strong> WebP only, exactly {limits.image.requiredDimension}×{limits.image.requiredDimension}px
-                (square) — other dimensions are rejected. Max {formatSize(limits.image.maxSizeKb)}. Up to
+                <strong>Images:</strong> WebP, JPG or PNG (converted to WebP), {limits.image.requiredDimension}×{limits.image.requiredDimension}px
+                (square) recommended — other sizes are resized to fit and may look stretched or lose quality.
+                Uploads up to {formatSize(limits.image.maxSizeKb)} are accepted; images above
+                {formatSize(limits.image.targetSizeKb)} are compressed by the server and may lose quality. Up to
                 {limits.image.max} images.
             </p>
             <p class="mt-1">
@@ -364,7 +380,7 @@
             bind:this={fileInput}
             type="file"
             multiple
-            accept="image/webp,video/mp4,video/quicktime"
+            accept="image/webp,image/jpeg,image/png,video/mp4,video/quicktime"
             class="sr-only"
             onchange={(event) => {
                 handleFiles(event.currentTarget.files);

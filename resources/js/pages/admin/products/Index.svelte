@@ -12,6 +12,8 @@
     import { untrack } from 'svelte';
     import ImageIcon from '@lucide/svelte/icons/image';
     import Trash2 from '@lucide/svelte/icons/trash-2';
+    import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
+    import { Alert, AlertDescription } from '@/components/ui/alert';
     import AppHead from '@/components/AppHead.svelte';
     import BulkActions from '@/components/dashboard/BulkActions.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
@@ -23,6 +25,7 @@
     import { Spinner } from '@/components/ui/spinner';
     import { bulk as bulkProducts, destroy, index as productsIndex, store, update } from '@/routes/admin/products';
     import FormFields from './FormFields.svelte';
+    import { imageWarnings } from './media';
     import MediaManager from './MediaManager.svelte';
 
     type Option = { id: number; name: string };
@@ -40,6 +43,7 @@
         image: {
             max: number;
             maxSizeKb: number;
+            targetSizeKb: number;
             requiredDimension: number;
             formats: string[];
         };
@@ -105,6 +109,22 @@
 
     let search = $state(untrack(() => filters.search ?? ''));
     let createOpen = $state(false);
+    let createImageWarnings = $state<string[]>([]);
+    let createPreviews = $state<{ name: string; url: string }[]>([]);
+
+    function setCreatePreviews(files: File[]) {
+        createPreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
+        createPreviews = files.map((file) => ({ name: file.name, url: URL.createObjectURL(file) }));
+    }
+
+    $effect(() => {
+        if (!createOpen) {
+            untrack(() => {
+                setCreatePreviews([]);
+                createImageWarnings = [];
+            });
+        }
+    });
 
     let editingProductId = $state<number | null>(null);
     let editOpen = $state(false);
@@ -268,9 +288,67 @@
 <Dialog bind:open={createOpen}>
     <DialogContent class="max-h-[85vh] max-w-2xl overflow-y-auto">
         <DialogTitle>New product</DialogTitle>
-        <Form {...store.form()} class="space-y-6" onSuccess={() => (createOpen = false)}>
+        <Form
+            {...store.form()}
+            class="space-y-6"
+            enctype="multipart/form-data"
+            onSuccess={() => {
+                createOpen = false;
+            }}
+        >
             {#snippet children({ errors, processing })}
                 <FormFields {brands} {categories} {subcategories} {tags} {errors} />
+
+                <div class="grid gap-2 rounded-md border p-4">
+                    <label for="images" class="text-sm font-medium">Product images</label>
+                    <input
+                        id="images"
+                        name="images[]"
+                        type="file"
+                        multiple
+                        accept="image/webp,image/jpeg,image/png"
+                        class="text-sm"
+                        onchange={async (event) => {
+                            const files = Array.from(event.currentTarget.files ?? []);
+                            setCreatePreviews(files);
+                            createImageWarnings = await imageWarnings(files, mediaLimits.image);
+                        }}
+                    />
+                    {#if createPreviews.length > 0}
+                        <div class="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                            {#each createPreviews as preview, index (preview.url)}
+                                <div class="relative aspect-square overflow-hidden rounded-md border bg-muted">
+                                    <img src={preview.url} alt={preview.name} class="size-full object-cover" />
+                                    {#if index === 0}
+                                        <span
+                                            class="absolute top-1 left-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground"
+                                        >Main</span>
+                                    {/if}
+                                </div>
+                            {/each}
+                        </div>
+                    {/if}
+                    <p class="text-xs text-muted-foreground">
+                        WebP, JPG or PNG (converted to WebP), up to {mediaLimits.image.max} images. Recommended:
+                        {mediaLimits.image.requiredDimension}×{mediaLimits.image.requiredDimension}px and
+                        {mediaLimits.image.targetSizeKb} KB or less. Other sizes are resized to fit, and files up to
+                        {mediaLimits.image.maxSizeKb / 1024} MB are accepted and compressed by the server. The first
+                        image becomes the main image.
+                    </p>
+                    {#if createImageWarnings.length > 0}
+                        <Alert>
+                            <TriangleAlert />
+                            <AlertDescription>
+                                {#each createImageWarnings as warning (warning)}
+                                    <p>{warning}</p>
+                                {/each}
+                            </AlertDescription>
+                        </Alert>
+                    {/if}
+                    {#each Object.entries(errors).filter(([key]) => key === 'images' || key.startsWith('images.')) as [key, message] (key)}
+                        <p class="text-sm text-destructive">{message}</p>
+                    {/each}
+                </div>
 
                 <DialogFooter>
                     <Button type="button" variant="outline" onclick={() => (createOpen = false)}>Cancel</Button>
