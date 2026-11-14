@@ -44,7 +44,7 @@
 
 <PageMeta
     title="Brand Directory"
-    description="Explore the illustrative DENTORA brand directory and discover associated dental equipment."
+    description="Browse brands available through DAS and explore their dental products."
 />
 
 <section class="container-wide pt-10 pb-20">
@@ -54,10 +54,6 @@
     <p class="section-intro max-w-xl">
         Explore a range of specialist perspectives on clinical design, daily
         essentials and dental technology.
-    </p>
-    <p class="mt-4 text-[11px] leading-6 text-muted-foreground">
-        These are sample brand identities for this demo, not actual suppliers or
-        verified distributor relationships.
     </p>
     <div class="relative my-9 max-w-md">
         <Search class="absolute top-3.5 left-3 size-4 text-muted-foreground" />

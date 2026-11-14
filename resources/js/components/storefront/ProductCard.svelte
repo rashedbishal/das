@@ -11,7 +11,6 @@
 
     const href = $derived(show.url(p.slug));
     const priceLabel = $derived(formatPrice(p));
-    const hasPrice = $derived(p.salePrice !== null || p.regularPrice !== null);
     const phone = $derived(
         resolvePhone(
             page.props.contactWidgets.whatsapp,
@@ -52,11 +51,6 @@
             {#if p.showPrice}
                 <div>
                     <div class="product-price">{priceLabel}</div>
-                    {#if hasPrice}
-                        <span class="text-[8px] text-muted-foreground"
-                            >Illustrative price</span
-                        >
-                    {/if}
                 </div>
             {/if}
             <Link

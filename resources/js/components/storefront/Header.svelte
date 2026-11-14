@@ -176,7 +176,7 @@
     <div
         class="container-wide flex h-[86px] items-center justify-between gap-3 sm:gap-6"
     >
-        <Link href={home.url()} aria-label="DENTORA home">
+        <Link href={home.url()} aria-label="DAS home">
             <Wordmark />
         </Link>
         <nav

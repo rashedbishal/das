@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\ContactEnquirySubmissionController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PublicSettingsController;
 use App\Http\Controllers\StorefrontHomeController;
 use App\Services\SettingsService;
@@ -16,8 +15,7 @@ Route::inertia('categories', 'storefront/Categories')->name('categories.index');
 Route::inertia('categories/{category}', 'storefront/Category')->name('categories.show');
 
 // Not a plain Route::inertia(): guests need the page to stash an intended URL so the
-// inline login modal (see storefront/Product.svelte) returns them here after login,
-// the same way Catalog\ProductController::show() does for the real catalog.
+// inline login modal (see storefront/Product.svelte) returns them here after login.
 Route::get('products/{slug}', function (Request $request, SettingsService $settings) {
     if (! $request->user()) {
         $request->session()->put('url.intended', $request->fullUrl());
@@ -40,12 +38,6 @@ Route::get('contact-widgets', [PublicSettingsController::class, 'widgets'])->nam
 Route::post('contact/enquiries', [ContactEnquirySubmissionController::class, 'store'])
     ->middleware('throttle:5,1')
     ->name('contact.enquiries.store');
-
-// Prefixed so the real catalog doesn't collide with the storefront demo's /products and /categories URLs.
-Route::prefix('catalog')->name('catalog.')->group(function () {
-    Route::get('/', HomeController::class)->name('home');
-    require __DIR__.'/catalog.php';
-});
 
 require __DIR__.'/admin.php';
 

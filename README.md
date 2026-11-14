@@ -110,7 +110,7 @@ All admin endpoints require the `auth:sanctum` + `admin` middleware and the poli
 The backend and API for all of the following are complete and tested; only the Svelte UI is intentionally minimal or deferred, per the "minimal frontend" brief:
 
 - Product specifications and related-product editing have no dedicated UI yet (API/Inertia endpoints accept `specifications[]` and `related_product_ids[]` arrays already).
-- Public brand browsing pages (`/api/v1/brands`, Inertia `Catalog\BrandController`) exist but have no Svelte pages; only category pages were built per the brief's explicit page list.
+- Public brand browsing is available in the storefront at `/brands` and through `/api/v1/brands`.
 - No image upload UI for brand images — these accept a plain URL string for now. (Category/subcategory images now support file upload, stored on the `public` disk via `CategoryService`/`SubcategoryService`, alongside the existing URL-string option.)
 
 ## Running Tests

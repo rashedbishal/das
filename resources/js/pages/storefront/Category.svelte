@@ -22,7 +22,7 @@
     {@const c = category}
     <PageMeta
         title={c.name}
-        description="Explore category-specific dental equipment and illustrative specifications. Speak with DENTORA for product guidance."
+        description="Explore DAS dental products and specifications in this category. Contact us for product guidance."
     />
 
     <section class="container-wide pt-10 pb-16">

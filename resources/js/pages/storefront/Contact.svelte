@@ -43,7 +43,7 @@
 
 <PageMeta
     title="Contact & Product Enquiries"
-    description="Talk to DENTORA about your dental equipment requirements and send a product enquiry."
+    description="Talk to DAS about your dental product requirements and send an enquiry."
 />
 
 <section class="container-wide pt-10 pb-20">

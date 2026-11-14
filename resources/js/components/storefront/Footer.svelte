@@ -55,7 +55,7 @@
                 </div>
             </div>
             <div>
-                <h3 class="footer-heading">DENTORA</h3>
+                <h3 class="footer-heading">DAS</h3>
                 <div class="footer-links">
                     <Link href={about.url()}>About Us</Link>
                     <Link href={brands.url()}>Our Brands</Link>
@@ -86,10 +86,7 @@
                 © {new Date().getFullYear()}
                 {page.props.siteSettings.name}. All rights reserved.
             </span>
-            <span
-                >Frontend demonstration · Illustrative products, brands and
-                prices</span
-            >
+            <span>Dental products and product guidance</span>
         </div>
     </div>
 </footer>

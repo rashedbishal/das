@@ -56,10 +56,9 @@ quantity visibility and storefront display are currently product-level.
   homepage sections, and other settings; `--force` skips confirmation.
 - Public catalog browsing shows product summaries. Full product details require
   customer sign-in; guests see an inline login prompt on product pages.
-- The main storefront is under `/`, `/catalogue`, `/categories`, `/products`,
-  and `/brands`. A separate, more server-driven catalog also exists under
-  `/catalog`. These are parallel implementations and should be considered for
-  consolidation or clearly assigned responsibilities.
+- The public storefront is under `/`, `/catalogue`, `/categories`,
+  `/products`, and `/brands`. `/catalogue` is the single canonical product
+  listing; product details are at `/products/{slug}`.
 - Contact widgets, phone links, and quote/enquiry UI are present. **The quote
   and contact forms now persist submissions for CMS review in a paginated
   enquiry inbox. Admins with the appropriate permission can mark messages
@@ -135,8 +134,6 @@ are configured in the app.
 - Product CMS forms do not currently provide dedicated editing for variants,
   specifications, or related products; the imported records and public views
   support these data, but ongoing maintenance needs a defined workflow.
-- The two public catalog implementations can diverge. Decide which is canonical
-  before adding substantial features.
 - There is no email notification, CRM integration, assignment workflow, or
   retention policy for enquiries. Admins need to check the inbox and respond
   directly via the submitted phone/email details.

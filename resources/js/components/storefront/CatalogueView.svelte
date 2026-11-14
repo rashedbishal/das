@@ -203,7 +203,7 @@
             </fieldset>
         {/each}
         <fieldset class="border-b py-6">
-            <legend class="filter-title float-left w-full">Illustrative price</legend>
+            <legend class="filter-title float-left w-full">Price</legend>
             <div class="clear-both">
                 <label for={priceId} class="text-[11px] text-muted-foreground">
                     Maximum price
@@ -347,10 +347,8 @@
             <p
                 class="mt-9 border-t pt-5 text-[10px] leading-6 text-muted-foreground"
             >
-                Illustrative catalogue. All brands, availability, prices and
-                technical specifications are demo content, not verified
-                manufacturer information. Contact us to discuss actual
-                equipment.
+                Product availability, prices and specifications may change.
+                Contact DAS to confirm the latest details before buying.
             </p>
         </div>
     </div>

@@ -8,12 +8,12 @@
 
 <PageMeta
     title="Equipment Catalogue"
-    description="Explore the DENTORA dental equipment catalogue. Search, filter and compare illustrative products for your practice."
+    description="Browse DAS dental products by category, brand and availability."
 />
 
 <section class="container-wide pt-9 pb-16 lg:pt-12">
     <Breadcrumb items={[{ label: 'Equipment Catalogue' }]} />
-    <p class="eyebrow mb-3">The DENTORA collection</p>
+    <p class="eyebrow mb-3">The DAS collection</p>
     <h1 class="page-heading">Equipment for every ambition.</h1>
     <p class="section-intro mb-10 max-w-xl text-sm">
         From the everyday essential to your next big investment. Find what’s

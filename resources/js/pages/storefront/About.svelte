@@ -31,12 +31,12 @@
 </script>
 
 <PageMeta
-    title="About DENTORA"
-    description="A considered approach to professional dental equipment. Discover our illustrative mission, product selection philosophy and personal support."
+    title="About DAS"
+    description="Learn about DAS and our approach to helping dental professionals find suitable products."
 />
 
 <div class="container-wide pt-10">
-    <Breadcrumb items={[{ label: 'About DENTORA' }]} />
+    <Breadcrumb items={[{ label: 'About DAS' }]} />
 </div>
 
 <section
@@ -50,7 +50,7 @@
         height={1024}
     />
     <div class="container-wide py-16">
-        <p class="eyebrow mb-5">Meet DENTORA</p>
+        <p class="eyebrow mb-5">Meet DAS</p>
         <h1 class="max-w-[650px] text-[44px] leading-[1.1] md:text-[60px]">
             Better equipment.
             <br />A more personal approach.
@@ -78,22 +78,12 @@
         </div>
         <div>
             <p class="text-sm leading-8 text-muted-foreground">
-                DENTORA is a concept for a professional dental equipment
-                supplier, built around the everyday needs of clinics,
-                laboratories and healthcare professionals.
+                DAS helps dental professionals explore products for clinics,
+                laboratories and everyday practice needs.
             </p>
             <p class="mt-5 text-sm leading-8 text-muted-foreground">
-                Our proposed mission is simple: bring thoughtful product
-                selection together with clear information and direct buying
-                assistance, so every equipment decision starts with a better
-                conversation.
-            </p>
-            <p
-                class="mt-6 border-l-2 border-primary pl-4 text-[11px] leading-6 text-muted-foreground"
-            >
-                Demonstration company profile. Replace this content with the
-                real business story, sourcing policies and verified service
-                commitments before use.
+                We focus on clear product information and direct assistance,
+                so each buying decision can start with the right conversation.
             </p>
         </div>
     </div>

@@ -3,7 +3,7 @@ export const FALLBACK_CONTACT = {
     telephone: '01761158577',
     email: 'afazad@gmail.com',
     address: 'Business address to be confirmed',
-    hours: 'Mon–Fri, 9:00–17:00 (illustrative)',
+    hours: 'Business hours available on request',
 };
 
 export function resolvePhone(whatsapp: {

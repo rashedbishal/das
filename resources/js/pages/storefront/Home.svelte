@@ -231,10 +231,6 @@
             </Link>
         {/each}
     </div>
-    <p class="mt-8 text-center text-[9px] text-muted-foreground">
-        Illustrative brand identities for this demonstration. No distributor
-        relationships are implied.
-    </p>
 </section>
 
 <section class="container-wide section-space">
