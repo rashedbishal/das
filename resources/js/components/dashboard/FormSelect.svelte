@@ -49,7 +49,12 @@
     <Select.Trigger {id} class={cn('w-full', className)}>
         <span data-slot="select-value">{selectedLabel ?? placeholder}</span>
     </Select.Trigger>
-    <Select.Content>
+    <!--
+        No scroll lock: the page keeps scrolling (and keeps its scrollbar)
+        while the list is open, and the list stays anchored to the trigger,
+        hiding if the trigger is scrolled out of view (e.g. inside a modal).
+    -->
+    <Select.Content preventScroll={false} hideWhenDetached>
         {#each options as option (option.value)}
             <Select.Item
                 value={option.value}
