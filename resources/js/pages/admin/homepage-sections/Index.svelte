@@ -27,6 +27,8 @@
         DialogTitle,
     } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
+    import LimitedInput from '@/components/dashboard/LimitedInput.svelte';
+    import { fieldLimits } from '@/lib/field-limits';
     import { Label } from '@/components/ui/label';
     import { bulk as bulkSections, destroy, store, update } from '@/routes/admin/homepage-sections';
 
@@ -230,7 +232,7 @@
                 {#snippet children({ errors, processing, progress })}
                     <input type="hidden" name="type" value="banner" />
 
-                    <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="grid items-start gap-4 sm:grid-cols-2">
                         <div class="grid content-start gap-2">
                             <Label for="landscape_image">
                                 Landscape image
@@ -310,9 +312,10 @@
 
                     <div class="grid gap-2">
                         <Label for="title">Headline</Label>
-                        <Input
+                        <LimitedInput
                             id="title"
                             name="title"
+                            limit={fieldLimits.banner.title}
                             value={section?.title ?? ''}
                             required
                         />
@@ -321,20 +324,22 @@
 
                     <div class="grid gap-2">
                         <Label for="subtitle">Supporting text</Label>
-                        <Input
+                        <LimitedInput
                             id="subtitle"
                             name="subtitle"
+                            limit={fieldLimits.banner.subtitle}
                             value={section?.subtitle ?? ''}
                         />
                         <InputError message={errors.subtitle} />
                     </div>
 
-                    <div class="grid gap-4 sm:grid-cols-[2fr_1fr]">
+                    <div class="grid items-start gap-4 sm:grid-cols-[2fr_1fr]">
                         <div class="grid gap-2">
                             <Label for="link_url">Button link</Label>
-                            <Input
+                            <LimitedInput
                                 id="link_url"
                                 name="link_url"
+                                limit={fieldLimits.banner.link_url}
                                 type="url"
                                 placeholder="https://…"
                                 value={section?.link_url ?? ''}
@@ -343,9 +348,10 @@
                         </div>
                         <div class="grid gap-2">
                             <Label for="link_label">Button text</Label>
-                            <Input
+                            <LimitedInput
                                 id="link_label"
                                 name="link_label"
+                                limit={fieldLimits.banner.link_label}
                                 placeholder="Explore"
                                 value={section?.link_label ?? ''}
                             />
@@ -353,7 +359,7 @@
                         </div>
                     </div>
 
-                    <div class="grid gap-4 sm:grid-cols-3">
+                    <div class="grid items-start gap-4 sm:grid-cols-3">
                         <div class="grid gap-2">
                             <Label for="starts_at">Show from</Label>
                             <DatePicker
@@ -381,6 +387,7 @@
                                 name="sort_order"
                                 type="number"
                                 min="0"
+                                max={fieldLimits.number.sort_order}
                                 value={section?.sort_order ?? nextOrder}
                             />
                             <InputError message={errors.sort_order} />

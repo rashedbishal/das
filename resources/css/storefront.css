@@ -41,6 +41,9 @@
     font-size: 14px;
     -webkit-font-smoothing: antialiased;
     color-scheme: light;
+    /* CMS text can contain long unbroken strings (codes, URLs); wrap them
+       rather than letting them widen the page. */
+    overflow-wrap: break-word;
 }
 
 @layer base {
@@ -345,9 +348,13 @@
     animation: rise 0.7s 0.15s both;
 }
 .hero-banner-title {
+    display: -webkit-box;
+    overflow: hidden;
     font-size: 48px;
     line-height: 1.13;
     font-weight: 600;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
 }
 .hero-banner-subtitle {
     margin-top: 16px;
@@ -565,17 +572,25 @@
     flex-direction: column;
 }
 .product-title {
+    display: -webkit-box;
+    overflow: hidden;
     font-size: 15px;
     line-height: 1.5;
     min-height: 45px;
     margin-top: 6px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 .product-spec {
+    display: -webkit-box;
+    overflow: hidden;
     font-size: 11px;
     color: var(--muted-foreground);
     line-height: 1.7;
     min-height: 38px;
     margin-top: 7px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 .product-price {
     font-weight: 600;
@@ -865,6 +880,10 @@
     padding: 17px 0;
     font-size: 13px;
 }
+.spec-row > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
 .hero-entrance {
     animation: rise 0.7s both;
 }
@@ -981,6 +1000,7 @@
     .product-spec {
         font-size: 10px;
         min-height: 49px;
+        -webkit-line-clamp: 3;
     }
     .product-price {
         font-size: 13px;

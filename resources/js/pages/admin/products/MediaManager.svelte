@@ -11,10 +11,11 @@
     import UploadCloud from '@lucide/svelte/icons/upload-cloud';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
     import FormSelect from '@/components/dashboard/FormSelect.svelte';
+    import LimitedInput from '@/components/dashboard/LimitedInput.svelte';
+    import { fieldLimits } from '@/lib/field-limits';
     import { imageDimensions, imageWarnings } from './media';
     import { Alert, AlertDescription } from '@/components/ui/alert';
     import { Button } from '@/components/ui/button';
-    import { Input } from '@/components/ui/input';
     import {
         store as storeMedia,
         update as updateMedia,
@@ -69,6 +70,7 @@
     let showUrlForm = $state(false);
     let urlType = $state('image');
     let urlValue = $state('');
+    let urlError = $state<string | null>(null);
 
     const imageCount = $derived(media.filter((m) => m.type === 'image').length);
     const videoCount = $derived(media.filter((m) => m.type === 'video').length);
@@ -227,7 +229,11 @@
             preserveState: true,
             onSuccess: () => {
                 urlValue = '';
+                urlError = null;
                 showUrlForm = false;
+            },
+            onError: (errors) => {
+                urlError = Object.values(errors)[0] ?? 'Could not add this URL.';
             },
         });
     }
@@ -409,9 +415,19 @@
                     ]}
                     class="sm:w-32"
                 />
-                <Input placeholder="https://example.com/photo.jpg" bind:value={urlValue} class="flex-1" />
+                <div class="min-w-0 flex-1">
+                    <LimitedInput
+                        type="url"
+                        placeholder="https://example.com/photo.jpg"
+                        limit={fieldLimits.media.url}
+                        bind:value={urlValue}
+                    />
+                </div>
                 <Button type="submit" size="sm">Add</Button>
             </form>
+            {#if urlError}
+                <p class="mt-1 text-sm text-destructive">{urlError}</p>
+            {/if}
         {/if}
     </div>
 </section>

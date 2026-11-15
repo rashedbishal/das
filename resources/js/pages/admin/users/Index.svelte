@@ -19,6 +19,8 @@
     import { Button } from '@/components/ui/button';
     import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
+    import LimitedInput from '@/components/dashboard/LimitedInput.svelte';
+    import { fieldLimits } from '@/lib/field-limits';
     import { Label } from '@/components/ui/label';
     import { ApiError, apiFetch } from '@/lib/api';
     import * as adminsApi from '@/routes/api/v1/admin/admins';
@@ -545,15 +547,27 @@
         <form onsubmit={createAdmin} class="space-y-4">
             <div class="grid gap-2">
                 <Label for="admin_name">Name</Label>
-                <Input id="admin_name" required bind:value={newAdmin.name} />
+                <LimitedInput id="admin_name" required limit={fieldLimits.admin.name} bind:value={newAdmin.name} />
             </div>
             <div class="grid gap-2">
                 <Label for="admin_email">Email</Label>
-                <Input id="admin_email" type="email" required bind:value={newAdmin.email} />
+                <LimitedInput
+                    id="admin_email"
+                    type="email"
+                    required
+                    limit={fieldLimits.admin.email}
+                    bind:value={newAdmin.email}
+                />
             </div>
             <div class="grid gap-2">
                 <Label for="admin_password">Password</Label>
-                <Input id="admin_password" type="password" required bind:value={newAdmin.password} />
+                <Input
+                    id="admin_password"
+                    type="password"
+                    required
+                    maxlength={fieldLimits.admin.password}
+                    bind:value={newAdmin.password}
+                />
             </div>
             <div class="grid gap-2">
                 <Label for="admin_role">Role</Label>
@@ -581,7 +595,12 @@
             <form onsubmit={updateAdmin} class="space-y-4">
                 <div class="grid gap-2">
                     <Label for="edit_admin_name">Name</Label>
-                    <Input id="edit_admin_name" required bind:value={editAdminForm.name} />
+                    <LimitedInput
+                        id="edit_admin_name"
+                        required
+                        limit={fieldLimits.admin.name}
+                        bind:value={editAdminForm.name}
+                    />
                 </div>
                 {#if isEditingSelf}
                     <div class="grid gap-2">
@@ -589,6 +608,7 @@
                         <Input
                             id="edit_admin_password"
                             type="password"
+                            maxlength={fieldLimits.admin.password}
                             placeholder="Leave blank to keep current password"
                             bind:value={editAdminForm.password}
                         />
@@ -600,6 +620,7 @@
                                 id="edit_admin_password_confirmation"
                                 type="password"
                                 required
+                                maxlength={fieldLimits.admin.password}
                                 bind:value={editAdminForm.password_confirmation}
                             />
                         </div>
@@ -607,11 +628,22 @@
                 {:else}
                     <div class="grid gap-2">
                         <Label for="edit_admin_email">Email</Label>
-                        <Input id="edit_admin_email" type="email" required bind:value={editAdminForm.email} />
+                        <LimitedInput
+                            id="edit_admin_email"
+                            type="email"
+                            required
+                            limit={fieldLimits.admin.email}
+                            bind:value={editAdminForm.email}
+                        />
                     </div>
                     <div class="grid gap-2">
                         <Label for="edit_admin_phone">Phone</Label>
-                        <Input id="edit_admin_phone" bind:value={editAdminForm.phone} />
+                        <LimitedInput
+                            id="edit_admin_phone"
+                            type="tel"
+                            limit={fieldLimits.admin.phone}
+                            bind:value={editAdminForm.phone}
+                        />
                     </div>
                     <div class="grid gap-2">
                         <Label for="edit_admin_role">Role</Label>
@@ -640,7 +672,7 @@
         <form onsubmit={createRole} class="space-y-4">
             <div class="grid gap-2">
                 <Label for="role_name">Name</Label>
-                <Input id="role_name" required bind:value={newRole.name} />
+                <LimitedInput id="role_name" required limit={fieldLimits.role.name} bind:value={newRole.name} />
             </div>
             <fieldset class="grid max-h-64 gap-1 overflow-y-auto rounded-md border p-3 text-sm">
                 <legend class="mb-1 text-sm font-medium">Permissions</legend>

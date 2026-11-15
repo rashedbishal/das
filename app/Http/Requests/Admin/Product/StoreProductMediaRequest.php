@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\Product;
 
 use App\Services\ProductMediaService;
+use App\Support\FieldLimits;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -37,10 +38,10 @@ class StoreProductMediaRequest extends FormRequest
                     ],
                 ),
             ],
-            'url' => ['required_if:source,url', 'nullable', 'url:http,https', 'max:2048'],
+            'url' => ['required_if:source,url', 'nullable', 'url:http,https', FieldLimits::max('media.url')],
             'is_main' => ['boolean'],
-            'alt_text' => ['nullable', 'string', 'max:255'],
-            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'alt_text' => ['nullable', 'string', FieldLimits::max('media.alt_text')],
+            'sort_order' => ['nullable', 'integer', 'min:0', 'max:'.FieldLimits::get('number.sort_order')],
         ];
     }
 

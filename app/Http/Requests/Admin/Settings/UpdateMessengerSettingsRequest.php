@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\Settings;
 
 use App\Models\Setting;
+use App\Support\FieldLimits;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -20,7 +21,7 @@ class UpdateMessengerSettingsRequest extends FormRequest
     {
         return [
             'enabled' => ['required', 'boolean'],
-            'page_url' => ['required_if:enabled,true', 'nullable', 'url:http,https', 'max:2048'],
+            'page_url' => ['required_if:enabled,true', 'nullable', 'url:http,https', FieldLimits::max('settings.messenger_url')],
         ];
     }
 }

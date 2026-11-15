@@ -20,6 +20,8 @@
     import { Button } from '@/components/ui/button';
     import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
+    import LimitedInput from '@/components/dashboard/LimitedInput.svelte';
+    import { fieldLimits } from '@/lib/field-limits';
     import { Label } from '@/components/ui/label';
     import { bulk as bulkCategories, destroy, store, update } from '@/routes/admin/categories';
     import {
@@ -326,7 +328,7 @@
             {#snippet children({ errors, processing })}
                 <div class="grid gap-2">
                     <Label for="name">Name</Label>
-                    <Input id="name" name="name" required />
+                    <LimitedInput id="name" name="name" required limit={fieldLimits.category.name} />
                     <InputError message={errors.name} />
                 </div>
 
@@ -370,7 +372,13 @@
                 {#snippet children({ errors, processing })}
                     <div class="grid gap-2">
                         <Label for="edit_category_name">Name</Label>
-                        <Input id="edit_category_name" name="name" value={category.name} required />
+                        <LimitedInput
+                            id="edit_category_name"
+                            name="name"
+                            value={category.name}
+                            required
+                            limit={fieldLimits.category.name}
+                        />
                         <InputError message={errors.name} />
                     </div>
 
@@ -398,7 +406,14 @@
 
                     <div class="grid gap-2">
                         <Label for="edit_category_sort_order">Sort order</Label>
-                        <Input id="edit_category_sort_order" name="sort_order" type="number" value={category.sort_order} />
+                        <Input
+                            id="edit_category_sort_order"
+                            name="sort_order"
+                            type="number"
+                            min="0"
+                            max={fieldLimits.number.sort_order}
+                            value={category.sort_order}
+                        />
                         <InputError message={errors.sort_order} />
                     </div>
 
@@ -431,7 +446,7 @@
 
                 <div class="grid gap-2">
                     <Label for="subcategory_name">Name</Label>
-                    <Input id="subcategory_name" name="name" required />
+                    <LimitedInput id="subcategory_name" name="name" required limit={fieldLimits.subcategory.name} />
                     <InputError message={errors.name} />
                 </div>
 
@@ -487,7 +502,13 @@
 
                     <div class="grid gap-2">
                         <Label for="edit_subcategory_name">Name</Label>
-                        <Input id="edit_subcategory_name" name="name" value={subcategory.name} required />
+                        <LimitedInput
+                            id="edit_subcategory_name"
+                            name="name"
+                            value={subcategory.name}
+                            required
+                            limit={fieldLimits.subcategory.name}
+                        />
                         <InputError message={errors.name} />
                     </div>
 
@@ -515,7 +536,14 @@
 
                     <div class="grid gap-2">
                         <Label for="edit_subcategory_sort_order">Sort order</Label>
-                        <Input id="edit_subcategory_sort_order" name="sort_order" type="number" value={subcategory.sort_order} />
+                        <Input
+                            id="edit_subcategory_sort_order"
+                            name="sort_order"
+                            type="number"
+                            min="0"
+                            max={fieldLimits.number.sort_order}
+                            value={subcategory.sort_order}
+                        />
                         <InputError message={errors.sort_order} />
                     </div>
 

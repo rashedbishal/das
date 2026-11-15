@@ -5,6 +5,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\Subcategory;
 use App\Models\Tag;
+use App\Support\FieldLimits;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -213,7 +214,9 @@ test('publishing a draft product for the first time stamps published_at', functi
 test('product text fields accept values up to their validation limits', function () {
     $admin = adminUser(['products.update']);
     $product = Product::factory()->create();
-    $canonicalUrl = 'https://example.com/'.str_repeat('a', 2048 - strlen('https://example.com/'));
+    $canonicalUrl = 'https://example.com/'.str_repeat('a', FieldLimits::get('product.canonical_url') - strlen('https://example.com/'));
+    $shortDescriptionLength = FieldLimits::get('product.short_description');
+    $seoDescriptionLength = FieldLimits::get('product.seo_description');
 
     $response = $this->actingAs($admin)->put(route('admin.products.update', $product), [
         'name' => $product->name,
@@ -222,15 +225,15 @@ test('product text fields accept values up to their validation limits', function
         'stock_status' => $product->stock_status,
         'status' => $product->status,
         'category_id' => $product->category_id,
-        'short_description' => str_repeat('s', 500),
-        'seo_description' => str_repeat('d', 500),
+        'short_description' => str_repeat('s', $shortDescriptionLength),
+        'seo_description' => str_repeat('d', $seoDescriptionLength),
         'canonical_url' => $canonicalUrl,
     ]);
 
     $response->assertSessionHasNoErrors();
     expect($product->fresh())
-        ->short_description->toHaveLength(500)
-        ->seo_description->toHaveLength(500)
+        ->short_description->toHaveLength($shortDescriptionLength)
+        ->seo_description->toHaveLength($seoDescriptionLength)
         ->canonical_url->toBe($canonicalUrl);
 });
 

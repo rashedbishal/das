@@ -1,0 +1,81 @@
+{
+    "product": {
+        "name": 120,
+        "slug": 140,
+        "sku": 40,
+        "model_number": 60,
+        "short_description": 300,
+        "full_description": 5000,
+        "highlight": 150,
+        "seo_title": 70,
+        "seo_description": 170,
+        "seo_keywords": 255,
+        "canonical_url": 500,
+        "spec_name": 80,
+        "spec_value": 200
+    },
+    "media": {
+        "url": 1000,
+        "alt_text": 150
+    },
+    "brand": {
+        "name": 60,
+        "slug": 80,
+        "description": 1000,
+        "website_url": 500,
+        "logo": 500
+    },
+    "category": {
+        "name": 50,
+        "slug": 70,
+        "description": 500,
+        "image": 500
+    },
+    "subcategory": {
+        "name": 60,
+        "slug": 80,
+        "description": 500,
+        "image": 500
+    },
+    "tag": {
+        "name": 40
+    },
+    "role": {
+        "name": 50,
+        "slug": 60
+    },
+    "admin": {
+        "name": 80,
+        "email": 150,
+        "phone": 20,
+        "password": 128
+    },
+    "banner": {
+        "title": 80,
+        "subtitle": 180,
+        "link_url": 500,
+        "link_label": 30
+    },
+    "settings": {
+        "site_name": 60,
+        "logo": 500,
+        "favicon": 500,
+        "contact_email": 150,
+        "contact_phone": 20,
+        "address": 300,
+        "timezone": 64,
+        "social_link": 500,
+        "whatsapp_phone": 20,
+        "whatsapp_message": 300,
+        "messenger_url": 500,
+        "delivery_note": 120,
+        "default_title": 70,
+        "default_description": 170,
+        "scripts": 20000
+    },
+    "number": {
+        "sort_order": 9999,
+        "stock_quantity": 1000000,
+        "price": 999999999
+    }
+}
