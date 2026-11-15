@@ -53,6 +53,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('products', ProductController::class)
         ->only(['index', 'store', 'update', 'destroy']);
     Route::post('products/bulk', [ProductController::class, 'bulk'])->name('products.bulk');
+    Route::post('products/{product}/restore', [ProductController::class, 'restore'])
+        ->withTrashed()
+        ->name('products.restore');
+    Route::delete('products/{product}/force', [ProductController::class, 'forceDestroy'])
+        ->withTrashed()
+        ->name('products.force-destroy');
 
     Route::post('products/{product}/media', [ProductMediaController::class, 'store'])->name('products.media.store');
     Route::patch('products/{product}/media/{media}', [ProductMediaController::class, 'update'])->name('products.media.update');

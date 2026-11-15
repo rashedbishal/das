@@ -31,11 +31,14 @@
 
     let { banners = [] }: { banners?: Banner[] } = $props();
 
-    loadBrands();
+    // Decorative sections: if these fail, they simply stay empty.
+    loadBrands().catch(() => {});
 
     let featuredProducts = $state<ProductCard[]>([]);
 
-    fetchFeaturedProducts().then((items) => (featuredProducts = items));
+    fetchFeaturedProducts()
+        .then((items) => (featuredProducts = items))
+        .catch(() => {});
 
     const reasons = [
         {

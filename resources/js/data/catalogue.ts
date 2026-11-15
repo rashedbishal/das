@@ -55,6 +55,13 @@ export type ProductDetail = ProductCard & {
     media: ProductMedia[];
     stockQuantity: number | null;
     relatedProducts: ProductCard[];
+    seo: ProductSeo;
+};
+
+export type ProductSeo = {
+    title: string | null;
+    description: string | null;
+    canonicalUrl: string | null;
 };
 
 export type CategorySubcategory = {
@@ -70,6 +77,7 @@ export type Category = {
     slug: string;
     description: string | null;
     image: string | null;
+    productsCount: number;
     subcategories: CategorySubcategory[];
 };
 
@@ -79,6 +87,7 @@ export type Brand = {
     slug: string;
     description: string | null;
     logo: string | null;
+    productsCount: number;
 };
 
 export type CatalogueFilters = {
@@ -130,6 +139,11 @@ type RawProductDetail = RawProductCard & {
         alt_text: string | null;
     }[];
     related_products: RawProductCard[];
+    seo: {
+        title: string | null;
+        description: string | null;
+        canonical_url: string | null;
+    } | null;
 };
 
 function toNumber(value: string | null): number | null {
@@ -184,28 +198,37 @@ function mapProductDetail(raw: RawProductDetail): ProductDetail {
             altText: m.alt_text,
         })),
         relatedProducts: (raw.related_products ?? []).map(mapProductCard),
+        seo: {
+            title: raw.seo?.title ?? null,
+            description: raw.seo?.description ?? null,
+            canonicalUrl: raw.seo?.canonical_url ?? null,
+        },
     };
 }
 
-function mapCategory(raw: {
+export type RawCategory = {
     id: number;
     name: string;
     slug: string;
     description: string | null;
     image: string | null;
+    products_count?: number;
     subcategories?: {
         id: number;
         name: string;
         slug: string;
         image: string | null;
     }[];
-}): Category {
+};
+
+export function mapCategory(raw: RawCategory): Category {
     return {
         id: raw.id,
         name: raw.name,
         slug: raw.slug,
         description: raw.description,
         image: raw.image,
+        productsCount: raw.products_count ?? 0,
         subcategories: (raw.subcategories ?? []).map((s) => ({
             id: s.id,
             name: s.name,
@@ -221,6 +244,7 @@ function mapBrand(raw: {
     slug: string;
     description: string | null;
     logo: string | null;
+    products_count?: number;
 }): Brand {
     return {
         id: raw.id,
@@ -228,6 +252,7 @@ function mapBrand(raw: {
         slug: raw.slug,
         description: raw.description,
         logo: raw.logo,
+        productsCount: raw.products_count ?? 0,
     };
 }
 
@@ -245,15 +270,27 @@ const sortMap: Record<string, string> = {
     'price-desc': 'price_desc',
 };
 
+export type RawProductPage = {
+    data: RawProductCard[];
+    meta: { current_page: number; last_page: number; total: number };
+};
+
+/** Converts a paginated /api/v1/products payload (or the same shape passed as page props). */
+export function toProductPage(result: RawProductPage | null): ProductPage {
+    return {
+        items: (result?.data ?? []).map(mapProductCard),
+        page: result?.meta.current_page ?? 1,
+        lastPage: result?.meta.last_page ?? 1,
+        total: result?.meta.total ?? 0,
+    };
+}
+
 export async function fetchProducts(
     filters: CatalogueFilters,
     page = 1,
     perPage = 12,
 ): Promise<ProductPage> {
-    const result = await apiFetch<{
-        data: RawProductCard[];
-        meta: { current_page: number; last_page: number; total: number };
-    }>(
+    const result = await apiFetch<RawProductPage>(
         productsIndex.url({
             query: {
                 search: filters.q,
@@ -269,12 +306,7 @@ export async function fetchProducts(
         }),
     );
 
-    return {
-        items: (result?.data ?? []).map(mapProductCard),
-        page: result?.meta.current_page ?? 1,
-        lastPage: result?.meta.last_page ?? 1,
-        total: result?.meta.total ?? 0,
-    };
+    return toProductPage(result);
 }
 
 export class ProductUnauthorizedError extends Error {}
@@ -303,14 +335,6 @@ export async function fetchProduct(
     }
 }
 
-export async function countProducts(
-    filters: CatalogueFilters,
-): Promise<number> {
-    const result = await fetchProducts(filters, 1, 1);
-
-    return result.total;
-}
-
 export async function fetchFeaturedProducts(): Promise<ProductCard[]> {
     const result = await apiFetch<{ featured_products: RawProductCard[] }>(
         homepageApi.url(),
@@ -325,22 +349,38 @@ export const brands = writable<Brand[]>([]);
 let categoriesPromise: Promise<void> | null = null;
 let brandsPromise: Promise<void> | null = null;
 
+/**
+ * Loads categories once per page session. A failed load is forgotten (not cached),
+ * so the next caller retries instead of being stuck with an empty list.
+ */
 export function loadCategories(): Promise<void> {
-    categoriesPromise ??= apiFetch<{ data: Category[] }>(
+    categoriesPromise ??= apiFetch<{ data: RawCategory[] }>(
         categoriesIndex.url(),
-    ).then((result) => {
-        categories.set((result?.data ?? []).map(mapCategory));
-    });
+    )
+        .then((result) => {
+            categories.set((result?.data ?? []).map(mapCategory));
+        })
+        .catch((error: unknown) => {
+            categoriesPromise = null;
+
+            throw error;
+        });
 
     return categoriesPromise;
 }
 
 export function loadBrands(): Promise<void> {
-    brandsPromise ??= apiFetch<{ data: Brand[] }>(brandsIndex.url()).then(
-        (result) => {
+    brandsPromise ??= apiFetch<{ data: Parameters<typeof mapBrand>[0][] }>(
+        brandsIndex.url(),
+    )
+        .then((result) => {
             brands.set((result?.data ?? []).map(mapBrand));
-        },
-    );
+        })
+        .catch((error: unknown) => {
+            brandsPromise = null;
+
+            throw error;
+        });
 
     return brandsPromise;
 }

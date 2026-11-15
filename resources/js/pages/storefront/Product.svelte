@@ -17,6 +17,7 @@
     import SectionHeading from '@/components/storefront/SectionHeading.svelte';
     import {
         fetchProduct,
+        ProductUnauthorizedError,
         formatPrice,
         pathSegment,
         stockLabel,
@@ -40,6 +41,9 @@
 
     let product = $state<ProductDetail | null>(null);
     let loading = $state(true);
+    /** Set when the product couldn't be loaded for a reason other than "not found". */
+    let loadFailed = $state(false);
+    let attempt = $state(0);
     let zoom = $state(false);
     let loginModalOpen = $state(false);
     let activeIndex = $state(0);
@@ -82,16 +86,24 @@
             return;
         }
 
+        void attempt;
         loginModalOpen = false;
         loading = true;
+        loadFailed = false;
         product = null;
 
         fetchProduct(slug)
             .then((result) => {
                 product = result;
             })
-            .catch(() => {
+            .catch((error: unknown) => {
                 product = null;
+
+                if (error instanceof ProductUnauthorizedError) {
+                    loginModalOpen = true;
+                } else {
+                    loadFailed = true;
+                }
             })
             .finally(() => {
                 loading = false;
@@ -100,6 +112,7 @@
 </script>
 
 {#if !authed}
+    <PageMeta title="Sign in to view this product" noindex />
     <section class="container-wide flex flex-col items-center gap-4 py-20 text-center">
         <h1 class="text-xl font-semibold">Sign in to view this product</h1>
         <p class="max-w-sm text-sm text-muted-foreground">
@@ -112,7 +125,12 @@
     <LoginModal bind:open={loginModalOpen} {loginMode} />
 {:else if product}
     {@const p = product}
-    <PageMeta title={p.name} description={p.shortDescription ?? p.name} />
+    <PageMeta
+        title={p.seo.title || p.name}
+        description={p.seo.description || p.shortDescription || p.name}
+        image={activeMedia?.type === 'image' ? activeMedia.url : p.image}
+        canonical={p.seo.canonicalUrl}
+    />
 
     <section class="container-wide pt-9 pb-16">
         <Breadcrumb
@@ -348,6 +366,15 @@
             class="h-[65dvh] w-full bg-photo object-contain"
         />
     </Modal>
+{:else if loadFailed}
+    <PageMeta title="Product unavailable" noindex />
+    <section class="container-wide flex flex-col items-center gap-4 py-20 text-center" role="alert">
+        <h1 class="text-xl font-semibold">We couldn’t load this product</h1>
+        <p class="max-w-sm text-sm text-muted-foreground">
+            Please check your connection and try again.
+        </p>
+        <Button onclick={() => attempt++}>Try again</Button>
+    </section>
 {:else if !loading}
     <MissingPage />
 {/if}

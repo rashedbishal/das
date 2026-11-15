@@ -104,8 +104,11 @@ class FortifyServiceProvider extends ServiceProvider
     private function configureRateLimiting(): void
     {
 
+        // Web logins post the identifier as "email"; the JSON API posts it as "identifier".
+        // Key on whichever was sent so each account gets its own limit on both surfaces.
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
+            $identifier = (string) ($request->input(Fortify::username()) ?? $request->input('identifier', ''));
+            $throttleKey = Str::transliterate(Str::lower($identifier).'|'.$request->ip());
 
             return Limit::perMinute(5)->by($throttleKey);
         });

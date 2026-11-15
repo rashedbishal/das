@@ -16,8 +16,8 @@
             <title>{{ config('app.name', 'Laravel') }}</title>
         </x-inertia::head>
 
-        {{-- Raw head script, e.g. Google Tag Manager, set from Admin -> Settings -> Tracking. Only --}}
-        {{-- admins holding settings.manage can edit this, so it is intentionally unescaped. --}}
+        {{-- Raw head script, e.g. Google Tag Manager, set from Admin -> Settings -> Tracking. Only the --}}
+        {{-- Mother Admin can edit it, and ShareTrackingScripts leaves it out of admin pages. --}}
         {!! $headScripts ?? '' !!}
     </head>
     <body class="font-sans antialiased">

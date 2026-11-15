@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Support\PublicDiskImage;
 use App\Support\SlugGenerator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -22,13 +24,24 @@ class CategoryService
             ? SlugGenerator::unique('categories', $data['slug'])
             : SlugGenerator::unique('categories', $data['name']);
 
-        $category = Category::query()->create($data);
+        $storedPath = null;
 
-        if ($imageFile instanceof UploadedFile && $imageFile->isValid()) {
-            $category->update(['image' => $this->storeImage($category, $imageFile)]);
+        try {
+            return DB::transaction(function () use ($data, $imageFile, &$storedPath) {
+                $category = Category::query()->create($data);
+
+                if ($imageFile instanceof UploadedFile && $imageFile->isValid()) {
+                    $storedPath = $this->storeImage($category, $imageFile);
+                    $category->update(['image' => $storedPath]);
+                }
+
+                return $category;
+            });
+        } catch (\Throwable $e) {
+            $this->deleteStoredImage($storedPath);
+
+            throw $e;
         }
-
-        return $category;
     }
 
     /**
@@ -37,17 +50,30 @@ class CategoryService
     public function update(Category $category, array $data): Category
     {
         $imageFile = Arr::pull($data, 'image_file');
+        $previousImage = $category->getRawOriginal('image');
 
         $data['slug'] = ! empty($data['slug'])
             ? SlugGenerator::unique('categories', $data['slug'], $category->id)
             : $category->slug;
 
+        $storedPath = null;
+
         if ($imageFile instanceof UploadedFile && $imageFile->isValid()) {
-            $this->deleteStoredImage($category->image);
-            $data['image'] = $this->storeImage($category, $imageFile);
+            $storedPath = $this->storeImage($category, $imageFile);
+            $data['image'] = $storedPath;
         }
 
-        $category->update($data);
+        try {
+            $category->update($data);
+        } catch (\Throwable $e) {
+            $this->deleteStoredImage($storedPath);
+
+            throw $e;
+        }
+
+        if ($previousImage !== $category->getRawOriginal('image')) {
+            $this->deleteStoredImage($previousImage);
+        }
 
         return $category;
     }
@@ -62,11 +88,14 @@ class CategoryService
             throw ValidationException::withMessages(['category' => 'This category still has products assigned and cannot be deleted.']);
         }
 
-        $this->deleteStoredImage($category->image);
+        $this->deleteStoredImage($category->getRawOriginal('image'));
 
         $category->delete();
     }
 
+    /**
+     * @return string The file's path on the public disk.
+     */
     private function storeImage(Category $category, UploadedFile $file): string
     {
         $path = $file->store("categories/{$category->id}", 'public');
@@ -75,15 +104,17 @@ class CategoryService
             throw new \RuntimeException('Failed to store the uploaded category image.');
         }
 
-        return Storage::disk('public')->url($path);
+        return $path;
     }
 
-    private function deleteStoredImage(?string $image): void
+    /**
+     * Deletes the file behind a stored value, but only if it is an upload we manage
+     * (never an external URL an admin typed in).
+     */
+    private function deleteStoredImage(?string $storedValue): void
     {
-        $prefix = Storage::disk('public')->url('');
-
-        if ($image && str_starts_with($image, $prefix)) {
-            Storage::disk('public')->delete(substr($image, strlen($prefix)));
+        if (PublicDiskImage::isStoredPath($storedValue)) {
+            Storage::disk('public')->delete((string) $storedValue);
         }
     }
 }

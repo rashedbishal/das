@@ -28,7 +28,7 @@ class UpdateGeneralSettingsRequest extends FormRequest
             'currency' => ['required', 'string', 'size:3'],
             'timezone' => ['required', 'timezone'],
             'social_links' => ['nullable', 'array'],
-            'social_links.*' => ['nullable', 'url', 'max:2048'],
+            'social_links.*' => ['nullable', 'url:http,https', 'max:2048'],
         ];
     }
 }

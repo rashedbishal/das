@@ -37,7 +37,7 @@ class StoreProductMediaRequest extends FormRequest
                     ],
                 ),
             ],
-            'url' => ['required_if:source,url', 'nullable', 'url', 'max:2048'],
+            'url' => ['required_if:source,url', 'nullable', 'url:http,https', 'max:2048'],
             'is_main' => ['boolean'],
             'alt_text' => ['nullable', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],

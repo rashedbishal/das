@@ -3,7 +3,10 @@
 use App\Models\ContactEnquiry;
 use App\Models\Role;
 use App\Models\User;
+use App\Notifications\NewContactEnquiry;
+use App\Services\SettingsService;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Support\Facades\Notification;
 
 test('visitors can submit an enquiry which is saved as unread', function () {
     $response = $this->from(route('contact'))->post(route('contact.enquiries.store'), [
@@ -183,4 +186,35 @@ test('default admin roles receive appropriate enquiry permissions', function () 
         ->and($customerManager->hasPermission('enquiries.manage'))->toBeTrue()
         ->and($readOnlyAdmin->hasPermission('enquiries.view'))->toBeTrue()
         ->and($readOnlyAdmin->hasPermission('enquiries.manage'))->toBeFalse();
+});
+
+test('a new enquiry notifies the business contact email', function () {
+    Notification::fake();
+    app(SettingsService::class)->set('general', 'contact_email', 'sales@example.test');
+
+    $this->from(route('contact'))->post(route('contact.enquiries.store'), [
+        'name' => 'Dr. Example',
+        'phone' => '01712345678',
+    ])->assertRedirect(route('contact'));
+
+    Notification::assertSentOnDemand(
+        NewContactEnquiry::class,
+        fn (NewContactEnquiry $notification, array $channels, object $notifiable) => $notifiable->routes['mail'] === 'sales@example.test'
+            && $notification->enquiry->name === 'Dr. Example',
+    );
+});
+
+test('an enquiry with the honeypot field filled is silently discarded', function () {
+    Notification::fake();
+    app(SettingsService::class)->set('general', 'contact_email', 'sales@example.test');
+
+    $response = $this->from(route('contact'))->post(route('contact.enquiries.store'), [
+        'name' => 'Spam Bot',
+        'phone' => '01712345678',
+        'website' => 'https://spam.example',
+    ]);
+
+    $response->assertRedirect(route('contact'))->assertSessionHasNoErrors();
+    expect(ContactEnquiry::query()->count())->toBe(0);
+    Notification::assertNothingSent();
 });

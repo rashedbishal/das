@@ -24,6 +24,8 @@ class AuthController extends Controller
      */
     public function register(Request $request): JsonResponse
     {
+        $this->ensureStateful($request);
+
         $user = $this->createNewUser->create($request->all());
 
         Auth::login($user);
@@ -47,6 +49,8 @@ class AuthController extends Controller
             ]);
         }
 
+        $this->ensureStateful($request);
+
         Auth::login($user);
         $request->session()->regenerate();
 
@@ -65,5 +69,19 @@ class AuthController extends Controller
     public function user(Request $request): JsonResponse
     {
         return response()->json(['data' => $request->user()]);
+    }
+
+    /**
+     * These endpoints sign in by session cookie (Sanctum stateful SPA mode), which only
+     * exists for requests from a configured first-party origin. Anything else gets a
+     * clear 400 instead of failing with "Session store not set" (a 500).
+     */
+    private function ensureStateful(Request $request): void
+    {
+        abort_unless(
+            $request->hasSession(),
+            400,
+            'Session authentication is only available to the first-party site (see SANCTUM_STATEFUL_DOMAINS).',
+        );
     }
 }

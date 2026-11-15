@@ -12,7 +12,10 @@
     let submitted = $state(false);
     let products = $state<ProductCard[]>([]);
 
-    fetchProducts({}, 1, 100).then((result) => (products = result.items));
+    // Optional product picker; if the list can't load, the free-text field still works.
+    fetchProducts({}, 1, 100)
+        .then((result) => (products = result.items))
+        .catch(() => {});
 
 </script>
 
@@ -39,6 +42,13 @@
         onSuccess={() => (submitted = true)}
     >
         {#snippet children({ errors: formErrors, processing })}
+            <!-- Honeypot: hidden from people and assistive tech; bots that fill it are ignored. -->
+            <div class="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true">
+                <label>
+                    Website
+                    <input name="website" tabindex="-1" autocomplete="off" />
+                </label>
+            </div>
             <div class="grid gap-5 sm:grid-cols-2">
                 <label>
                     <span class="form-label">Your name *</span>

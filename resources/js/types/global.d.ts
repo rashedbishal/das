@@ -30,7 +30,13 @@ declare module '@inertiajs/core' {
                 contactEmail: string | null;
                 address: string | null;
                 currency: string;
-                deliveryNote: string;
+                deliveryNote: string | null;
+            };
+            seo: {
+                defaultTitle: string | null;
+                defaultDescription: string | null;
+                canonicalUrl: string;
+                appUrl: string;
             };
             [key: string]: unknown;
         };

@@ -9,6 +9,7 @@
 <PageMeta
     title="Page not found"
     description="Let’s help you find the right equipment instead."
+    noindex
 />
 
 <div class="container-wide py-24 text-center lg:py-36">

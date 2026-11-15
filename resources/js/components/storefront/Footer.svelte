@@ -5,9 +5,10 @@
     import { categories, loadCategories } from '@/data/catalogue';
     import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
     import { about, brands, catalogue, contact, home } from '@/routes';
+    import { show as categoryShow } from '@/routes/categories';
     import Wordmark from './Wordmark.svelte';
 
-    loadCategories();
+    loadCategories().catch(() => {});
 
     const phone = $derived(
         resolvePhone(
@@ -48,7 +49,7 @@
                 <h3 class="footer-heading">Explore equipment</h3>
                 <div class="footer-links">
                     {#each $categories.slice(0, 5) as c (c.id)}
-                        <Link href={catalogue.url({ query: { category: c.slug } })}>
+                        <Link href={categoryShow.url(c.slug)}>
                             {c.name}
                         </Link>
                     {/each}

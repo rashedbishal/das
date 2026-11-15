@@ -28,7 +28,11 @@ class ProductController extends Controller
     {
         abort_unless(Gate::allows('view', $product), 404);
 
-        $product->load(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'variants', 'relatedProducts.brand', 'relatedProducts.media']);
+        $product->load([
+            'brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'variants',
+            // Only published products may be recommended; drafts and archived ones stay hidden.
+            'relatedProducts' => fn ($query) => $query->published()->with(['brand', 'media']),
+        ]);
 
         return response()->json(['data' => new ProductResource($product)]);
     }

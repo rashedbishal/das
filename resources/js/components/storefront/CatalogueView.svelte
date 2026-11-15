@@ -7,7 +7,6 @@
     import {
         brands,
         categories,
-        countProducts,
         fetchProducts,
         filterQuery,
         loadBrands,
@@ -16,6 +15,7 @@
         stockLabel,
         type CatalogueFilters,
         type ProductCard as ProductCardType,
+        type ProductPage,
     } from '@/data/catalogue';
     import Button from './Button.svelte';
     import Drawer from './Drawer.svelte';
@@ -28,23 +28,39 @@
     let {
         urlFor,
         fixedCategory,
+        initial = null,
     }: {
         urlFor: (query: Record<string, string>) => string;
         fixedCategory?: string;
+        /** First page rendered server-side for the current URL's filters. */
+        initial?: ProductPage | null;
     } = $props();
 
-    loadCategories();
-    loadBrands();
+    // Background lookups for the filter lists; a failure only leaves a list empty.
+    loadCategories().catch(() => {});
+    loadBrands().catch(() => {});
 
+    /** Delay before fetching after a filter change, so typing doesn't fire a request per key. */
+    const FETCH_DELAY_MS = 250;
+
+    // svelte-ignore state_referenced_locally
+    const firstPage = initial;
     let filters = $state<CatalogueFilters>(parseFilters(page.url));
     let writtenUrl = page.url;
     let mobile = $state(false);
-    let items = $state<ProductCardType[]>([]);
-    let total = $state(0);
-    let currentPage = $state(1);
-    let lastPage = $state(1);
+    let items = $state<ProductCardType[]>(firstPage?.items ?? []);
+    let total = $state(firstPage?.total ?? 0);
+    let currentPage = $state(firstPage?.page ?? 1);
+    let lastPage = $state(firstPage?.lastPage ?? 1);
     let loading = $state(false);
-    let categoryCounts = $state<Record<string, number>>({});
+    let failed = $state(false);
+    let skipInitialFetch = firstPage !== null;
+    /** Only the latest request may update the list, so slow stale responses are ignored. */
+    let latestRequest = 0;
+
+    const categoryCounts = $derived(
+        Object.fromEntries($categories.map((c) => [c.slug, c.productsCount])),
+    );
 
     $effect(() => {
         if (page.url !== writtenUrl) {
@@ -56,38 +72,74 @@
     $effect(() => {
         const activeFilters = { ...filters, category: fixedCategory ?? filters.category };
 
-        loading = true;
+        if (skipInitialFetch) {
+            skipInitialFetch = false;
 
-        fetchProducts(activeFilters, 1).then((result) => {
-            items = result.items;
-            total = result.total;
-            currentPage = result.page;
-            lastPage = result.lastPage;
-            loading = false;
-        });
-    });
-
-    $effect(() => {
-        for (const c of $categories) {
-            if (!(c.slug in categoryCounts)) {
-                countProducts({ category: c.slug }).then((count) => {
-                    categoryCounts = { ...categoryCounts, [c.slug]: count };
-                });
-            }
+            return;
         }
+
+        const request = ++latestRequest;
+        loading = true;
+        failed = false;
+
+        const timer = setTimeout(() => {
+            fetchProducts(activeFilters, 1)
+                .then((result) => {
+                    if (request !== latestRequest) {
+                        return;
+                    }
+
+                    items = result.items;
+                    total = result.total;
+                    currentPage = result.page;
+                    lastPage = result.lastPage;
+                })
+                .catch(() => {
+                    if (request === latestRequest) {
+                        failed = true;
+                    }
+                })
+                .finally(() => {
+                    if (request === latestRequest) {
+                        loading = false;
+                    }
+                });
+        }, FETCH_DELAY_MS);
+
+        return () => clearTimeout(timer);
     });
+
+    function retry() {
+        filters = { ...filters };
+    }
 
     function loadMore() {
         const activeFilters = { ...filters, category: fixedCategory ?? filters.category };
+        const request = ++latestRequest;
 
         loading = true;
+        failed = false;
 
-        fetchProducts(activeFilters, currentPage + 1).then((result) => {
-            items = [...items, ...result.items];
-            currentPage = result.page;
-            lastPage = result.lastPage;
-            loading = false;
-        });
+        fetchProducts(activeFilters, currentPage + 1)
+            .then((result) => {
+                if (request !== latestRequest) {
+                    return;
+                }
+
+                items = [...items, ...result.items];
+                currentPage = result.page;
+                lastPage = result.lastPage;
+            })
+            .catch(() => {
+                if (request === latestRequest) {
+                    failed = true;
+                }
+            })
+            .finally(() => {
+                if (request === latestRequest) {
+                    loading = false;
+                }
+            });
     }
 
     function onChange(value: CatalogueFilters) {
@@ -308,6 +360,15 @@
                     </Button>
                 {/each}
             </div>
+            {#if failed}
+                <div class="empty-state" role="alert">
+                    <h2 class="text-xl">We couldn’t load the equipment list.</h2>
+                    <p class="mt-3 mb-6 text-xs text-muted-foreground">
+                        Please check your connection and try again.
+                    </p>
+                    <Button variant="outline" onclick={retry}>Try again</Button>
+                </div>
+            {/if}
             {#if items.length}
                 <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-5">
                     {#each items as p (p.id)}
@@ -327,7 +388,7 @@
                         </Button>
                     </div>
                 {/if}
-            {:else if !loading}
+            {:else if !loading && !failed}
                 <div class="empty-state">
                     <Search class="mx-auto mb-5 size-8 text-primary" />
                     <h2 class="text-xl">No equipment found.</h2>

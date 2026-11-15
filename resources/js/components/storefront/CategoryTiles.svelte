@@ -2,29 +2,22 @@
     import { Link } from '@inertiajs/svelte';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import LayoutGrid from '@lucide/svelte/icons/layout-grid';
-    import { categories, countProducts, loadCategories } from '@/data/catalogue';
-    import { catalogue } from '@/routes';
+    import { categories, loadCategories } from '@/data/catalogue';
+    import { show as categoryShow } from '@/routes/categories';
 
-    loadCategories();
+    // Product counts come with the category list (one request, not one per category).
+    loadCategories().catch(() => {});
 
-    let counts = $state<Record<string, number>>({});
-
-    $effect(() => {
-        for (const c of $categories) {
-            if (!(c.slug in counts)) {
-                countProducts({ category: c.slug }).then((total) => {
-                    counts = { ...counts, [c.slug]: total };
-                });
-            }
-        }
-    });
+    const counts = $derived(
+        Object.fromEntries($categories.map((c) => [c.slug, c.productsCount])),
+    );
 </script>
 
 <!-- Wrapping, centred row (not a grid) so a short last row sits in the middle. -->
 <div class="category-cards">
     {#each $categories as c (c.id)}
         <Link
-            href={catalogue.url({ query: { category: c.slug } })}
+            href={categoryShow.url(c.slug)}
             class="category-card"
         >
             <div class="category-card-media">

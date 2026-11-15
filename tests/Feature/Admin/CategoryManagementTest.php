@@ -5,6 +5,7 @@ use App\Models\Product;
 use App\Models\Subcategory;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 test('an admin with categories.manage can create a category', function () {
@@ -89,6 +90,64 @@ test('uploading a new image when updating a category replaces and deletes the ol
     Storage::disk('public')->assertMissing($firstImagePath);
     $secondImagePath = "categories/{$category->id}/".basename($category->fresh()->image);
     Storage::disk('public')->assertExists($secondImagePath);
+});
+
+test('an uploaded category image is stored as a relative path and survives a domain change', function () {
+    Storage::fake('public');
+    $admin = adminUser(['categories.manage']);
+    $category = Category::factory()->create();
+
+    $this->actingAs($admin)->put(route('admin.categories.update', $category), [
+        'name' => $category->name,
+        'is_active' => true,
+        'image_file' => UploadedFile::fake()->image('chair.jpg'),
+    ]);
+
+    $storedPath = $category->fresh()->getRawOriginal('image');
+    expect($storedPath)->toStartWith("categories/{$category->id}/")
+        ->and($category->fresh()->image)->toBe(Storage::disk('public')->url($storedPath));
+
+    // The admin form resubmits the resolved URL; it must not be stored as an absolute URL.
+    $this->actingAs($admin)->put(route('admin.categories.update', $category), [
+        'name' => $category->name,
+        'is_active' => true,
+        'image' => $category->fresh()->image,
+    ]);
+
+    expect($category->fresh()->getRawOriginal('image'))->toBe($storedPath);
+    Storage::disk('public')->assertExists($storedPath);
+});
+
+test('replacing an uploaded category image with an external url deletes the uploaded file', function () {
+    Storage::fake('public');
+    $admin = adminUser(['categories.manage']);
+    $category = Category::factory()->create();
+    $this->actingAs($admin)->put(route('admin.categories.update', $category), [
+        'name' => $category->name,
+        'is_active' => true,
+        'image_file' => UploadedFile::fake()->image('chair.jpg'),
+    ]);
+    $uploadedPath = $category->fresh()->getRawOriginal('image');
+
+    $this->actingAs($admin)->put(route('admin.categories.update', $category), [
+        'name' => $category->name,
+        'is_active' => true,
+        'image' => 'https://cdn.example.com/chair.jpg',
+    ]);
+
+    expect($category->fresh()->image)->toBe('https://cdn.example.com/chair.jpg');
+    Storage::disk('public')->assertMissing($uploadedPath);
+});
+
+test('legacy absolute storage urls from an old domain are converted to relative paths', function () {
+    $category = Category::factory()->create();
+    DB::table('categories')->where('id', $category->id)->update([
+        'image' => 'http://192.168.0.111:8000/storage/categories/7/legacy.jpg',
+    ]);
+
+    (include database_path('migrations/2026_11_15_060102_convert_category_images_to_relative_paths.php'))->up();
+
+    expect($category->fresh()->getRawOriginal('image'))->toBe('categories/7/legacy.jpg');
 });
 
 test('a category cannot be deleted while it still has subcategories', function () {

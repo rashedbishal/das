@@ -52,11 +52,19 @@ class HandleInertiaRequests extends Middleware
             'siteSettings' => [
                 'name' => $settings->get('general', 'site_name', config('app.name')),
                 'logo' => $settings->get('general', 'logo'),
-                'contactPhone' => $settings->get('general', 'contact_phone', '01761158577'),
-                'contactEmail' => $settings->get('general', 'contact_email', 'afazad@gmail.com'),
+                // Contact details come from the CMS (seeded by SettingsSeeder); the storefront
+                // has its own fallback in resources/js/lib/contact.ts when they are unset.
+                'contactPhone' => $settings->get('general', 'contact_phone'),
+                'contactEmail' => $settings->get('general', 'contact_email'),
                 'address' => $settings->get('general', 'address'),
                 'currency' => $settings->get('general', 'currency', 'BDT'),
-                'deliveryNote' => $settings->get('catalog', 'delivery_note', 'Through courier all over Bangladesh'),
+                'deliveryNote' => $settings->get('catalog', 'delivery_note'),
+            ],
+            'seo' => [
+                'defaultTitle' => $settings->get('seo', 'default_title'),
+                'defaultDescription' => $settings->get('seo', 'default_description'),
+                'canonicalUrl' => $request->url(),
+                'appUrl' => rtrim((string) config('app.url'), '/'),
             ],
         ];
     }

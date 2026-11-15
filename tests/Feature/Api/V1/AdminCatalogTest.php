@@ -41,6 +41,23 @@ test('an admin without products.create receives a 403 from the api', function ()
     $response->assertForbidden();
 });
 
+test('an admin without products.publish cannot publish a product through the api', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create(['status' => 'draft']);
+
+    $response = $this->actingAs($admin)->putJson(route('api.v1.admin.products.update', $product), [
+        'name' => $product->name,
+        'sku' => $product->sku,
+        'stock_quantity' => $product->stock_quantity,
+        'stock_status' => $product->stock_status,
+        'status' => 'published',
+        'category_id' => $product->category_id,
+    ]);
+
+    $response->assertUnprocessable()->assertJsonValidationErrors('status');
+    expect($product->fresh()->status)->toBe('draft');
+});
+
 test('a guest receives a 401 from the admin products api', function () {
     $this->getJson(route('api.v1.admin.products.index'))->assertUnauthorized();
 });
@@ -69,4 +86,19 @@ test('an admin cannot delete media belonging to a different product through the 
     $response = $this->actingAs($admin)->deleteJson(route('api.v1.admin.products.media.destroy', [$product, $media]));
 
     $response->assertNotFound();
+});
+
+test('the api enforces the per-type media limit', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+    ProductMedia::factory()->for($product)->video()->count(2)->create();
+
+    $response = $this->actingAs($admin)->postJson(route('api.v1.admin.products.media.store', $product), [
+        'source' => 'url',
+        'type' => 'video',
+        'url' => 'https://www.youtube.com/watch?v=onetoomany',
+    ]);
+
+    $response->assertUnprocessable()->assertJsonValidationErrors('file');
+    expect($product->media()->where('type', 'video')->count())->toBe(2);
 });

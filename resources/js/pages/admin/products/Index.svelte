@@ -9,6 +9,7 @@
 <script lang="ts">
     import { Form, Link, router } from '@inertiajs/svelte';
     import Pencil from '@lucide/svelte/icons/pencil';
+    import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
     import { untrack } from 'svelte';
     import ImageIcon from '@lucide/svelte/icons/image';
     import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -23,7 +24,15 @@
     import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
     import { Spinner } from '@/components/ui/spinner';
-    import { bulk as bulkProducts, destroy, index as productsIndex, store, update } from '@/routes/admin/products';
+    import {
+        bulk as bulkProducts,
+        destroy,
+        forceDestroy,
+        index as productsIndex,
+        restore,
+        store,
+        update,
+    } from '@/routes/admin/products';
     import FormFields from './FormFields.svelte';
     import { imageWarnings } from './media';
     import MediaManager from './MediaManager.svelte';
@@ -132,6 +141,9 @@
 
     let deleteTarget = $state<ProductRow | null>(null);
     let deleteOpen = $state(false);
+    let forceDeleteTarget = $state<ProductRow | null>(null);
+    let forceDeleteOpen = $state(false);
+    const viewingTrash = $derived(Boolean(filters.trashed));
     let selectedIds = $state<number[]>([]);
     let bulkDeleteOpen = $state(false);
     let bulkError = $state<string | null>(null);
@@ -154,6 +166,21 @@
     function confirmDeleteProduct() {
         if (deleteTarget) {
             router.delete(destroy.url(deleteTarget.id));
+        }
+    }
+
+    function restoreProduct(product: ProductRow) {
+        router.post(restore.url(product.id));
+    }
+
+    function askForceDeleteProduct(product: ProductRow) {
+        forceDeleteTarget = product;
+        forceDeleteOpen = true;
+    }
+
+    function confirmForceDeleteProduct() {
+        if (forceDeleteTarget) {
+            router.delete(forceDestroy.url(forceDeleteTarget.id));
         }
     }
 
@@ -181,8 +208,18 @@
 
 <div class="w-full p-4">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 class="text-xl font-semibold">Products</h1>
-        <Button onclick={() => (createOpen = true)}>New product</Button>
+        <h1 class="text-xl font-semibold">{viewingTrash ? 'Trash' : 'Products'}</h1>
+        <div class="flex gap-2">
+            {#if viewingTrash}
+                <Link href={productsIndex.url()} class={buttonVariants({ variant: 'outline' })}>Back to products</Link>
+            {:else}
+                <Link href={productsIndex.url({ query: { trashed: 1 } })} class={buttonVariants({ variant: 'outline' })}>
+                    <Trash2 class="size-4" />
+                    Trash
+                </Link>
+                <Button onclick={() => (createOpen = true)}>New product</Button>
+            {/if}
+        </div>
     </div>
 
     <form onsubmit={applySearch} class="mb-4 flex gap-2">
@@ -194,8 +231,15 @@
         <Button type="submit">Search</Button>
     </form>
 
+    {#if viewingTrash}
+        <p class="mb-4 text-sm text-muted-foreground">
+            Deleted products stay here until you restore them or delete them permanently. Permanent deletion also
+            removes their uploaded images and frees their SKU.
+        </p>
+    {/if}
+
     <BulkActions
-        count={selectedIds.length}
+        count={viewingTrash ? 0 : selectedIds.length}
         error={bulkError}
         onClear={() => {
             selectedIds = [];
@@ -257,18 +301,33 @@
             {/if}
         {/snippet}
         {#snippet actions(product)}
-            <Button variant="ghost" size="sm" aria-label="Edit {product.name}" onclick={() => askEditProduct(product)}>
-                <Pencil class="size-4" />
-            </Button>
-            <Button
-                variant="ghost"
-                size="sm"
-                class="text-destructive hover:text-destructive"
-                aria-label="Delete {product.name}"
-                onclick={() => askDeleteProduct(product)}
-            >
-                <Trash2 class="size-4" />
-            </Button>
+            {#if viewingTrash}
+                <Button variant="ghost" size="sm" aria-label="Restore {product.name}" onclick={() => restoreProduct(product)}>
+                    <RotateCcw class="size-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    class="text-destructive hover:text-destructive"
+                    aria-label="Delete {product.name} permanently"
+                    onclick={() => askForceDeleteProduct(product)}
+                >
+                    <Trash2 class="size-4" />
+                </Button>
+            {:else}
+                <Button variant="ghost" size="sm" aria-label="Edit {product.name}" onclick={() => askEditProduct(product)}>
+                    <Pencil class="size-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    class="text-destructive hover:text-destructive"
+                    aria-label="Delete {product.name}"
+                    onclick={() => askDeleteProduct(product)}
+                >
+                    <Trash2 class="size-4" />
+                </Button>
+            {/if}
         {/snippet}
     </ResponsiveTable>
 
@@ -390,14 +449,23 @@
 
 <ConfirmDialog
     bind:open={deleteOpen}
-    title="Delete product?"
-    description={deleteTarget ? `This will permanently delete "${deleteTarget.name}". This cannot be undone.` : ''}
+    title="Move product to trash?"
+    description={deleteTarget ? `"${deleteTarget.name}" will be hidden from the site. You can restore it from the trash.` : ''}
     onConfirm={confirmDeleteProduct}
 />
 
 <ConfirmDialog
+    bind:open={forceDeleteOpen}
+    title="Delete product permanently?"
+    description={forceDeleteTarget
+        ? `This permanently deletes "${forceDeleteTarget.name}" and its uploaded images. This cannot be undone.`
+        : ''}
+    onConfirm={confirmForceDeleteProduct}
+/>
+
+<ConfirmDialog
     bind:open={bulkDeleteOpen}
-    title="Delete selected products?"
-    description={`This will permanently delete ${selectedIds.length} selected products. This cannot be undone.`}
+    title="Move selected products to trash?"
+    description={`${selectedIds.length} selected products will be hidden from the site. You can restore them from the trash.`}
     onConfirm={() => runBulkAction('delete')}
 />

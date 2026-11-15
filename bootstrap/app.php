@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Middleware\AddSecurityHeaders;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\LogoutInactiveUsers;
 use App\Http\Middleware\ShareTrackingScripts;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,7 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        $middleware->append(AddSecurityHeaders::class);
+
         $middleware->web(append: [
+            LogoutInactiveUsers::class,
             HandleAppearance::class,
             ShareTrackingScripts::class,
             HandleInertiaRequests::class,
@@ -28,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->statefulApi();
+        $middleware->api(append: [LogoutInactiveUsers::class]);
 
         // The dashboard and admin pages are admin-only, so guests there go to the admin
         // sign-in; signed-in visitors to a guest page go back to their side of the app.

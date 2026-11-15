@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin\HomepageSection;
 
 use App\Models\HomepageSection;
+use App\Services\BannerImageService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -25,9 +26,9 @@ class StoreHomepageSectionRequest extends FormRequest
             'subtitle' => ['nullable', 'string', 'max:255'],
             // Raw uploads (e.g. straight from an image generator); BannerImageService crops
             // and converts them to the desktop, tablet and mobile WebP renditions.
-            'landscape_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:20480', 'dimensions:min_width=1200,min_height=500'],
-            'portrait_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:20480', 'dimensions:min_width=800,min_height=1000'],
-            'link_url' => ['nullable', 'url', 'max:2048'],
+            'landscape_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:20480', 'dimensions:min_width=1200,min_height=500,max_width='.BannerImageService::MAX_SOURCE_DIMENSION.',max_height='.BannerImageService::MAX_SOURCE_DIMENSION],
+            'portrait_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:20480', 'dimensions:min_width=800,min_height=1000,max_width='.BannerImageService::MAX_SOURCE_DIMENSION.',max_height='.BannerImageService::MAX_SOURCE_DIMENSION],
+            'link_url' => ['nullable', 'url:http,https', 'max:2048'],
             'link_label' => ['nullable', 'string', 'max:40'],
             'show_text' => ['boolean'],
             'sort_order' => ['integer', 'min:0'],

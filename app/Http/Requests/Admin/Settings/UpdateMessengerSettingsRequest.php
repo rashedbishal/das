@@ -20,7 +20,7 @@ class UpdateMessengerSettingsRequest extends FormRequest
     {
         return [
             'enabled' => ['required', 'boolean'],
-            'page_url' => ['required_if:enabled,true', 'nullable', 'url', 'max:2048'],
+            'page_url' => ['required_if:enabled,true', 'nullable', 'url:http,https', 'max:2048'],
         ];
     }
 }

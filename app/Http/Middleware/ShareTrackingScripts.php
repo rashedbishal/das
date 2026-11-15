@@ -13,14 +13,18 @@ class ShareTrackingScripts
     public function __construct(private readonly SettingsService $settings) {}
 
     /**
-     * Handle an incoming request.
+     * Tracking snippets run unescaped, so they are only injected into the public
+     * storefront. Admin pages never receive them: a snippet running in an admin's
+     * session could act with that admin's permissions.
      *
      * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        View::share('headScripts', (string) $this->settings->get('tracking', 'head_scripts', ''));
-        View::share('bodyScripts', (string) $this->settings->get('tracking', 'body_scripts', ''));
+        $isAdminArea = $request->is('admin', 'admin/*', 'dashboard', 'dashboard/*');
+
+        View::share('headScripts', $isAdminArea ? '' : (string) $this->settings->get('tracking', 'head_scripts', ''));
+        View::share('bodyScripts', $isAdminArea ? '' : (string) $this->settings->get('tracking', 'body_scripts', ''));
 
         return $next($request);
     }

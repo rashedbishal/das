@@ -10,6 +10,8 @@ use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
 {
+    use ChecksPublishPermission;
+
     public function authorize(): bool
     {
         return $this->user()?->can('create', Product::class) ?? false;
@@ -42,7 +44,7 @@ class StoreProductRequest extends FormRequest
             'seo_title' => ['nullable', 'string', 'max:255'],
             'seo_description' => ['nullable', 'string', 'max:500'],
             'seo_keywords' => ['nullable', 'string', 'max:255'],
-            'canonical_url' => ['nullable', 'url', 'max:2048'],
+            'canonical_url' => ['nullable', 'url:http,https', 'max:2048'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'subcategory_id' => ['nullable', 'integer', Rule::exists('subcategories', 'id')->where('category_id', $this->input('category_id'))],
             'tag_ids' => ['nullable', 'array'],
@@ -88,6 +90,7 @@ class StoreProductRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'sku.unique' => 'This SKU is already used by another product. If you deleted that product, restore it or delete it permanently from the trash.',
             'images.*.mimes' => ':Attribute must be WebP, JPG or PNG.',
             'images.*.image' => ':Attribute must be WebP, JPG or PNG.',
             'images.*.max' => ':Attribute must be '.(ProductMediaService::MAX_IMAGE_UPLOAD_SIZE_KB / 1024).' MB or smaller.',

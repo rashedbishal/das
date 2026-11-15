@@ -35,7 +35,7 @@ class ProductController extends Controller
         $this->authorize('viewAny', Product::class);
 
         $products = $this->products->paginate(
-            $request->only(['search', 'status', 'brand', 'category', 'subcategory', 'stock_status', 'sort', 'per_page']),
+            $request->only(['search', 'status', 'brand', 'category', 'subcategory', 'stock_status', 'sort', 'per_page', 'trashed']),
             includeAllStatuses: true,
         );
 
@@ -47,7 +47,7 @@ class ProductController extends Controller
 
         return Inertia::render('admin/products/Index', [
             'products' => $products,
-            'filters' => $request->only(['search', 'status', 'brand', 'category', 'subcategory', 'stock_status', 'sort']),
+            'filters' => $request->only(['search', 'status', 'brand', 'category', 'subcategory', 'stock_status', 'sort', 'trashed']),
             'mediaLimits' => ProductMediaService::limits(),
             ...$this->formOptions(),
         ]);
@@ -99,9 +99,34 @@ class ProductController extends Controller
 
         $this->products->delete($product);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Product deleted.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Product moved to trash.']);
 
         return to_route('admin.products.index');
+    }
+
+    public function restore(Product $product): RedirectResponse
+    {
+        $this->authorize('delete', $product);
+        abort_unless($product->trashed(), 404);
+
+        $this->products->restore($product);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Product restored.']);
+
+        return to_route('admin.products.index', ['trashed' => 1]);
+    }
+
+    public function forceDestroy(Product $product): RedirectResponse
+    {
+        $this->authorize('delete', $product);
+        // Only products already in the trash can be removed for good.
+        abort_unless($product->trashed(), 404);
+
+        $this->products->forceDelete($product);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Product permanently deleted.']);
+
+        return to_route('admin.products.index', ['trashed' => 1]);
     }
 
     public function bulk(Request $request): RedirectResponse

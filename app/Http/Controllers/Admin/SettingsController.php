@@ -31,6 +31,7 @@ class SettingsController extends Controller
             'catalog' => $this->settings->group('catalog'),
             'seo' => $this->settings->group('seo'),
             'tracking' => $this->settings->group('tracking'),
+            'canManageTracking' => request()->user()?->can('manageTracking', Setting::class) ?? false,
         ]);
     }
 

@@ -15,11 +15,15 @@ class ProductMediaController extends Controller
 
     public function store(StoreProductMediaRequest $request, Product $product): JsonResponse
     {
-        $meta = $request->only(['is_main', 'alt_text', 'sort_order']);
+        $isUpload = $request->string('source')->toString() === 'upload';
 
-        $media = $request->string('source')->toString() === 'upload'
-            ? $this->media->addUpload($product, $request->file('file'), $request->string('type')->toString(), $meta)
-            : $this->media->addUrl($product, $request->string('type')->toString(), (string) $request->string('url'), $meta);
+        $media = $this->media->add(
+            $product,
+            $request->string('type')->toString(),
+            $isUpload ? $request->file('file') : null,
+            $isUpload ? null : $request->string('url')->toString(),
+            $request->only(['is_main', 'alt_text', 'sort_order']),
+        );
 
         return response()->json(['data' => $media], 201);
     }

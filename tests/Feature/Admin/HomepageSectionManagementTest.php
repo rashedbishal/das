@@ -151,3 +151,45 @@ test('the storefront home page receives only visible banners that have images', 
         ->has('banners', 1)
         ->where('banners.0.title', 'Shown'));
 });
+
+test('a banner image wider than the maximum source dimension is rejected', function () {
+    Storage::fake('public');
+    $admin = adminUser(['content.manage']);
+
+    $response = $this->actingAs($admin)->post(route('admin.homepage-sections.store'), [
+        'type' => 'banner',
+        'title' => 'Huge Banner',
+        'landscape_image' => UploadedFile::fake()->image('huge.jpg', 8001, 1000),
+    ]);
+
+    $response->assertSessionHasErrors('landscape_image');
+    expect(HomepageSection::query()->where('title', 'Huge Banner')->exists())->toBeFalse()
+        ->and(Storage::disk('public')->allFiles('banners'))->toBeEmpty();
+});
+
+test('a banner link must be an http or https url', function () {
+    $admin = adminUser(['content.manage']);
+
+    $response = $this->actingAs($admin)->post(route('admin.homepage-sections.store'), [
+        'type' => 'banner',
+        'title' => 'Scripted Link',
+        'link_url' => 'javascript://example.com/%0Aalert(1)',
+    ]);
+
+    $response->assertSessionHasErrors('link_url');
+});
+
+test('a landscape banner upload produces desktop, tablet and mobile renditions', function () {
+    Storage::fake('public');
+    $admin = adminUser(['content.manage']);
+
+    $this->actingAs($admin)->post(route('admin.homepage-sections.store'), [
+        'type' => 'banner',
+        'title' => 'Renditions',
+        'landscape_image' => UploadedFile::fake()->image('wide.jpg', 1920, 640),
+    ])->assertSessionHasNoErrors();
+
+    $section = HomepageSection::query()->where('title', 'Renditions')->firstOrFail();
+    expect([$section->image, $section->image_tablet, $section->image_mobile])->each->not->toBeNull()
+        ->and(Storage::disk('public')->allFiles('banners'))->toHaveCount(3);
+});

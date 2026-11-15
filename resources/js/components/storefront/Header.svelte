@@ -32,7 +32,7 @@
         login,
         logout,
     } from '@/routes';
-    import { index as categoriesIndex } from '@/routes/categories';
+    import { index as categoriesIndex, show as categoryShow } from '@/routes/categories';
     import { show as productShow } from '@/routes/products';
     import Button from './Button.svelte';
     import { buttonClass } from './button';
@@ -40,7 +40,7 @@
     import Modal from './Modal.svelte';
     import Wordmark from './Wordmark.svelte';
 
-    loadCategories();
+    loadCategories().catch(() => {});
 
     const phone = $derived(
         resolvePhone(
@@ -136,8 +136,12 @@
         };
     }
 
+    /** Only the latest search may fill the results, so slow stale responses are dropped. */
+    let latestSearch = 0;
+
     $effect(() => {
         const term = q.trim();
+        const search = ++latestSearch;
 
         if (!term) {
             matches = [];
@@ -145,9 +149,22 @@
             return;
         }
 
-        fetchProducts({ q: term }, 1, 4).then((result) => {
-            matches = result.items;
-        });
+        // Wait for a pause in typing instead of querying on every keystroke.
+        const timer = setTimeout(() => {
+            fetchProducts({ q: term }, 1, 4)
+                .then((result) => {
+                    if (search === latestSearch) {
+                        matches = result.items;
+                    }
+                })
+                .catch(() => {
+                    if (search === latestSearch) {
+                        matches = [];
+                    }
+                });
+        }, 250);
+
+        return () => clearTimeout(timer);
     });
 
     function goToCatalogue(term: string) {
@@ -467,18 +484,15 @@
         </Button>
     </form>
     <div class="mt-1 flex flex-wrap gap-2">
-        {#each ['Dental chair', 'Autoclave', 'Handpiece'] as term (term)}
-            <Button
-                variant="outline"
-                size="sm"
-                onclick={() => {
-                    q = term;
-                    goToCatalogue(term);
-                }}
+        {#each $categories.slice(0, 4) as c (c.id)}
+            <Link
+                href={categoryShow.url(c.slug)}
+                class={buttonClass({ variant: 'outline', size: 'sm' })}
+                onclick={() => (searchOpen = false)}
             >
-                {term}
+                {c.name}
                 <ArrowUpRight class="size-3" />
-            </Button>
+            </Link>
         {/each}
     </div>
     {#if matches.length}

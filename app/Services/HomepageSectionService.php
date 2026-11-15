@@ -52,26 +52,48 @@ class HomepageSectionService
         $section->fill(Arr::except($data, ['landscape_image', 'portrait_image', 'show_text', 'content']));
 
         $replaced = [];
+        $written = [];
 
-        if ($landscape instanceof UploadedFile) {
-            $replaced[] = $section->image;
-            $replaced[] = $section->image_tablet;
-            $section->image = $this->images->render($landscape, 'desktop', 'landscape_image');
-            $section->image_tablet = $this->images->render($landscape, 'tablet', 'landscape_image');
+        try {
+            if ($landscape instanceof UploadedFile) {
+                $cutMobile = ! $portrait instanceof UploadedFile
+                    && ($content['mobile_source'] ?? 'landscape') !== 'portrait';
+                $paths = $this->images->renderAll(
+                    $landscape,
+                    $cutMobile ? ['desktop', 'tablet', 'mobile'] : ['desktop', 'tablet'],
+                    'landscape_image',
+                );
+                $written = [...$written, ...array_values($paths)];
+
+                $replaced[] = $section->image;
+                $replaced[] = $section->image_tablet;
+                $section->image = $paths['desktop'];
+                $section->image_tablet = $paths['tablet'];
+
+                if ($cutMobile) {
+                    $replaced[] = $section->image_mobile;
+                    $section->image_mobile = $paths['mobile'];
+                    $content['mobile_source'] = 'landscape';
+                }
+            }
+
+            if ($portrait instanceof UploadedFile) {
+                $paths = $this->images->renderAll($portrait, ['mobile'], 'portrait_image');
+                $written = [...$written, ...array_values($paths)];
+
+                $replaced[] = $section->image_mobile;
+                $section->image_mobile = $paths['mobile'];
+                $content['mobile_source'] = 'portrait';
+            }
+
+            $section->content = $content;
+            $section->save();
+        } catch (\Throwable $e) {
+            // Nothing was saved, so remove the renditions written for this attempt.
+            $this->images->delete(...$written);
+
+            throw $e;
         }
-
-        if ($portrait instanceof UploadedFile) {
-            $replaced[] = $section->image_mobile;
-            $section->image_mobile = $this->images->render($portrait, 'mobile', 'portrait_image');
-            $content['mobile_source'] = 'portrait';
-        } elseif ($landscape instanceof UploadedFile && ($content['mobile_source'] ?? 'landscape') !== 'portrait') {
-            $replaced[] = $section->image_mobile;
-            $section->image_mobile = $this->images->render($landscape, 'mobile', 'landscape_image');
-            $content['mobile_source'] = 'landscape';
-        }
-
-        $section->content = $content;
-        $section->save();
 
         $this->images->delete(...$replaced);
 

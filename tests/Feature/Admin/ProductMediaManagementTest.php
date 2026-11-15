@@ -241,6 +241,30 @@ test('an image that is not 1200×1200 is accepted and resized to 1200×1200', fu
         ->and(Storage::disk('public')->size($media->path))->toBeLessThanOrEqual(50 * 1024);
 });
 
+test('a non-square image keeps its aspect ratio and is padded to a square', function () {
+    Storage::fake('public');
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+
+    // A 2:1 opaque image should fill the middle half of the square, with
+    // transparent bands above and below rather than being stretched.
+    $this->actingAs($admin)->post(route('admin.products.media.store', $product), [
+        'source' => 'upload',
+        'type' => 'image',
+        'file' => UploadedFile::fake()->image('wide.jpg', 800, 400),
+    ])->assertSessionHasNoErrors();
+
+    $stored = imagecreatefromstring((string) Storage::disk('public')->get($product->media()->firstOrFail()->path));
+    $width = imagesx($stored);
+    $height = imagesy($stored);
+    $alphaAt = fn (float $y) => (imagecolorat($stored, intdiv($width, 2), (int) ($height * $y)) >> 24) & 0x7F;
+
+    expect($width)->toBe($height)
+        ->and($alphaAt(0.1))->toBeGreaterThan(100)
+        ->and($alphaAt(0.9))->toBeGreaterThan(100)
+        ->and($alphaAt(0.5))->toBeLessThan(20);
+});
+
 test('a jpg image is accepted and stored as webp', function () {
     Storage::fake('public');
     $admin = adminUser(['products.update']);

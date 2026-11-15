@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\PublicDiskImage;
 use Database\Factories\SubcategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -38,6 +39,7 @@ class Subcategory extends Model
     {
         return [
             'is_active' => 'boolean',
+            'image' => PublicDiskImage::class,
         ];
     }
 

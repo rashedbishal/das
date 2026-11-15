@@ -4,27 +4,20 @@
     import Breadcrumb from '@/components/storefront/Breadcrumb.svelte';
     import ContactBanner from '@/components/storefront/ContactBanner.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
-    import { categories, countProducts, loadCategories } from '@/data/catalogue';
+    import { categories, loadCategories } from '@/data/catalogue';
     import { show } from '@/routes/categories';
 
-    loadCategories();
+    // Product counts come with the category list (one request, not one per category).
+    loadCategories().catch(() => {});
 
-    let counts = $state<Record<string, number>>({});
-
-    $effect(() => {
-        for (const c of $categories) {
-            if (!(c.slug in counts)) {
-                countProducts({ category: c.slug }).then((total) => {
-                    counts = { ...counts, [c.slug]: total };
-                });
-            }
-        }
-    });
+    const counts = $derived(
+        Object.fromEntries($categories.map((c) => [c.slug, c.productsCount])),
+    );
 </script>
 
 <PageMeta
     title="Equipment Categories"
-    description="Discover eight dental equipment categories, from treatment chairs and imaging to laboratory equipment and instruments."
+    description="Browse DAS dental equipment by category, from instruments to laboratory materials."
 />
 
 <section class="container-wide pt-10 pb-16">

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\PublicDiskImage;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -36,6 +37,7 @@ class Category extends Model
     {
         return [
             'is_active' => 'boolean',
+            'image' => PublicDiskImage::class,
         ];
     }
 

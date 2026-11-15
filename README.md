@@ -2,7 +2,7 @@
 
 A CMS-driven product catalog for dental equipment, instruments, and supplies. This is strictly a **catalog and discovery platform** — there is no cart, checkout, payment, or order management. Customers contact the business directly to purchase.
 
-Built on Laravel 13 + Inertia v3 + Svelte 5 (the `laravel/svelte-starter-kit`), with a versioned JSON API (`/api/v1`) alongside the Inertia-rendered pages for headless/mobile consumption.
+Built on Laravel 13 + Inertia v3 + Svelte 5 (the `laravel/svelte-starter-kit`), with a versioned JSON API (`/api/v1`) alongside the Inertia-rendered pages. The public API feeds the storefront; the admin API (`/api/v1/admin`) covers core catalogue management only — see [API Reference](#api-reference-apiv1) for what is admin-panel-only.
 
 For a concise technical handoff and next-phase planning brief, see [docs/current-state-and-next-phase.md](docs/current-state-and-next-phase.md).
 
@@ -64,7 +64,7 @@ Native `roles` / `permissions` tables (no third-party package), chosen so the Mo
 Enforced on the backend (not just the frontend), on **both** the Inertia routes and the `/api/v1` routes:
 
 - Guests may browse product/category/brand listings (summary fields only — never full description, specifications, or SEO fields; see `App\Http\Resources\ProductCardResource`).
-- Opening a product detail page as a guest never navigates away or reveals whether the slug exists (Inertia route): the page renders in place with `authRequired: true` and `product: null`, and the Svelte page shows an inline login modal over it. The API instead returns `401`. Either way, logging in returns the user to the product they requested (`session(['url.intended' => ...])` set by the controller, consumed by Fortify's `redirect()->intended()`).
+- Opening a product detail page as a guest never navigates away or reveals whether the slug exists: the storefront route (`/products/{slug}`, a closure in `routes/web.php`) renders `storefront/Product` in place, which shows an inline login modal (`components/LoginModal.svelte`) and marks the page `noindex`. The API instead returns `401`. Either way, logging in returns the user to the product they requested (`session(['url.intended' => ...])` set by the controller, consumed by Fortify's `redirect()->intended()`).
 - Authenticated customers see full detail only for **published** products; admins see all statuses. Non-public statuses return `404` rather than `403` for authenticated non-admins, to avoid confirming a draft/archived product's existence.
 
 ## Media & Storage
@@ -75,35 +75,51 @@ Product images/videos live in one `product_media` table (`type`: image/video, `s
 
 All settings live in one `settings` table (`group`, `key`, `value` as JSON) behind a cached `App\Services\SettingsService`, editable from **Admin → Settings**:
 
-| Group       | Keys                                                                                                             |
-| ----------- | ---------------------------------------------------------------------------------------------------------------- |
-| `general`   | site_name, logo, favicon, contact_email, contact_phone, address, currency, timezone, social_links                |
-| `auth`      | login_mode (`email`\|`phone`\|`both`), registration_enabled                                                      |
-| `whatsapp`  | enabled, phone, message                                                                                          |
-| `messenger` | enabled, page_url                                                                                                |
-| `catalog`   | page_size, featured_limit, delivery_note (shown on all product detail pages)                                     |
-| `seo`       | default_title, default_description                                                                               |
-| `tracking`  | head_scripts, body_scripts (raw JS/HTML, e.g. Google Tag Manager — injected into every page's `<head>`/`<body>`) |
+| Group       | Keys                                                                                                                                                        |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `general`   | site_name, logo, favicon, contact_email, contact_phone, address, currency, timezone, social_links                                                           |
+| `auth`      | login_mode (`email`\|`phone`\|`both`), registration_enabled                                                                                                 |
+| `whatsapp`  | enabled, phone, message                                                                                                                                     |
+| `messenger` | enabled, page_url                                                                                                                                           |
+| `catalog`   | page_size, featured_limit, delivery_note (shown on all product detail pages)                                                                                |
+| `seo`       | default_title, default_description                                                                                                                          |
+| `tracking`  | head_scripts, body_scripts (raw JS/HTML, e.g. Google Tag Manager — injected into storefront pages' `<head>`/`<body>`, never admin pages; Mother Admin only) |
 
 WhatsApp/Messenger config is shared to every Inertia page as `contactWidgets` and exposed publicly at `GET /api/v1/settings/contact-widgets` (and the Inertia-side `GET /contact-widgets`) for the floating widget component — the frontend never hard-codes a phone number or page URL.
 
 ## Admin Bulk Actions
 
-The CMS list screens support selecting visible rows (up to 100 per request). Products can be published, moved to draft, have customer-facing price or stock visibility toggled, or be deleted. Hidden price and stock fields are omitted from public product responses and filters while their values remain stored for later display. Categories and subcategories, brands, and homepage sections can be activated, deactivated, or deleted; tags can be deleted. In **Users & Roles**, admins can be deactivated, reactivated, or deleted, customers can be deactivated or reactivated, and non-system roles can be deleted. Existing permission, protected-account, and relationship constraints also apply to bulk actions.
+The CMS list screens support selecting visible rows (up to 100 per request). Products can be published, moved to draft, have customer-facing price or stock visibility toggled, or be moved to the trash (restorable, or permanently deleted from the **Trash** view, which also removes their uploaded files). Hidden price and stock fields are omitted from public product responses and filters while their values remain stored for later display. Categories and subcategories, brands, and homepage sections can be activated, deactivated, or deleted; tags can be deleted. In **Users & Roles**, admins can be deactivated, reactivated, or deleted, customers can be deactivated or reactivated, and non-system roles can be deleted. Existing permission, protected-account, and relationship constraints also apply to bulk actions.
 
 ## Contact Enquiries
 
-The public contact and product-enquiry forms save submissions in the `contact_enquiries` table. Admins with `enquiries.view` can review the paginated inbox; admins with `enquiries.manage` can mark submissions read/unread and permanently delete them, individually or in bulk (up to 100 selected records). The default content/customer manager roles receive manage access, while read-only admins can view. The public submission endpoint is throttled to five requests per minute per client. Submissions are stored for CMS review; automatic email or CRM delivery is not configured.
+The public contact and product-enquiry forms save submissions in the `contact_enquiries` table. Admins with `enquiries.view` can review the paginated inbox; admins with `enquiries.manage` can mark submissions read/unread and permanently delete them, individually or in bulk (up to 100 selected records). The default content/customer manager roles receive manage access, while read-only admins can view. The public submission endpoint is throttled to five requests per minute per client. Each submission is also emailed (queued — needs the queue worker) to the `general.contact_email` setting. A hidden honeypot field silently discards bot submissions.
 
 ## API Reference (`/api/v1`)
 
 All admin endpoints require the `auth:sanctum` + `admin` middleware and the policy-gated permission named in parentheses.
 
-**Public**: `GET products`, `GET products/{slug}` (auth required, 401 otherwise), `GET categories`, `GET categories/{slug}`, `GET brands`, `GET brands/{slug}`, `GET tags`, `GET homepage`, `GET settings/contact-widgets`.
+**Public**: `GET products`, `GET products/{slug}` (auth required, 401 otherwise), `GET categories`, `GET categories/{slug}`, `GET subcategories/{slug}`, `GET brands`, `GET brands/{slug}`, `GET tags`, `GET homepage`, `GET settings/contact-widgets`. Category and brand listings include a published `products_count`.
 
 **Auth**: `POST auth/register`, `POST auth/login` (body: `identifier`, `password`), `POST auth/logout`, `GET auth/user`.
 
-**Admin**: `apiResource admin/products` (+ `POST`/`DELETE admin/products/{product}/media/{media}`), `admin/categories`, `admin/brands`, `admin/tags` (`*.manage`/`*.view`), `admin/roles` (+`GET admin/roles/permissions`, `POST admin/roles/bulk`), `admin/admins` (+ `POST .../deactivate|reactivate`, `POST admin/admins/bulk`), `admin/customers` (+ `POST admin/customers/bulk`), `admin/settings` (`settings.manage`/`settings.view`, or `seo.manage` for the catalog/SEO group).
+**Admin**: `apiResource admin/products` (+ `POST admin/products/{product}/media`, `DELETE admin/products/{product}/media/{media}`), `admin/categories`, `admin/subcategories`, `admin/brands`, `admin/tags` (`*.manage`/`*.view`), `admin/roles` (+`GET admin/roles/permissions`, `POST admin/roles/bulk`), `admin/admins` (+ `POST .../deactivate|reactivate`, `POST admin/admins/bulk`, `POST admin/admins/{admin}/transfer-mother-admin`), `admin/customers` (+ `POST admin/customers/bulk`), `admin/settings` (`settings.manage`/`settings.view`, or `seo.manage` for the catalog/SEO group).
+
+### Admin API coverage
+
+The admin API is intentionally **partial**: it covers core catalogue CRUD, product media upload/delete, users, roles and the general/auth/WhatsApp/Messenger/catalog-SEO settings. Its only first-party consumer today is the admin **Users & Roles** page (`admins`, `customers`, `roles`); everything else in it exists for a future headless or mobile client.
+
+These features exist **only in the Inertia admin panel** (`routes/admin.php`) and have no `/api/v1/admin` equivalent:
+
+- Contact enquiries (inbox, mark read/unread, delete, bulk)
+- Homepage banners/sections (create, edit, delete, bulk)
+- Bulk actions for products, categories, subcategories, brands and tags
+- Product trash (restore, permanent delete)
+- Setting a product's main image
+- Tracking-script settings (Mother Admin only)
+- Dashboard statistics
+
+Both surfaces share the same form requests, services and policies, so validation and authorization rules (e.g. `products.publish` for status changes, per-product media limits) are identical wherever an endpoint exists on both. When adding an admin feature, add it to the Inertia panel; add an API endpoint only when a real API consumer needs it, and update this list either way.
 
 ## Known Gaps / Left for the Frontend Developer
 
@@ -127,6 +143,8 @@ npm run build                       # production asset build
 The suite covers: Mother Admin bootstrap/idempotency, role/permission anti-escalation, all three customer login modes with Bangladeshi phone validation and duplicate-normalization, the product-detail access rule (guest redirect, customer/admin visibility by status) on both Inertia and API routes, full catalog CRUD + media upload + search/filter/sort/pagination, settings/homepage-section management, contact-widget exposure, and targeted mass-assignment/IDOR checks.
 
 ## Deployment Notes
+
+The full production runbook (supervised queue + SSR processes, cron, backups, monitoring, Nginx, pre-launch checklist) is in [`docs/deployment.md`](docs/deployment.md); the production environment template is [`.env.production.example`](.env.production.example).
 
 - Set `APP_ENV=production`, `APP_DEBUG=false`, and a strong `APP_KEY`.
 - Run `php artisan storage:link` on first deploy (product media depends on it).

@@ -23,6 +23,13 @@ class StoreContactEnquiryRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'product_name' => ['nullable', 'string', 'max:255'],
             'message' => ['nullable', 'string', 'max:5000'],
+            // Honeypot: hidden from people, so only bots fill it in.
+            'website' => ['nullable', 'string', 'max:255'],
         ];
+    }
+
+    public function isHoneypotTriggered(): bool
+    {
+        return filled($this->input('website'));
     }
 }

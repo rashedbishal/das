@@ -23,7 +23,7 @@ class StoreBrandRequest extends FormRequest
             'slug' => ['nullable', 'string', 'max:255'],
             'logo' => ['nullable', 'string', 'max:2048'],
             'description' => ['nullable', 'string'],
-            'website_url' => ['nullable', 'url', 'max:2048'],
+            'website_url' => ['nullable', 'url:http,https', 'max:2048'],
             'is_active' => ['boolean'],
         ];
     }

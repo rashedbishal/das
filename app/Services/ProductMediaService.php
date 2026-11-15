@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\ProductMedia;
 use GdImage;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -65,6 +66,33 @@ class ProductMediaService
                 'formats' => self::VIDEO_FORMATS,
             ],
         ];
+    }
+
+    /**
+     * Adds an upload or URL as product media, enforcing the per-type limit. The product
+     * row is locked while counting so simultaneous requests can't both pass the check.
+     *
+     * @param  array<string, mixed>  $meta
+     *
+     * @throws ValidationException when the product already has the maximum for this type.
+     */
+    public function add(Product $product, string $type, ?UploadedFile $file, ?string $url, array $meta = []): ProductMedia
+    {
+        return DB::transaction(function () use ($product, $type, $file, $url, $meta) {
+            Product::query()->whereKey($product->id)->lockForUpdate()->first();
+
+            $max = self::limits()[$type]['max'];
+
+            if ($product->media()->where('type', $type)->count() >= $max) {
+                throw ValidationException::withMessages([
+                    'file' => "This product already has the maximum of {$max} {$type}s.",
+                ]);
+            }
+
+            return $file !== null
+                ? $this->addUpload($product, $file, $type, $meta)
+                : $this->addUrl($product, $type, (string) $url, $meta);
+        });
     }
 
     /**
@@ -183,8 +211,8 @@ class ProductMediaService
     }
 
     /**
-     * Resize to the required square (stretching if the aspect ratio differs),
-     * then re-encode as WebP until it fits the target file size.
+     * Fit into the required square (keeping the aspect ratio, padding with
+     * transparency), then re-encode as WebP until it fits the target file size.
      */
     private function storeProcessedImage(Product $product, UploadedFile $file, string $errorKey): string
     {
@@ -204,14 +232,34 @@ class ProductMediaService
         }
 
         $dimension = self::REQUIRED_IMAGE_DIMENSION;
+        $originalWidth = imagesx($original);
+        $originalHeight = imagesy($original);
 
-        if (imagesx($original) === $dimension && imagesy($original) === $dimension) {
+        if ($originalWidth === $dimension && $originalHeight === $dimension) {
             $source = $original;
         } else {
+            // Fit the whole photo inside the square without distorting it; the unused
+            // band (top/bottom or left/right) is left transparent.
+            $fit = min($dimension / $originalWidth, $dimension / $originalHeight);
+            $fitWidth = max(1, (int) round($originalWidth * $fit));
+            $fitHeight = max(1, (int) round($originalHeight * $fit));
+
             $source = imagecreatetruecolor($dimension, $dimension);
             imagealphablending($source, false);
             imagesavealpha($source, true);
-            imagecopyresampled($source, $original, 0, 0, 0, 0, $dimension, $dimension, imagesx($original), imagesy($original));
+            imagefill($source, 0, 0, (int) imagecolorallocatealpha($source, 0, 0, 0, 127));
+            imagecopyresampled(
+                $source,
+                $original,
+                intdiv($dimension - $fitWidth, 2),
+                intdiv($dimension - $fitHeight, 2),
+                0,
+                0,
+                $fitWidth,
+                $fitHeight,
+                $originalWidth,
+                $originalHeight,
+            );
             imagedestroy($original);
         }
 

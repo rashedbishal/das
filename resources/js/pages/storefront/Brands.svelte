@@ -7,28 +7,36 @@
     import PageMeta from '@/components/storefront/PageMeta.svelte';
     import {
         brands,
-        countProducts,
         fetchProducts,
         loadBrands,
         type ProductCard,
     } from '@/data/catalogue';
     import { catalogue } from '@/routes';
 
-    loadBrands();
-
     let q = $state('');
-    let counts = $state<Record<string, number>>({});
+    let brandsFailed = $state(false);
     let previews = $state<Record<string, ProductCard[]>>({});
+    /** Brands whose preview request has started, so each is only fetched once. */
+    const requested = new Set<string>();
 
+    function load() {
+        brandsFailed = false;
+        loadBrands().catch(() => (brandsFailed = true));
+    }
+
+    load();
+
+    // Product counts come with the brand list; only the small preview strip is
+    // fetched per brand, and a failed preview just stays empty.
     $effect(() => {
         for (const b of $brands) {
-            if (!(b.slug in counts)) {
-                countProducts({ brand: b.slug }).then((total) => {
-                    counts = { ...counts, [b.slug]: total };
-                });
-                fetchProducts({ brand: b.slug }, 1, 3).then((result) => {
-                    previews = { ...previews, [b.slug]: result.items };
-                });
+            if (!requested.has(b.slug) && b.productsCount > 0) {
+                requested.add(b.slug);
+                fetchProducts({ brand: b.slug }, 1, 3)
+                    .then((result) => {
+                        previews = { ...previews, [b.slug]: result.items };
+                    })
+                    .catch(() => {});
             }
         }
     });
@@ -90,14 +98,19 @@
                     <div
                         class="mt-6 flex items-center justify-between text-xs text-primary"
                     >
-                        Explore {counts[b.slug] ?? 0} products
+                        Explore {b.productsCount} products
                         <ArrowUpRight class="size-4" />
                     </div>
                 </div>
             </Link>
         {/each}
     </div>
-    {#if !found.length}
+    {#if brandsFailed}
+        <div class="empty-state" role="alert">
+            We couldn’t load the brand list.
+            <button class="ml-1 underline" onclick={load}>Try again</button>
+        </div>
+    {:else if !found.length && $brands.length}
         <div class="empty-state">No brands found. Try another search.</div>
     {/if}
 </section>

@@ -43,7 +43,7 @@ test('an admin with products.create can create a product with relations and spec
 });
 
 test('an admin can save product price and stock visibility settings', function () {
-    $admin = adminUser(['products.create']);
+    $admin = adminUser(['products.create', 'products.publish']);
     $category = Category::factory()->create();
 
     $response = $this->actingAs($admin)->post(route('admin.products.store'), [
@@ -83,7 +83,7 @@ test('creating a product requires a category', function () {
 });
 
 test('an admin can create a product directly under a category without a price', function () {
-    $admin = adminUser(['products.create']);
+    $admin = adminUser(['products.create', 'products.publish']);
     $category = Category::factory()->create();
 
     $response = $this->actingAs($admin)->post(route('admin.products.store'), [
@@ -192,7 +192,7 @@ test('creating a product rejects a sale price that is not lower than the regular
 });
 
 test('publishing a draft product for the first time stamps published_at', function () {
-    $admin = adminUser(['products.create', 'products.update']);
+    $admin = adminUser(['products.create', 'products.update', 'products.publish']);
     $product = Product::factory()->create(['status' => 'draft', 'published_at' => null]);
 
     $response = $this->actingAs($admin)->put(route('admin.products.update', $product), [
@@ -208,6 +208,92 @@ test('publishing a draft product for the first time stamps published_at', functi
 
     $response->assertRedirect();
     expect($product->fresh()->published_at)->not->toBeNull();
+});
+
+test('product text fields accept values up to their validation limits', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+    $canonicalUrl = 'https://example.com/'.str_repeat('a', 2048 - strlen('https://example.com/'));
+
+    $response = $this->actingAs($admin)->put(route('admin.products.update', $product), [
+        'name' => $product->name,
+        'sku' => $product->sku,
+        'stock_quantity' => $product->stock_quantity,
+        'stock_status' => $product->stock_status,
+        'status' => $product->status,
+        'category_id' => $product->category_id,
+        'short_description' => str_repeat('s', 500),
+        'seo_description' => str_repeat('d', 500),
+        'canonical_url' => $canonicalUrl,
+    ]);
+
+    $response->assertSessionHasNoErrors();
+    expect($product->fresh())
+        ->short_description->toHaveLength(500)
+        ->seo_description->toHaveLength(500)
+        ->canonical_url->toBe($canonicalUrl);
+});
+
+test('an admin without products.publish cannot change a product status through the edit form', function (string $from, string $to) {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create(['status' => $from]);
+
+    $response = $this->actingAs($admin)->put(route('admin.products.update', $product), [
+        'name' => $product->name,
+        'sku' => $product->sku,
+        'stock_quantity' => $product->stock_quantity,
+        'stock_status' => $product->stock_status,
+        'status' => $to,
+        'category_id' => $product->category_id,
+    ]);
+
+    $response->assertSessionHasErrors(['status' => 'You do not have permission to change a product\'s publish status.']);
+    expect($product->fresh()->status)->toBe($from);
+})->with([
+    'publishing a draft' => ['draft', 'published'],
+    'archiving a published product' => ['published', 'archived'],
+    'unpublishing a published product' => ['published', 'draft'],
+]);
+
+test('an admin without products.publish can edit a published product without changing its status', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create(['status' => 'published', 'name' => 'Old Name']);
+
+    $response = $this->actingAs($admin)->put(route('admin.products.update', $product), [
+        'name' => 'New Name',
+        'sku' => $product->sku,
+        'stock_quantity' => $product->stock_quantity,
+        'stock_status' => $product->stock_status,
+        'status' => 'published',
+        'category_id' => $product->category_id,
+    ]);
+
+    $response->assertSessionHasNoErrors();
+    expect($product->fresh())
+        ->name->toBe('New Name')
+        ->status->toBe('published');
+});
+
+test('an admin without products.publish can only create draft products', function () {
+    $admin = adminUser(['products.create']);
+    $category = Category::factory()->create();
+    $payload = [
+        'name' => 'Editor Product',
+        'stock_quantity' => 1,
+        'stock_status' => 'in_stock',
+        'category_id' => $category->id,
+    ];
+
+    $this->actingAs($admin)
+        ->post(route('admin.products.store'), [...$payload, 'sku' => 'SKU-EDITOR-PUB', 'status' => 'published'])
+        ->assertSessionHasErrors('status');
+
+    $this->actingAs($admin)
+        ->post(route('admin.products.store'), [...$payload, 'sku' => 'SKU-EDITOR-DRAFT', 'status' => 'draft'])
+        ->assertSessionHasNoErrors();
+
+    expect(Product::query()->where('sku', 'SKU-EDITOR-PUB')->exists())->toBeFalse()
+        ->and(Product::query()->where('sku', 'SKU-EDITOR-DRAFT')->value('status'))->toBe('draft');
 });
 
 test('an admin with products.delete can delete a product', function () {
@@ -337,4 +423,62 @@ test('an empty image slot does not block creating a product', function () {
     ])->assertSessionHasNoErrors()->assertRedirect(route('admin.products.index'));
 
     expect(Product::query()->where('sku', 'SKU-NO-IMAGES')->firstOrFail()->media)->toBeEmpty();
+});
+
+test('a deleted product can be restored from the trash', function () {
+    $admin = adminUser(['products.view', 'products.delete']);
+    $product = Product::factory()->create();
+    $product->delete();
+
+    $this->actingAs($admin)
+        ->get(route('admin.products.index', ['trashed' => 1]))
+        ->assertInertia(fn ($page) => $page->where('products.data.0.id', $product->id));
+
+    $this->actingAs($admin)
+        ->post(route('admin.products.restore', $product))
+        ->assertRedirect(route('admin.products.index', ['trashed' => 1]));
+
+    expect($product->fresh()->trashed())->toBeFalse();
+});
+
+test('permanently deleting a trashed product removes its files and frees its sku', function () {
+    Storage::fake('public');
+    $admin = adminUser(['products.delete', 'products.create']);
+    $product = Product::factory()->create(['sku' => 'SKU-REUSE']);
+    Storage::disk('public')->put("products/{$product->id}/photo.webp", 'image');
+    $product->delete();
+
+    $this->actingAs($admin)->delete(route('admin.products.force-destroy', $product))->assertRedirect();
+
+    expect(Product::withTrashed()->whereKey($product->id)->exists())->toBeFalse();
+    Storage::disk('public')->assertMissing("products/{$product->id}/photo.webp");
+
+    $this->actingAs($admin)->post(route('admin.products.store'), [
+        'name' => 'Reused SKU',
+        'sku' => 'SKU-REUSE',
+        'status' => 'draft',
+        'stock_quantity' => 1,
+        'stock_status' => 'in_stock',
+        'category_id' => Category::factory()->create()->id,
+    ])->assertSessionHasNoErrors();
+});
+
+test('a product that is not in the trash cannot be permanently deleted', function () {
+    $admin = adminUser(['products.delete']);
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin)->delete(route('admin.products.force-destroy', $product))->assertNotFound();
+
+    expect($product->fresh())->not->toBeNull();
+});
+
+test('restoring or permanently deleting requires products.delete', function () {
+    $admin = adminUser(['products.view']);
+    $product = Product::factory()->create();
+    $product->delete();
+
+    $this->actingAs($admin)->post(route('admin.products.restore', $product))->assertForbidden();
+    $this->actingAs($admin)->delete(route('admin.products.force-destroy', $product))->assertForbidden();
+
+    expect(Product::withTrashed()->find($product->id)->trashed())->toBeTrue();
 });

@@ -36,8 +36,12 @@ class SettingPolicy
         return $user->hasPermission('settings.manage') || $user->hasPermission('seo.manage');
     }
 
+    /**
+     * Tracking snippets are raw, unescaped HTML/JS served to every visitor, so only the
+     * Mother Admin may edit them; settings.manage is delegable and must not be enough.
+     */
     public function manageTracking(User $user): bool
     {
-        return $user->hasPermission('settings.manage');
+        return $user->isMotherAdmin();
     }
 }

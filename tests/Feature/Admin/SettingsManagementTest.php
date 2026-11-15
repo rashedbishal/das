@@ -119,3 +119,31 @@ test('customers cannot access the settings page', function () {
 
     $this->actingAs($customer)->get(route('admin.settings.edit'))->assertForbidden();
 });
+
+test('only the mother admin can update tracking scripts', function () {
+    $settingsManager = adminUser(['settings.manage']);
+    $motherAdmin = User::factory()->motherAdmin()->create();
+    $payload = ['head_scripts' => '<script>window.tracked = true;</script>', 'body_scripts' => ''];
+
+    $this->actingAs($settingsManager)
+        ->put(route('admin.settings.tracking.update'), $payload)
+        ->assertForbidden();
+    expect(app(SettingsService::class)->get('tracking', 'head_scripts'))->toBeNull();
+
+    $this->actingAs($motherAdmin)
+        ->put(route('admin.settings.tracking.update'), $payload)
+        ->assertRedirect();
+    expect(app(SettingsService::class)->get('tracking', 'head_scripts'))->toBe($payload['head_scripts']);
+});
+
+test('tracking scripts are injected into storefront pages but never admin pages', function () {
+    app(SettingsService::class)->set('tracking', 'head_scripts', '<script>window.gtmMarker = 1;</script>');
+    $admin = adminUser(['settings.view']);
+
+    $this->get(route('about'))->assertSee('window.gtmMarker = 1;', escape: false);
+
+    $this->actingAs($admin)
+        ->get(route('admin.settings.edit'))
+        ->assertOk()
+        ->assertDontSee('window.gtmMarker', escape: false);
+});

@@ -35,15 +35,20 @@ export async function apiFetch<T = unknown>(
 
     const token = getCookie('XSRF-TOKEN');
 
-    const response = await fetch(url, {
-        ...options,
-        headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            ...(token ? { 'X-XSRF-TOKEN': token } : {}),
-            ...options.headers,
-        },
-    });
+    // Start from the caller's headers (a plain object, array or Headers instance)
+    // and fill in the defaults they didn't set.
+    const headers = new Headers(options.headers);
+    headers.set('Accept', headers.get('Accept') ?? 'application/json');
+    headers.set(
+        'Content-Type',
+        headers.get('Content-Type') ?? 'application/json',
+    );
+
+    if (token && !headers.has('X-XSRF-TOKEN')) {
+        headers.set('X-XSRF-TOKEN', token);
+    }
+
+    const response = await fetch(url, { ...options, headers });
 
     if (!response.ok) {
         const body = await response.json().catch(() => ({}));

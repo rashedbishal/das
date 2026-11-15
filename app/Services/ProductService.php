@@ -8,6 +8,7 @@ use App\Support\SlugGenerator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ProductService
 {
@@ -22,9 +23,17 @@ class ProductService
      */
     public function paginate(array $filters, bool $includeAllStatuses = false): LengthAwarePaginator
     {
-        $query = Product::query()->with(['brand', 'category', 'subcategory', 'tags', 'media']);
+        // The admin list shows every relation; public product cards only need the
+        // brand and images (see ProductCardResource).
+        $query = $includeAllStatuses
+            ? Product::query()->with(['brand', 'category', 'subcategory', 'tags', 'media'])
+            : Product::query()->with(['brand', 'media' => fn ($media) => $media->where('type', 'image')]);
 
         if ($includeAllStatuses) {
+            if (! empty($filters['trashed'])) {
+                $query->onlyTrashed();
+            }
+
             if (! empty($filters['status'])) {
                 $query->where('status', $filters['status']);
             }
@@ -33,11 +42,11 @@ class ProductService
         }
 
         if (! empty($filters['search'])) {
-            $term = trim((string) $filters['search']);
-            $query->where(function ($inner) use ($term) {
-                $inner->where('name', 'like', "%{$term}%")
-                    ->orWhere('sku', 'like', "%{$term}%")
-                    ->orWhere('model_number', 'like', "%{$term}%");
+            $pattern = '%'.$this->escapeLike(trim((string) $filters['search'])).'%';
+            $query->where(function ($inner) use ($pattern) {
+                $inner->whereRaw("name like ? escape '!'", [$pattern])
+                    ->orWhereRaw("sku like ? escape '!'", [$pattern])
+                    ->orWhereRaw("model_number like ? escape '!'", [$pattern]);
             });
         }
 
@@ -69,7 +78,7 @@ class ProductService
         }
 
         if (! empty($filters['model_number'])) {
-            $query->where('model_number', 'like', '%'.$filters['model_number'].'%');
+            $query->whereRaw("model_number like ? escape '!'", ['%'.$this->escapeLike((string) $filters['model_number']).'%']);
         }
 
         if (! empty($filters['featured'])) {
@@ -147,11 +156,44 @@ class ProductService
         });
     }
 
+    /**
+     * Moves the product to the trash (soft delete); it can be restored later.
+     */
     public function delete(Product $product): void
     {
         $this->activity->log('product.deleted', $product, "Deleted product {$product->name}");
 
         $product->delete();
+    }
+
+    public function restore(Product $product): void
+    {
+        $product->restore();
+
+        $this->activity->log('product.restored', $product, "Restored product {$product->name}");
+    }
+
+    /**
+     * Permanently deletes a trashed product, its media rows (via FK cascade) and its
+     * uploaded files, which frees its SKU and slug for reuse.
+     */
+    public function forceDelete(Product $product): void
+    {
+        $this->activity->log('product.force_deleted', $product, "Permanently deleted product {$product->name}");
+
+        $productId = $product->id;
+        $product->forceDelete();
+
+        Storage::disk('public')->deleteDirectory("products/{$productId}");
+    }
+
+    /**
+     * Makes "%" and "_" in a search term match literally ("!" is the escape character,
+     * which MySQL and SQLite both accept in an ESCAPE clause).
+     */
+    private function escapeLike(string $term): string
+    {
+        return str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $term);
     }
 
     /**

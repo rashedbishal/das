@@ -17,22 +17,15 @@ class ProductMediaController extends Controller
 
     public function store(StoreProductMediaRequest $request, Product $product): RedirectResponse
     {
-        $type = $request->string('type')->toString();
-        $limits = ProductMediaService::limits()[$type];
+        $isUpload = $request->string('source')->toString() === 'upload';
 
-        if ($product->media()->where('type', $type)->count() >= $limits['max']) {
-            return back()->withErrors([
-                'file' => "This product already has the maximum of {$limits['max']} {$type}s.",
-            ]);
-        }
-
-        $meta = $request->only(['is_main', 'alt_text', 'sort_order']);
-
-        if ($request->string('source')->toString() === 'upload') {
-            $this->media->addUpload($product, $request->file('file'), $request->string('type')->toString(), $meta);
-        } else {
-            $this->media->addUrl($product, $request->string('type')->toString(), (string) $request->string('url'), $meta);
-        }
+        $this->media->add(
+            $product,
+            $request->string('type')->toString(),
+            $isUpload ? $request->file('file') : null,
+            $isUpload ? null : $request->string('url')->toString(),
+            $request->only(['is_main', 'alt_text', 'sort_order']),
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Media added.']);
 

@@ -24,6 +24,7 @@
         catalog,
         seo,
         tracking,
+        canManageTracking,
     }: {
         general: { site_name?: string; contact_email?: string; contact_phone?: string; address?: string; currency?: string; timezone?: string };
         authSettings: { login_mode?: string; registration_enabled?: boolean; require_email_verification?: boolean };
@@ -32,6 +33,7 @@
         catalog: { page_size?: number; featured_limit?: number; delivery_note?: string };
         seo: { default_title?: string; default_description?: string };
         tracking: { head_scripts?: string; body_scripts?: string };
+        canManageTracking: boolean;
     } = $props();
 
     const tabs = [
@@ -252,11 +254,14 @@
                 <CardDescription>
                     Paste raw JavaScript to run on every page. The head snippet is injected just before
                     <code>&lt;/head&gt;</code>; the body snippet right after the opening <code>&lt;body&gt;</code> tag (where
-                    GTM's <code>&lt;noscript&gt;</code> fallback belongs). Only admins with Settings access can edit this,
-                    since it runs unsanitized on every visitor's page.
+                    GTM's <code>&lt;noscript&gt;</code> fallback belongs). It runs on storefront pages only, never in the
+                    admin panel. Only the Mother Admin can edit it, since it runs unsanitized on every visitor's page.
                 </CardDescription>
             </CardHeader>
             <CardContent>
+                {#if !canManageTracking}
+                    <p class="text-sm text-muted-foreground">Only the Mother Admin can change tracking scripts.</p>
+                {:else}
                 <Form {...SettingsController.updateTracking.form()} class="space-y-4">
                     {#snippet children({ errors, processing })}
                         <div class="grid gap-2">
@@ -286,6 +291,7 @@
                         <Button type="submit" disabled={processing}>Save tracking scripts</Button>
                     {/snippet}
                 </Form>
+                {/if}
             </CardContent>
         </Card>
     {/if}
