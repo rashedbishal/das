@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -17,6 +18,15 @@ use Illuminate\Support\Carbon;
 #[Fillable(['group', 'key', 'value'])]
 class Setting extends Model
 {
+    use LogsModelActivity;
+
+    protected string $activityLogName = 'content';
+
+    protected function activityLabel(): string
+    {
+        return "{$this->group}.{$this->key}";
+    }
+
     /**
      * @return array<string, string>
      */

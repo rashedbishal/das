@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Database\Factories\HomepageSectionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -31,7 +32,9 @@ use Illuminate\Support\Carbon;
 class HomepageSection extends Model
 {
     /** @use HasFactory<HomepageSectionFactory> */
-    use HasFactory;
+    use HasFactory, LogsModelActivity;
+
+    protected string $activityLogName = 'content';
 
     /**
      * @return array<string, string>

@@ -2,6 +2,7 @@
     import { Link, page } from '@inertiajs/svelte';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import Check from '@lucide/svelte/icons/check';
+    import Lock from '@lucide/svelte/icons/lock';
     import Maximize2 from '@lucide/svelte/icons/maximize-2';
     import Phone from '@lucide/svelte/icons/phone';
     import CirclePlay from '@lucide/svelte/icons/circle-play';
@@ -9,28 +10,38 @@
     import Button from '@/components/storefront/Button.svelte';
     import { buttonClass } from '@/components/storefront/button';
     import ContactBanner from '@/components/storefront/ContactBanner.svelte';
-    import MissingPage from '@/components/storefront/MissingPage.svelte';
     import Modal from '@/components/storefront/Modal.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
     import ProductGrid from '@/components/storefront/ProductGrid.svelte';
     import QuoteDialog from '@/components/storefront/QuoteDialog.svelte';
     import SectionHeading from '@/components/storefront/SectionHeading.svelte';
     import {
-        fetchProduct,
-        ProductUnauthorizedError,
         formatPrice,
-        pathSegment,
+        mapProductDetail,
         stockLabel,
-        type ProductDetail,
+        type RawProductDetail,
     } from '@/data/catalogue';
     import LoginModal from '@/components/LoginModal.svelte';
     import { resolvePhone } from '@/lib/contact';
+    import { absoluteUrl, jsonLdScript } from '@/lib/seo';
     import { catalogue } from '@/routes';
-    import { show as categoryShow } from '@/routes/categories';
+    import { show as brandShow } from '@/routes/brands';
+    import { show as categoryShow, subcategory as subcategoryShow } from '@/routes/categories';
+    import { show as productShow } from '@/routes/products';
 
-    let { loginMode = 'both' }: { loginMode?: 'email' | 'phone' | 'both' } = $props();
+    // Rendered server-side (public, so search engines can index it). Prices are only
+    // included for signed-in customers; guests see "Sign in to see price".
+    let {
+        product,
+        isPreview = false,
+        loginMode = 'both',
+    }: {
+        product: RawProductDetail;
+        isPreview?: boolean;
+        loginMode?: 'email' | 'phone' | 'both';
+    } = $props();
 
-    const slug = $derived(pathSegment(page.url, 1));
+    const p = $derived(mapProductDetail(product));
     const phone = $derived(
         resolvePhone(
             page.props.contactWidgets.whatsapp,
@@ -39,107 +50,105 @@
     );
     const authed = $derived(!!page.props.auth.user);
 
-    let product = $state<ProductDetail | null>(null);
-    let loading = $state(true);
-    /** Set when the product couldn't be loaded for a reason other than "not found". */
-    let loadFailed = $state(false);
-    let attempt = $state(0);
     let zoom = $state(false);
     let loginModalOpen = $state(false);
     let activeIndex = $state(0);
 
     const gallery = $derived.by(() => {
-        if (!product) {
-            return [];
-        }
-
-        const media = product.media.filter((m) => m.url);
+        const media = p.media.filter((m) => m.url);
 
         return media.length > 0
             ? media
-            : product.image
-              ? [
-                    {
-                        type: 'image',
-                        url: product.image,
-                        isMain: true,
-                        altText: null,
-                    },
-                ]
+            : p.image
+              ? [{ type: 'image', url: p.image, isMain: true, altText: null }]
               : [];
     });
     const activeMedia = $derived(gallery[activeIndex] ?? null);
+    const images = $derived(gallery.filter((m) => m.type === 'image').map((m) => m.url));
 
     $effect(() => {
-        const main = gallery.findIndex(
-            (m) => m.isMain && m.type === 'image',
-        );
+        const main = gallery.findIndex((m) => m.isMain && m.type === 'image');
         activeIndex = main >= 0 ? main : 0;
     });
 
-    $effect(() => {
-        if (!authed) {
-            loginModalOpen = true;
-            loading = false;
-            product = null;
+    const canonical = $derived(p.seo.canonicalUrl || productShow.url(p.slug));
+    const metaDescription = $derived(
+        p.seo.description?.trim() ||
+            p.shortDescription?.trim() ||
+            p.fullDescription?.trim().slice(0, 160) ||
+            `${p.name}${p.brand ? ` by ${p.brand.name}` : ''}, available from DAS. Contact us for price and availability.`,
+    );
 
-            return;
-        }
+    const breadcrumbs = $derived([
+        { label: 'Categories', href: catalogue.url() },
+        ...(p.category ? [{ label: p.category.name, href: categoryShow.url(p.category.slug) }] : []),
+        ...(p.category && p.subcategory
+            ? [{ label: p.subcategory.name, href: subcategoryShow.url([p.category.slug, p.subcategory.slug]) }]
+            : []),
+        { label: p.name },
+    ]);
 
-        void attempt;
-        loginModalOpen = false;
-        loading = true;
-        loadFailed = false;
-        product = null;
+    /** schema.org Product, so search engines understand the page (no price for guests). */
+    const productJsonLd = $derived.by(() => {
+        const appUrl = page.props.seo.appUrl;
+        const availability: Record<string, string> = {
+            in_stock: 'https://schema.org/InStock',
+            out_of_stock: 'https://schema.org/OutOfStock',
+            backorder: 'https://schema.org/BackOrder',
+            on_order: 'https://schema.org/PreOrder',
+        };
+        const price = p.salePrice ?? p.regularPrice;
 
-        fetchProduct(slug)
-            .then((result) => {
-                product = result;
-            })
-            .catch((error: unknown) => {
-                product = null;
-
-                if (error instanceof ProductUnauthorizedError) {
-                    loginModalOpen = true;
-                } else {
-                    loadFailed = true;
-                }
-            })
-            .finally(() => {
-                loading = false;
-            });
+        return jsonLdScript({
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: p.name,
+            description: metaDescription,
+            url: absoluteUrl(appUrl, productShow.url(p.slug)),
+            ...(images.length ? { image: images.map((url) => absoluteUrl(appUrl, url)) } : {}),
+            ...(p.sku ? { sku: p.sku } : {}),
+            ...(p.modelNumber ? { mpn: p.modelNumber, model: p.modelNumber } : {}),
+            ...(p.brand ? { brand: { '@type': 'Brand', name: p.brand.name } } : {}),
+            ...(p.category ? { category: p.subcategory ? `${p.category.name} > ${p.subcategory.name}` : p.category.name } : {}),
+            ...(p.showPrice && price !== null
+                ? {
+                      offers: {
+                          '@type': 'Offer',
+                          price,
+                          priceCurrency: p.currency || 'BDT',
+                          url: absoluteUrl(appUrl, productShow.url(p.slug)),
+                          ...(p.stockStatus && availability[p.stockStatus]
+                              ? { availability: availability[p.stockStatus] }
+                              : {}),
+                      },
+                  }
+                : {}),
+        });
     });
 </script>
 
-{#if !authed}
-    <PageMeta title="Sign in to view this product" noindex />
-    <section class="container-wide flex flex-col items-center gap-4 py-20 text-center">
-        <h1 class="text-xl font-semibold">Sign in to view this product</h1>
-        <p class="max-w-sm text-sm text-muted-foreground">
-            Full product details, including pricing and specifications, are available to
-            registered customers. Log in below to continue — no need to leave this page.
-        </p>
-        <Button onclick={() => (loginModalOpen = true)}>Log in</Button>
-    </section>
+<svelte:head>
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+    {@html productJsonLd}
+</svelte:head>
 
-    <LoginModal bind:open={loginModalOpen} {loginMode} />
-{:else if product}
-    {@const p = product}
-    <PageMeta
-        title={p.seo.title || p.name}
-        description={p.seo.description || p.shortDescription || p.name}
-        image={activeMedia?.type === 'image' ? activeMedia.url : p.image}
-        canonical={p.seo.canonicalUrl}
-    />
+<PageMeta
+    title={p.seo.title?.trim() || p.name}
+    description={metaDescription}
+    image={images[0] ?? null}
+    {canonical}
+    noindex={isPreview}
+    type="product"
+/>
+
+{#if isPreview}
+    <div class="border-b bg-amber-50 px-4 py-2 text-center text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+        Preview: this product is not published, so customers and search engines can’t see it.
+    </div>
+{/if}
 
     <section class="container-wide pt-9 pb-16">
-        <Breadcrumb
-            items={[
-                { label: 'Equipment', href: catalogue.url() },
-                { label: p.category?.name ?? 'Equipment' },
-                { label: p.name },
-            ]}
-        />
+        <Breadcrumb items={breadcrumbs} />
         <div class="grid gap-9 lg:grid-cols-2 lg:gap-16">
             <div>
                 <div
@@ -219,9 +228,11 @@
                 {/if}
             </div>
             <div class="lg:pt-4">
-                <div class="eyebrow mb-4">
-                    {p.brand?.name}
-                </div>
+                {#if p.brand}
+                    <Link href={brandShow.url(p.brand.slug)} class="eyebrow mb-4 block hover:underline">
+                        {p.brand.name}
+                    </Link>
+                {/if}
                 <h1 class="text-[31px] leading-tight font-semibold [overflow-wrap:anywhere] lg:text-[38px]">
                     {p.name}
                 </h1>
@@ -282,6 +293,14 @@
                         </span>
                     {/if}
                     </div>
+                {:else if p.priceLoginRequired}
+                    <div class="mt-6 flex flex-wrap items-center gap-3 rounded-md border border-dashed p-4">
+                        <Lock class="size-4 text-primary" />
+                        <span class="text-sm">Prices are available to registered customers.</span>
+                        <Button variant="outline" size="sm" onclick={() => (loginModalOpen = true)}>
+                            Sign in to see price
+                        </Button>
+                    </div>
                 {/if}
                 <ul class="my-7 space-y-3">
                     {#each p.highlights as f (f)}
@@ -291,18 +310,26 @@
                         </li>
                     {/each}
                 </ul>
-                <div class="flex flex-wrap gap-3">
-                    <a
-                        href="tel:{phone.tel}"
-                        class={buttonClass({ class: 'h-12 px-7 shadow-none' })}
-                    >
-                        <Phone />
-                        Call for Price
-                    </a>
-                    {#key p.slug}
-                        <QuoteDialog product={p.name} />
-                    {/key}
-                </div>
+                {#if authed}
+                    <div class="flex flex-wrap gap-3">
+                        <a
+                            href="tel:{phone.tel}"
+                            class={buttonClass({ class: 'h-12 px-7 shadow-none' })}
+                        >
+                            <Phone />
+                            Call for Price
+                        </a>
+                        {#key p.slug}
+                            <QuoteDialog product={p.name} />
+                        {/key}
+                    </div>
+                {:else}
+                    <div class="flex flex-wrap gap-3">
+                        <Button class="h-12 px-7" onclick={() => (loginModalOpen = true)}>
+                            Sign in to enquire
+                        </Button>
+                    </div>
+                {/if}
             </div>
         </div>
         <div
@@ -342,6 +369,7 @@
         </div>
     </section>
 
+    {#if p.relatedProducts.length > 0}
     <section class="border-t bg-secondary">
         <div class="container-wide section-space">
             <SectionHeading
@@ -352,6 +380,7 @@
             <ProductGrid items={p.relatedProducts} />
         </div>
     </section>
+    {/if}
 
     <ContactBanner />
 
@@ -366,15 +395,5 @@
             class="h-[65dvh] w-full bg-photo object-contain"
         />
     </Modal>
-{:else if loadFailed}
-    <PageMeta title="Product unavailable" noindex />
-    <section class="container-wide flex flex-col items-center gap-4 py-20 text-center" role="alert">
-        <h1 class="text-xl font-semibold">We couldn’t load this product</h1>
-        <p class="max-w-sm text-sm text-muted-foreground">
-            Please check your connection and try again.
-        </p>
-        <Button onclick={() => attempt++}>Try again</Button>
-    </section>
-{:else if !loading}
-    <MissingPage />
-{/if}
+
+<LoginModal bind:open={loginModalOpen} {loginMode} />

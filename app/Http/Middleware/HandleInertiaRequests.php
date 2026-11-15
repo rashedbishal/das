@@ -2,8 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Resources\CategoryResource;
+use App\Models\Category;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -57,14 +60,36 @@ class HandleInertiaRequests extends Middleware
                 'contactPhone' => $settings->get('general', 'contact_phone'),
                 'contactEmail' => $settings->get('general', 'contact_email'),
                 'address' => $settings->get('general', 'address'),
+                'addressCity' => $settings->get('general', 'address_city'),
+                'addressRegion' => $settings->get('general', 'address_region'),
+                'postalCode' => $settings->get('general', 'postal_code'),
+                'mapUrl' => $settings->get('general', 'map_url'),
+                'latitude' => $settings->get('general', 'latitude'),
+                'longitude' => $settings->get('general', 'longitude'),
+                'openingHours' => $settings->get('general', 'opening_hours', []),
+                'socialLinks' => array_filter((array) $settings->get('general', 'social_links', [])),
                 'currency' => $settings->get('general', 'currency', 'BDT'),
                 'deliveryNote' => $settings->get('catalog', 'delivery_note'),
             ],
+            // Category links for the storefront header and footer, so they are in the
+            // server-rendered HTML; sent once and kept across page visits.
+            ...($request->is('admin', 'admin/*', 'dashboard', 'dashboard/*') ? [] : [
+                'navCategories' => Inertia::once(fn () => CategoryResource::collection(
+                    Category::query()
+                        ->active()
+                        ->withCount(['products' => fn ($query) => $query->published()])
+                        ->with(['subcategories' => fn ($query) => $query->active()->orderBy('sort_order')])
+                        ->orderBy('sort_order')
+                        ->get(),
+                )->resolve()),
+            ]),
             'seo' => [
                 'defaultTitle' => $settings->get('seo', 'default_title'),
                 'defaultDescription' => $settings->get('seo', 'default_description'),
                 'canonicalUrl' => $request->url(),
                 'appUrl' => rtrim((string) config('app.url'), '/'),
+                'googleSiteVerification' => $settings->get('seo', 'google_site_verification'),
+                'bingSiteVerification' => $settings->get('seo', 'bing_site_verification'),
             ],
         ];
     }

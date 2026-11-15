@@ -23,19 +23,25 @@
         "slug": 80,
         "description": 1000,
         "website_url": 500,
-        "logo": 500
+        "logo": 500,
+        "seo_title": 70,
+        "seo_description": 170
     },
     "category": {
         "name": 50,
         "slug": 70,
         "description": 500,
-        "image": 500
+        "image": 500,
+        "seo_title": 70,
+        "seo_description": 170
     },
     "subcategory": {
         "name": 60,
         "slug": 80,
         "description": 500,
-        "image": 500
+        "image": 500,
+        "seo_title": 70,
+        "seo_description": 170
     },
     "tag": {
         "name": 40
@@ -63,6 +69,10 @@
         "contact_email": 150,
         "contact_phone": 20,
         "address": 300,
+        "address_city": 80,
+        "address_region": 80,
+        "postal_code": 20,
+        "map_url": 1000,
         "timezone": 64,
         "social_link": 500,
         "whatsapp_phone": 20,
@@ -71,7 +81,11 @@
         "delivery_note": 120,
         "default_title": 70,
         "default_description": 170,
+        "site_verification": 120,
         "scripts": 20000
+    },
+    "stock": {
+        "note": 255
     },
     "number": {
         "sort_order": 9999,

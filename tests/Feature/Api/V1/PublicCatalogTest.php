@@ -17,10 +17,21 @@ test('the public products api returns only published products with summary field
     $response->assertDontSee('SECRET INTERNAL DETAIL');
 });
 
-test('a guest receives a 401 from the product detail api', function () {
-    $product = Product::factory()->published()->create();
+test('a guest receives product detail from the api without prices', function () {
+    $product = Product::factory()->published()->create(['regular_price' => 1500, 'show_price' => true]);
 
-    $this->getJson(route('api.v1.products.show', $product))->assertUnauthorized();
+    $this->getJson(route('api.v1.products.show', $product))
+        ->assertOk()
+        ->assertJsonPath('data.sku', $product->sku)
+        ->assertJsonPath('data.regular_price', null)
+        ->assertJsonPath('data.show_price', false)
+        ->assertJsonPath('data.price_login_required', true);
+});
+
+test('a guest receives a 404 for a draft product via the api', function () {
+    $product = Product::factory()->create(['status' => 'draft']);
+
+    $this->getJson(route('api.v1.products.show', $product))->assertNotFound();
 });
 
 test('an authenticated customer receives full product detail from the api', function () {

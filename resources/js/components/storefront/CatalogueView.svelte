@@ -28,10 +28,14 @@
     let {
         urlFor,
         fixedCategory,
+        fixedSubcategory,
+        fixedBrand,
         initial = null,
     }: {
         urlFor: (query: Record<string, string>) => string;
         fixedCategory?: string;
+        fixedSubcategory?: string;
+        fixedBrand?: string;
         /** First page rendered server-side for the current URL's filters. */
         initial?: ProductPage | null;
     } = $props();
@@ -58,6 +62,24 @@
     /** Only the latest request may update the list, so slow stale responses are ignored. */
     let latestRequest = 0;
 
+    // Prices are for signed-in customers, so guests can't filter or sort by price.
+    const canUsePrice = $derived(!!page.props.auth.user);
+
+    function withFixed(value: CatalogueFilters): CatalogueFilters {
+        return {
+            ...value,
+            category: fixedCategory ?? value.category,
+            subcategory: fixedSubcategory ?? value.subcategory,
+            brand: fixedBrand ?? value.brand,
+            ...(canUsePrice
+                ? {}
+                : {
+                      maxPrice: undefined,
+                      sort: value.sort?.startsWith('price') ? undefined : value.sort,
+                  }),
+        };
+    }
+
     const categoryCounts = $derived(
         Object.fromEntries($categories.map((c) => [c.slug, c.productsCount])),
     );
@@ -70,7 +92,7 @@
     });
 
     $effect(() => {
-        const activeFilters = { ...filters, category: fixedCategory ?? filters.category };
+        const activeFilters = withFixed(filters);
 
         if (skipInitialFetch) {
             skipInitialFetch = false;
@@ -114,7 +136,7 @@
     }
 
     function loadMore() {
-        const activeFilters = { ...filters, category: fixedCategory ?? filters.category };
+        const activeFilters = withFixed(filters);
         const request = ++latestRequest;
 
         loading = true;
@@ -179,11 +201,15 @@
                   },
               ]
             : []),
-        {
-            key: 'brand' as FilterKey,
-            name: 'Brand',
-            options: $brands.map((b) => ({ value: b.slug, label: b.name })),
-        },
+        ...(!fixedBrand
+            ? [
+                  {
+                      key: 'brand' as FilterKey,
+                      name: 'Brand',
+                      options: $brands.map((b) => ({ value: b.slug, label: b.name })),
+                  },
+              ]
+            : []),
         {
             key: 'stockStatus' as FilterKey,
             name: 'Availability',
@@ -254,6 +280,7 @@
                 </div>
             </fieldset>
         {/each}
+        {#if canUsePrice}
         <fieldset class="border-b py-6">
             <legend class="filter-title float-left w-full">Price</legend>
             <div class="clear-both">
@@ -285,6 +312,7 @@
                 </p>
             </div>
         </fieldset>
+        {/if}
     </div>
 {/snippet}
 
@@ -334,8 +362,10 @@
             >
                 <option value="featured">Featured</option>
                 <option value="name">Name: A–Z</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
+                {#if canUsePrice}
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                {/if}
             </select>
         </label>
     </div>

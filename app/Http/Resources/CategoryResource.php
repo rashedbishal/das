@@ -23,6 +23,10 @@ class CategoryResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
+            'seo' => [
+                'title' => $this->seo_title,
+                'description' => $this->seo_description,
+            ],
             'image' => $this->image,
             'products_count' => $this->whenCounted('products'),
             // Resolved to a plain list so it has the same shape in JSON responses and in

@@ -59,13 +59,21 @@ Native `roles` / `permissions` tables (no third-party package), chosen so the Mo
 - **Anti-escalation**: an admin can only grant a role, or assign permissions, that they already hold themselves (checked permission-by-permission). The Mother Admin bypasses this check; nobody else can grant the Mother Admin role directly — only via the transfer flow above.
 - Seeded example roles: `product-manager`, `catalog-editor`, `content-manager`, `customer-manager`, `seo-manager`, `read-only-admin` — all fully custom/editable (unlike Mother Admin). Permission catalog (group → slugs) is seeded by `Database\Seeders\RolePermissionSeeder` and can be inspected via `GET /api/v1/admin/roles/permissions`.
 
-## Product Detail Access Rule
+## Product Access & Prices
 
 Enforced on the backend (not just the frontend), on **both** the Inertia routes and the `/api/v1` routes:
 
-- Guests may browse product/category/brand listings (summary fields only — never full description, specifications, or SEO fields; see `App\Http\Resources\ProductCardResource`).
-- Opening a product detail page as a guest never navigates away or reveals whether the slug exists: the storefront route (`/products/{slug}`, a closure in `routes/web.php`) renders `storefront/Product` in place, which shows an inline login modal (`components/LoginModal.svelte`) and marks the page `noindex`. The API instead returns `401`. Either way, logging in returns the user to the product they requested (`session(['url.intended' => ...])` set by the controller, consumed by Fortify's `redirect()->intended()`).
-- Authenticated customers see full detail only for **published** products; admins see all statuses. Non-public statuses return `404` rather than `403` for authenticated non-admins, to avoid confirming a draft/archived product's existence.
+- **Published products are public**, so search engines can index them. `/products/{slug}` (`StorefrontProductController`) renders the full product (description, specifications, images, brand, category) server-side; `GET /api/v1/products/{slug}` returns the same detail.
+- **Prices are for signed-in users only.** `ProductResource` and `ProductCardResource` return `regular_price`/`sale_price` (and variant prices) only when a user is signed in; for guests they are `null` and `price_login_required` is `true`, and the storefront shows "Sign in to see price". Guests also can't filter or sort by price (`ProductService::withoutPriceFiltersForGuests`). The call/quote buttons on the product page are shown after sign-in. Stock status follows each product's "show stock" setting for everyone.
+- A guest who signs in from a product page returns to it (`session(['url.intended' => ...])`, consumed by Fortify's `redirect()->intended()`).
+- Unknown, draft and archived products are a real `404` for guests and customers; admins can preview drafts (the page is marked as a preview and `noindex`).
+
+## SEO
+
+- Every storefront page (home, catalogue, categories, `/categories/{category}/{subcategory}`, brands, `/brands/{brand}`, products, about, contact) is rendered server-side with its title, description, absolute canonical URL, Open Graph tags and JSON-LD (`Store`/`Organization` with address and opening hours, `BreadcrumbList`, `Product`). See `components/storefront/PageMeta.svelte`.
+- `/sitemap.xml` (`SeoController`) lists all of them, including every published product with its images; `/robots.txt` points to it.
+- The CMS, the API and sign-in/account pages send `X-Robots-Tag: noindex, nofollow` (`AddSecurityHeaders`); catalogue search results (`?q=`) are `noindex, follow`.
+- Admins: SEO title/description on products, categories, subcategories and brands, with a Google preview and checklist in each form; Settings → General (address, map, opening hours, social profiles) and Settings → Catalog & SEO (Search Console/Bing verification); **SEO Health** (`/admin/seo`) lists pages with content gaps.
 
 ## Media & Storage
 
@@ -99,7 +107,7 @@ The public contact and product-enquiry forms save submissions in the `contact_en
 
 All admin endpoints require the `auth:sanctum` + `admin` middleware and the policy-gated permission named in parentheses.
 
-**Public**: `GET products`, `GET products/{slug}` (auth required, 401 otherwise), `GET categories`, `GET categories/{slug}`, `GET subcategories/{slug}`, `GET brands`, `GET brands/{slug}`, `GET tags`, `GET homepage`, `GET settings/contact-widgets`. Category and brand listings include a published `products_count`.
+**Public**: `GET products`, `GET products/{slug}` (published only; prices only for signed-in users), `GET categories`, `GET categories/{slug}`, `GET subcategories/{slug}`, `GET brands`, `GET brands/{slug}`, `GET tags`, `GET homepage`, `GET settings/contact-widgets`. Category and brand listings include a published `products_count`.
 
 **Auth**: `POST auth/register`, `POST auth/login` (body: `identifier`, `password`), `POST auth/logout`, `GET auth/user`.
 
@@ -140,7 +148,7 @@ npm run check                       # svelte-check + eslint, if configured
 npm run build                       # production asset build
 ```
 
-The suite covers: Mother Admin bootstrap/idempotency, role/permission anti-escalation, all three customer login modes with Bangladeshi phone validation and duplicate-normalization, the product-detail access rule (guest redirect, customer/admin visibility by status) on both Inertia and API routes, full catalog CRUD + media upload + search/filter/sort/pagination, settings/homepage-section management, contact-widget exposure, and targeted mass-assignment/IDOR checks.
+The suite covers: Mother Admin bootstrap/idempotency, role/permission anti-escalation, all three customer login modes with Bangladeshi phone validation and duplicate-normalization, the product access rules (public published products, prices for signed-in users only, admin draft preview) on both Inertia and API routes, full catalog CRUD + media upload + search/filter/sort/pagination, settings/homepage-section management, contact-widget exposure, and targeted mass-assignment/IDOR checks.
 
 ## Deployment Notes
 

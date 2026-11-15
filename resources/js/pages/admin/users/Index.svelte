@@ -1,4 +1,6 @@
 <script module lang="ts">
+    export type PageMeta = { current_page: number; last_page: number; total: number };
+
     export const layout = {
         breadcrumbs: [{ title: 'Users & Roles', href: '/admin/users' }],
     };
@@ -10,6 +12,7 @@
     import Power from '@lucide/svelte/icons/power';
     import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
     import Trash2 from '@lucide/svelte/icons/trash-2';
+    import { onDestroy, untrack } from 'svelte';
     import AppHead from '@/components/AppHead.svelte';
     import BulkActions from '@/components/dashboard/BulkActions.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
@@ -22,6 +25,7 @@
     import LimitedInput from '@/components/dashboard/LimitedInput.svelte';
     import { fieldLimits } from '@/lib/field-limits';
     import { Label } from '@/components/ui/label';
+    import { Spinner } from '@/components/ui/spinner';
     import { ApiError, apiFetch } from '@/lib/api';
     import * as adminsApi from '@/routes/api/v1/admin/admins';
     import * as customersApi from '@/routes/api/v1/admin/customers';
@@ -29,8 +33,17 @@
 
     type Role = { id: number; name: string; slug: string; is_system: boolean; permissions: { id: number; slug: string; name: string }[] };
     type Permission = { id: number; slug: string; name: string; group: string };
-    type AdminUser = { id: number; name: string; email: string | null; phone: string | null; is_active: boolean; role: Role | null };
-    type Customer = { id: number; name: string; email: string | null; phone: string | null; is_active: boolean };
+    type AdminUser = {
+        id: number;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        is_active: boolean;
+        role: Role | null;
+        created_at: string | null;
+    };
+    type Customer = { id: number; name: string; email: string | null; phone: string | null; is_active: boolean; created_at: string | null };
+    type Paginated<T> = { data: T[]; current_page: number; last_page: number; total: number };
 
     const currentUserId = $derived(page.props.auth.user?.id as number | undefined);
 
@@ -55,22 +68,57 @@
     let roleSearch = $state('');
     let customerSearch = $state('');
 
-    const filteredAdmins = $derived(
-        admins.filter(
-            (admin) =>
-                admin.name.toLowerCase().includes(adminSearch.toLowerCase()) ||
-                (admin.email ?? '').toLowerCase().includes(adminSearch.toLowerCase()),
-        ),
-    );
     const filteredRoles = $derived(roles.filter((role) => role.name.toLowerCase().includes(roleSearch.toLowerCase())));
-    const filteredCustomers = $derived(
-        customers.filter(
-            (customer) =>
-                customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-                (customer.email ?? '').toLowerCase().includes(customerSearch.toLowerCase()) ||
-                (customer.phone ?? '').toLowerCase().includes(customerSearch.toLowerCase()),
-        ),
-    );
+    // Admins and customers are searched and paged on the server (newest first), so
+    // every account is reachable, not just the first page. Searching starts shortly
+    // after typing stops, and a slower, older response never overwrites a newer one.
+    const SEARCH_DELAY_MS = 250;
+    let adminPage = $state(1);
+    let adminMeta = $state<PageMeta>({ current_page: 1, last_page: 1, total: 0 });
+    let adminsLoading = $state(false);
+    let adminRequest = 0;
+    let customerPage = $state(1);
+    let customerMeta = $state<PageMeta>({ current_page: 1, last_page: 1, total: 0 });
+    let customersLoading = $state(false);
+    let customerRequest = 0;
+    let searchTimer: ReturnType<typeof setTimeout> | undefined;
+
+    onDestroy(() => clearTimeout(searchTimer));
+
+    function listQuery(search: string, pageNumber: number): Record<string, string | number> {
+        const term = search.trim();
+        return term ? { search: term, page: pageNumber } : { page: pageNumber };
+    }
+
+    function reportLoadError(e: unknown) {
+        error = e instanceof Error ? e.message : 'Failed to load';
+    }
+
+    function onAdminSearchInput() {
+        clearTimeout(searchTimer);
+        adminPage = 1;
+        searchTimer = setTimeout(() => loadAdmins().catch(reportLoadError), SEARCH_DELAY_MS);
+    }
+
+    function onCustomerSearchInput() {
+        clearTimeout(searchTimer);
+        customerPage = 1;
+        searchTimer = setTimeout(() => loadCustomers().catch(reportLoadError), SEARCH_DELAY_MS);
+    }
+
+    function goToAdminPage(pageNumber: number) {
+        adminPage = pageNumber;
+        loadAdmins().catch(reportLoadError);
+    }
+
+    function goToCustomerPage(pageNumber: number) {
+        customerPage = pageNumber;
+        loadCustomers().catch(reportLoadError);
+    }
+
+    function formatJoined(value: string | null): string {
+        return value ? new Date(value).toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—';
+    }
 
     let createAdminOpen = $state(false);
     let createRoleOpen = $state(false);
@@ -93,9 +141,32 @@
         selectableRoleIds.length > 0 && selectableRoleIds.every((id) => selectedRoleIds.includes(id)),
     );
 
-    async function loadAdmins() {
-        const result = await apiFetch<{ data: AdminUser[] }>(adminsApi.index.url());
-        admins = result?.data ?? [];
+    async function loadAdmins(): Promise<void> {
+        const requestId = ++adminRequest;
+        adminsLoading = true;
+        try {
+            const result = await apiFetch<Paginated<AdminUser>>(
+                adminsApi.index.url({ query: listQuery(adminSearch, adminPage) }),
+            );
+            if (requestId !== adminRequest) return;
+
+            // A delete or search can leave the current page past the end; step back.
+            if (result && result.last_page > 0 && adminPage > result.last_page) {
+                adminPage = result.last_page;
+                return loadAdmins();
+            }
+
+            admins = result?.data ?? [];
+            adminMeta = {
+                current_page: result?.current_page ?? 1,
+                last_page: result?.last_page ?? 1,
+                total: result?.total ?? 0,
+            };
+        } catch (e) {
+            if (requestId === adminRequest) throw e;
+        } finally {
+            if (requestId === adminRequest) adminsLoading = false;
+        }
     }
 
     async function loadRoles() {
@@ -107,21 +178,48 @@
         permissions = permissionsResult?.data ?? [];
     }
 
-    async function loadCustomers() {
-        const result = await apiFetch<{ data: Customer[] }>(customersApi.index.url());
-        customers = result?.data ?? [];
+    async function loadCustomers(): Promise<void> {
+        const requestId = ++customerRequest;
+        customersLoading = true;
+        try {
+            const result = await apiFetch<Paginated<Customer>>(
+                customersApi.index.url({ query: listQuery(customerSearch, customerPage) }),
+            );
+            if (requestId !== customerRequest) return;
+
+            if (result && result.last_page > 0 && customerPage > result.last_page) {
+                customerPage = result.last_page;
+                return loadCustomers();
+            }
+
+            customers = result?.data ?? [];
+            customerMeta = {
+                current_page: result?.current_page ?? 1,
+                last_page: result?.last_page ?? 1,
+                total: result?.total ?? 0,
+            };
+        } catch (e) {
+            if (requestId === customerRequest) throw e;
+        } finally {
+            if (requestId === customerRequest) customersLoading = false;
+        }
     }
 
+    // Reload only when the tab changes (not when the loaded data changes).
     $effect(() => {
-        error = null;
-        if (tab === 'admins') {
-            loadAdmins().catch((e) => (error = e instanceof Error ? e.message : 'Failed to load'));
-            if (roles.length === 0) loadRoles().catch(() => {});
-        } else if (tab === 'roles') {
-            loadRoles().catch((e) => (error = e instanceof Error ? e.message : 'Failed to load'));
-        } else if (tab === 'customers') {
-            loadCustomers().catch((e) => (error = e instanceof Error ? e.message : 'Failed to load'));
-        }
+        const current = tab;
+        untrack(() => {
+            error = null;
+            clearTimeout(searchTimer);
+            if (current === 'admins') {
+                loadAdmins().catch(reportLoadError);
+                if (roles.length === 0) loadRoles().catch(() => {});
+            } else if (current === 'roles') {
+                loadRoles().catch(reportLoadError);
+            } else if (current === 'customers') {
+                loadCustomers().catch(reportLoadError);
+            }
+        });
     });
 
     async function createAdmin(event: SubmitEvent) {
@@ -353,7 +451,7 @@
             <Button onclick={() => (createAdminOpen = true)}>Create admin</Button>
         </div>
 
-        <Input bind:value={adminSearch} placeholder="Search admins..." class="mb-4 sm:max-w-sm" />
+        {@render searchBox('admins', onAdminSearchInput, adminsLoading, adminMeta.total, 'admin')}
 
         <BulkActions count={selectedAdminIds.length} onClear={() => (selectedAdminIds = [])}>
             {#snippet children()}
@@ -364,15 +462,16 @@
         </BulkActions>
 
         <ResponsiveTable
-            items={filteredAdmins}
+            items={admins}
             key={(admin) => admin.id}
             columns={[
                 { key: 'name', label: 'Name' },
                 { key: 'email', label: 'Email' },
                 { key: 'role', label: 'Role' },
                 { key: 'status', label: 'Status' },
+                { key: 'joined', label: 'Joined', class: 'whitespace-nowrap' },
             ]}
-            empty="No admins found."
+            empty={adminSearch.trim() ? 'No admins match your search.' : 'No admins found.'}
             selectedKeys={selectedAdminIds}
             disabledKeys={admins.filter((admin) => admin.id === currentUserId || admin.role?.is_system).map((admin) => admin.id)}
             onSelectionChange={(keys) => (selectedAdminIds = keys.map(Number))}
@@ -384,6 +483,8 @@
                     {admin.email ?? '—'}
                 {:else if column.key === 'role'}
                     {admin.role?.name ?? '—'}
+                {:else if column.key === 'joined'}
+                    {formatJoined(admin.created_at)}
                 {:else}
                     {@render statusBadge(admin.is_active)}
                 {/if}
@@ -419,6 +520,7 @@
                 {/if}
             {/snippet}
         </ResponsiveTable>
+        {@render pager(adminMeta, goToAdminPage)}
     {:else if tab === 'roles'}
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-xl font-semibold">Roles</h1>
@@ -493,7 +595,7 @@
     {:else if tab === 'customers'}
         <h1 class="mb-4 text-xl font-semibold">Customers</h1>
 
-        <Input bind:value={customerSearch} placeholder="Search customers..." class="mb-4 sm:max-w-sm" />
+        {@render searchBox('customers', onCustomerSearchInput, customersLoading, customerMeta.total, 'customer')}
 
         <BulkActions count={selectedCustomerIds.length} onClear={() => (selectedCustomerIds = [])}>
             {#snippet children()}
@@ -503,15 +605,16 @@
         </BulkActions>
 
         <ResponsiveTable
-            items={filteredCustomers}
+            items={customers}
             key={(customer) => customer.id}
             columns={[
                 { key: 'name', label: 'Name' },
                 { key: 'email', label: 'Email' },
                 { key: 'phone', label: 'Phone' },
                 { key: 'status', label: 'Status' },
+                { key: 'joined', label: 'Joined', class: 'whitespace-nowrap' },
             ]}
-            empty="No customers found."
+            empty={customerSearch.trim() ? 'No customers match your search.' : 'No customers found.'}
             selectedKeys={selectedCustomerIds}
             onSelectionChange={(keys) => (selectedCustomerIds = keys.map(Number))}
         >
@@ -522,6 +625,8 @@
                     {customer.email ?? '—'}
                 {:else if column.key === 'phone'}
                     {customer.phone ?? '—'}
+                {:else if column.key === 'joined'}
+                    {formatJoined(customer.created_at)}
                 {:else}
                     {@render statusBadge(customer.is_active)}
                 {/if}
@@ -532,8 +637,60 @@
                 </Button>
             {/snippet}
         </ResponsiveTable>
+        {@render pager(customerMeta, goToCustomerPage)}
     {/if}
 </div>
+
+{#snippet searchBox(kind: 'admins' | 'customers', onInput: () => void, loading: boolean, total: number, noun: string)}
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+        <div class="relative w-full sm:max-w-sm">
+            {#if kind === 'admins'}
+                <Input
+                    type="search"
+                    bind:value={adminSearch}
+                    oninput={onInput}
+                    placeholder="Search by name, email or phone..."
+                    aria-label="Search admins"
+                    class="pr-9"
+                />
+            {:else}
+                <Input
+                    type="search"
+                    bind:value={customerSearch}
+                    oninput={onInput}
+                    placeholder="Search by name, email or phone..."
+                    aria-label="Search customers"
+                    class="pr-9"
+                />
+            {/if}
+            {#if loading}
+                <Spinner class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground" />
+            {/if}
+        </div>
+        <p class="text-sm text-muted-foreground" aria-live="polite">
+            {total.toLocaleString()} {total === 1 ? noun : `${noun}s`}
+        </p>
+    </div>
+{/snippet}
+
+{#snippet pager(meta: PageMeta, go: (pageNumber: number) => void)}
+    {#if meta.last_page > 1}
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm">
+            <Button variant="ghost" size="sm" disabled={meta.current_page <= 1} onclick={() => go(meta.current_page - 1)}>
+                Previous
+            </Button>
+            <span>Page {meta.current_page} of {meta.last_page}</span>
+            <Button
+                variant="ghost"
+                size="sm"
+                disabled={meta.current_page >= meta.last_page}
+                onclick={() => go(meta.current_page + 1)}
+            >
+                Next
+            </Button>
+        </div>
+    {/if}
+{/snippet}
 
 {#snippet statusBadge(isActive: boolean)}
     <Badge variant={isActive ? 'default' : 'secondary'}>

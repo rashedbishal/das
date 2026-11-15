@@ -10,6 +10,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AddSecurityHeaders
 {
+    /** Paths search engines must not index: the CMS, the API and sign-in/account pages. */
+    private const NOINDEX_PATHS = [
+        'admin', 'admin/*', 'dashboard', 'dashboard/*', 'api/*',
+        'login', 'register', 'forgot-password', 'reset-password/*',
+        'email/verify', 'email/verify/*', 'user/*', 'contact-widgets',
+    ];
+
     /**
      * Baseline hardening headers on every response, plus a Content Security Policy on
      * the admin panel. The storefront has no CSP because admin-managed tracking
@@ -35,6 +42,11 @@ class AddSecurityHeaders
 
         if ($request->is('admin', 'admin/*', 'dashboard', 'dashboard/*')) {
             $response->headers->set('Content-Security-Policy', $this->adminPolicy());
+        }
+
+        // Private and account pages stay out of search results (the storefront is indexable).
+        if ($request->is(...self::NOINDEX_PATHS)) {
+            $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
         }
 
         return $response;

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
@@ -24,6 +25,7 @@ test('users can authenticate using the login screen', function () {
 
 test('customers return to the product page that prompted the login', function () {
     $user = User::factory()->create();
+    Product::factory()->published()->create(['slug' => 'some-product']);
 
     $this->get(route('products.show', 'some-product'));
 

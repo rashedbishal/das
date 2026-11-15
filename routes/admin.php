@@ -1,12 +1,15 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ContactEnquiryController;
 use App\Http\Controllers\Admin\HomepageSectionController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductMediaController;
+use App\Http\Controllers\Admin\SeoHealthController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\SubcategoryController;
 use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\UserManagementController;
@@ -60,6 +63,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         ->withTrashed()
         ->name('products.force-destroy');
 
+    Route::get('stock', [StockController::class, 'index'])->name('stock.index');
+    Route::post('stock/{product}', [StockController::class, 'store'])->name('stock.store');
+    Route::get('stock/{product}/history', [StockController::class, 'history'])->name('stock.history');
+
     Route::post('products/{product}/media', [ProductMediaController::class, 'store'])->name('products.media.store');
     Route::patch('products/{product}/media/{media}', [ProductMediaController::class, 'update'])->name('products.media.update');
     Route::delete('products/{product}/media/{media}', [ProductMediaController::class, 'destroy'])->name('products.media.destroy');
@@ -77,4 +84,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('settings/tracking', [SettingsController::class, 'updateTracking'])->name('settings.tracking.update');
 
     Route::get('users', [UserManagementController::class, 'index'])->name('users.index');
+
+    Route::get('seo', SeoHealthController::class)->name('seo.index');
+
+    Route::get('activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
+    Route::delete('activity-log', [ActivityLogController::class, 'destroy'])->name('activity-log.destroy');
 });

@@ -30,7 +30,7 @@ class SubcategoryController extends Controller
                 ->orderBy('name')
                 ->get(),
             'subcategories' => Subcategory::query()
-                ->with('category:id,name')
+                ->with('category:id,name,slug')
                 ->withCount('products')
                 ->orderBy('sort_order')
                 ->orderBy('name')

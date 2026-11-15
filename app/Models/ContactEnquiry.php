@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -21,6 +22,10 @@ use Illuminate\Support\Carbon;
 #[Fillable(['name', 'business_name', 'phone', 'email', 'product_name', 'message', 'is_read'])]
 class ContactEnquiry extends Model
 {
+    use LogsModelActivity;
+
+    protected string $activityLogName = 'enquiries';
+
     /**
      * @return array<string, string>
      */

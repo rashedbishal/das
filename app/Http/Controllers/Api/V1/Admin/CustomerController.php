@@ -15,7 +15,13 @@ class CustomerController extends Controller
         $this->authorize('viewAnyCustomers', User::class);
 
         return response()->json(
-            User::query()->customers()->orderBy('name')->paginate((int) $request->integer('per_page', 25))->toArray(),
+            User::query()
+                ->customers()
+                ->search($request->string('search')->toString())
+                ->newestFirst()
+                ->paginate(max(1, min($request->integer('per_page', 25), 100)))
+                ->withQueryString()
+                ->toArray(),
         );
     }
 

@@ -17,6 +17,7 @@
     import Building2 from '@lucide/svelte/icons/building-2';
     import ClipboardList from '@lucide/svelte/icons/clipboard-list';
     import LayoutGrid from '@lucide/svelte/icons/layout-grid';
+    import Eye from '@lucide/svelte/icons/eye';
     import Mail from '@lucide/svelte/icons/mail';
     import Package from '@lucide/svelte/icons/package';
     import PackageSearch from '@lucide/svelte/icons/package-search';
@@ -31,7 +32,8 @@
     import StatCard from '@/components/dashboard/StatCard.svelte';
     import TrendChart from '@/components/dashboard/TrendChart.svelte';
     import { buttonVariants } from '@/components/ui/button';
-    import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+    import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+    import { index as activityLogIndex } from '@/routes/admin/activity-log';
     import { index as adminBrands } from '@/routes/admin/brands';
     import { index as adminCategories } from '@/routes/admin/categories';
     import { index as adminEnquiries } from '@/routes/admin/enquiries';
@@ -58,6 +60,7 @@
 
     let {
         permissions,
+        pageViews,
         stats,
         categoryBreakdown,
         monthlyTrend,
@@ -65,6 +68,11 @@
         recentActivity,
     }: {
         permissions?: Record<string, boolean>;
+        pageViews?: {
+            today: number;
+            lastSevenDays: number;
+            trend: { label: string; value: number }[];
+        };
         stats?: {
             products: { total: number; published: number; draft: number } | null;
             categories: { total: number } | null;
@@ -119,6 +127,14 @@
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {#if pageViews}
+            <StatCard
+                label="Website views today"
+                value={pageViews.today}
+                hint="{pageViews.lastSevenDays} in the last 7 days"
+                icon={Eye}
+            />
+        {/if}
         {#if stats?.products}
             <StatCard
                 label="Products"
@@ -150,6 +166,17 @@
 
     <div class="grid gap-4 lg:grid-cols-[2fr_1fr]">
         <div class="flex min-w-0 flex-col gap-4">
+            {#if pageViews}
+                <Card>
+                    <CardHeader>
+                        <CardTitle class="text-base">Website views, last 14 days</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <TrendChart data={pageViews.trend} />
+                    </CardContent>
+                </Card>
+            {/if}
+
             {#if categoryBreakdown}
                 <Card>
                     <CardHeader>
@@ -262,6 +289,9 @@
                         <CardTitle class="flex items-center gap-2 text-base">
                             <ClipboardList class="size-4" /> Recent activity
                         </CardTitle>
+                        <CardAction>
+                            <Link href={activityLogIndex()} class="text-sm text-primary hover:underline">View all</Link>
+                        </CardAction>
                     </CardHeader>
                     <CardContent>
                         {#if recentActivity.length === 0}
@@ -270,11 +300,10 @@
                             <ul class="flex flex-col gap-3">
                                 {#each recentActivity as entry (entry.id)}
                                     <li class="text-sm">
-                                        <p class="break-words">
-                                            <span class="font-medium">{entry.user?.name ?? 'System'}</span>
-                                            {entry.description ?? entry.action}
+                                        <p class="break-words">{entry.description ?? entry.action}</p>
+                                        <p class="text-xs text-muted-foreground">
+                                            {entry.user?.name ?? 'System'} · {timeAgo(entry.created_at)}
                                         </p>
-                                        <p class="text-xs text-muted-foreground">{timeAgo(entry.created_at)}</p>
                                     </li>
                                 {/each}
                             </ul>

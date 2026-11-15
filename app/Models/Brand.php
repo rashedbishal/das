@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Database\Factories\BrandFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,17 +18,19 @@ use Illuminate\Support\Carbon;
  * @property string $slug
  * @property string|null $logo
  * @property string|null $description
+ * @property string|null $seo_title
+ * @property string|null $seo_description
  * @property string|null $website_url
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  */
-#[Fillable(['name', 'slug', 'logo', 'description', 'website_url', 'is_active'])]
+#[Fillable(['name', 'slug', 'logo', 'description', 'website_url', 'is_active', 'seo_title', 'seo_description'])]
 class Brand extends Model
 {
     /** @use HasFactory<BrandFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, LogsModelActivity, SoftDeletes;
 
     /**
      * @return array<string, string>

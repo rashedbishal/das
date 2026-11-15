@@ -5,7 +5,7 @@
 </script>
 
 <script lang="ts">
-    import { Form } from '@inertiajs/svelte';
+    import { Form, page } from '@inertiajs/svelte';
     import SettingsController from '@/actions/App/Http/Controllers/Admin/SettingsController';
     import AppHead from '@/components/AppHead.svelte';
     import FormSelect from '@/components/dashboard/FormSelect.svelte';
@@ -17,6 +17,8 @@
     import LimitedTextarea from '@/components/dashboard/LimitedTextarea.svelte';
     import { fieldLimits } from '@/lib/field-limits';
     import { Label } from '@/components/ui/label';
+    import type { OpeningHoursDay } from '@/lib/business';
+    import BusinessFields from './BusinessFields.svelte';
 
     let {
         general,
@@ -28,12 +30,32 @@
         tracking,
         canManageTracking,
     }: {
-        general: { site_name?: string; contact_email?: string; contact_phone?: string; address?: string; currency?: string; timezone?: string };
+        general: {
+            site_name?: string;
+            contact_email?: string;
+            contact_phone?: string;
+            address?: string;
+            currency?: string;
+            timezone?: string;
+            address_city?: string | null;
+            address_region?: string | null;
+            postal_code?: string | null;
+            map_url?: string | null;
+            latitude?: string | number | null;
+            longitude?: string | number | null;
+            opening_hours?: OpeningHoursDay[] | null;
+            social_links?: Record<string, string | null> | null;
+        };
         authSettings: { login_mode?: string; registration_enabled?: boolean; require_email_verification?: boolean };
         whatsapp: { enabled?: boolean; phone?: string; message?: string };
         messenger: { enabled?: boolean; page_url?: string };
         catalog: { page_size?: number; featured_limit?: number; delivery_note?: string };
-        seo: { default_title?: string; default_description?: string };
+        seo: {
+            default_title?: string;
+            default_description?: string;
+            google_site_verification?: string | null;
+            bing_site_verification?: string | null;
+        };
         tracking: { head_scripts?: string; body_scripts?: string };
         canManageTracking: boolean;
     } = $props();
@@ -48,6 +70,7 @@
     ] as const;
 
     let tab = $state<(typeof tabs)[number]['value']>('general');
+    const sitemapUrl = $derived(`${page.props.seo.appUrl}/sitemap.xml`);
 </script>
 
 <AppHead title="Settings" />
@@ -109,7 +132,7 @@
                             <InputError message={errors.contact_phone} />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="address">Address</Label>
+                            <Label for="address">Street address</Label>
                             <LimitedTextarea
                                 id="address"
                                 name="address"
@@ -120,6 +143,7 @@
                             />
                             <InputError message={errors.address} />
                         </div>
+                        <BusinessFields {general} {errors} />
                         <div class="grid items-start gap-4 sm:grid-cols-2">
                             <div class="grid gap-2">
                                 <Label for="currency">Currency</Label>
@@ -339,6 +363,36 @@
                             />
                             <InputError message={errors.default_description} />
                         </div>
+                        <fieldset class="grid gap-4 rounded-md border p-4">
+                            <legend class="px-1 text-sm font-medium">Search engine verification</legend>
+                            <p class="text-xs text-muted-foreground">
+                                In Google Search Console (or Bing Webmaster Tools), add your site and choose the “HTML tag”
+                                method. Paste the tag or just its code here, save, then click Verify there.
+                            </p>
+                            <div class="grid gap-2">
+                                <Label for="google_site_verification">Google Search Console code</Label>
+                                <Input
+                                    id="google_site_verification"
+                                    name="google_site_verification"
+                                    placeholder='<meta name="google-site-verification" content="..." />'
+                                    value={seo.google_site_verification ?? ''}
+                                />
+                                <InputError message={errors.google_site_verification} />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="bing_site_verification">Bing Webmaster code</Label>
+                                <Input
+                                    id="bing_site_verification"
+                                    name="bing_site_verification"
+                                    placeholder='<meta name="msvalidate.01" content="..." />'
+                                    value={seo.bing_site_verification ?? ''}
+                                />
+                                <InputError message={errors.bing_site_verification} />
+                            </div>
+                            <p class="text-xs text-muted-foreground">
+                                Then submit your sitemap in Search Console: <span class="font-mono">{sitemapUrl}</span>
+                            </p>
+                        </fieldset>
                         <Button type="submit" disabled={processing}>Save catalog &amp; SEO settings</Button>
                     {/snippet}
                 </Form>

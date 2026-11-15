@@ -24,6 +24,8 @@ class StoreBrandRequest extends FormRequest
             'slug' => ['nullable', 'string', FieldLimits::max('brand.slug')],
             'logo' => ['nullable', 'string', FieldLimits::max('brand.logo')],
             'description' => ['nullable', 'string', FieldLimits::max('brand.description')],
+            'seo_title' => ['nullable', 'string', FieldLimits::max('brand.seo_title')],
+            'seo_description' => ['nullable', 'string', FieldLimits::max('brand.seo_description')],
             'website_url' => ['nullable', 'url:http,https', FieldLimits::max('brand.website_url')],
             'is_active' => ['boolean'],
         ];

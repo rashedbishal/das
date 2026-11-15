@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use Database\Factories\ProductMediaFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -28,7 +29,19 @@ use Illuminate\Support\Facades\Storage;
 class ProductMedia extends Model
 {
     /** @use HasFactory<ProductMediaFactory> */
-    use HasFactory;
+    use HasFactory, LogsModelActivity;
+
+    protected function activityType(): string
+    {
+        return $this->type === 'video' ? 'video' : 'image';
+    }
+
+    protected function activityLabel(): string
+    {
+        $productName = Product::withTrashed()->whereKey($this->product_id)->value('name');
+
+        return 'of product '.($productName ?? '#'.$this->product_id);
+    }
 
     /**
      * @return array<string, string>

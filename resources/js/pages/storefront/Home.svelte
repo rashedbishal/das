@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Link } from '@inertiajs/svelte';
+    import { Link, page } from '@inertiajs/svelte';
     import ArrowRight from '@lucide/svelte/icons/arrow-right';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import Check from '@lucide/svelte/icons/check';
@@ -20,25 +20,20 @@
     import ProductGrid from '@/components/storefront/ProductGrid.svelte';
     import SectionHeading from '@/components/storefront/SectionHeading.svelte';
     import TrustStrip from '@/components/storefront/TrustStrip.svelte';
-    import {
-        brands,
-        fetchFeaturedProducts,
-        loadBrands,
-        type ProductCard,
-    } from '@/data/catalogue';
-    import { brands as brandsRoute, catalogue, contact } from '@/routes';
+    import { brands, loadBrands, mapProductCard, type RawProductCard } from '@/data/catalogue';
+    import { brands as brandsRoute, catalogue, contact, home } from '@/routes';
     import { index as categoriesIndex } from '@/routes/categories';
 
-    let { banners = [] }: { banners?: Banner[] } = $props();
+    let {
+        banners = [],
+        featuredProducts: rawFeatured = [],
+    }: { banners?: Banner[]; featuredProducts?: RawProductCard[] } = $props();
 
     // Decorative sections: if these fail, they simply stay empty.
     loadBrands().catch(() => {});
 
-    let featuredProducts = $state<ProductCard[]>([]);
-
-    fetchFeaturedProducts()
-        .then((items) => (featuredProducts = items))
-        .catch(() => {});
+    // Rendered server-side so the product links are in the HTML.
+    const featuredProducts = $derived(rawFeatured.map(mapProductCard));
 
     const reasons = [
         {
@@ -64,9 +59,13 @@
     ];
 </script>
 
+<!-- Home uses the CMS defaults (Settings → Catalog & SEO) when they are set. -->
 <PageMeta
-    title="Professional Dental Equipment"
-    description="Discover precision dental equipment, clinical essentials and personal product guidance for your practice."
+    title={page.props.seo.defaultTitle?.trim() || `Professional Dental Equipment | ${page.props.siteSettings.name}`}
+    exactTitle
+    description={page.props.seo.defaultDescription?.trim() ||
+        'Discover precision dental equipment, clinical essentials and personal product guidance for your practice.'}
+    canonical={home.url()}
 />
 
 {#if banners.length > 0}

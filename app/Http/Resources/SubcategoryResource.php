@@ -23,6 +23,10 @@ class SubcategoryResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
+            'seo' => [
+                'title' => $this->seo_title,
+                'description' => $this->seo_description,
+            ],
             'image' => $this->image,
             'category' => $this->whenLoaded('category', fn () => $this->category ? [
                 'name' => $this->category->name,

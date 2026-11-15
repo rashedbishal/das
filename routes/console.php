@@ -25,3 +25,6 @@ Schedule::command('inertia:check-ssr')
     ->everyFiveMinutes()
     ->environments(['production'])
     ->onFailure(fn () => Log::critical('The Inertia SSR server is not responding; pages are being served without server-rendered meta tags.'));
+
+// Activity log entries older than config('activitylog.delete_records_older_than_days') (365).
+Schedule::command('activitylog:clean --force')->dailyAt('02:00')->withoutOverlapping();

@@ -8,17 +8,13 @@ use App\Models\User;
 class ProductPolicy
 {
     /**
-     * Full product detail is never available to guests — only to any
-     * authenticated user (customer or admin) once the product is published,
-     * or to admins regardless of status.
+     * Published products are public (guests and search engines see the full page;
+     * prices are hidden from guests by the resources). Drafts and archived products
+     * are visible to admins only, as a preview.
      */
     public function view(?User $user, Product $product): bool
     {
-        if ($user === null) {
-            return false;
-        }
-
-        return $product->status === 'published' || $user->isAdmin();
+        return $product->status === 'published' || ($user?->isAdmin() ?? false);
     }
 
     public function viewAny(User $user): bool

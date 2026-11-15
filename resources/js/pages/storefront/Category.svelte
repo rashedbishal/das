@@ -11,7 +11,7 @@
         type RawProductPage,
     } from '@/data/catalogue';
     import { catalogue } from '@/routes';
-    import { index as categoriesIndex, show } from '@/routes/categories';
+    import { index as categoriesIndex, show, subcategory as subcategoryShow } from '@/routes/categories';
 
     // The category is resolved server-side; unknown slugs get a real 404 response.
     let {
@@ -32,8 +32,9 @@
 </script>
 
 <PageMeta
-    title={c.name}
-    description={c.description?.trim() ||
+    title={c.seo.title?.trim() || c.name}
+    description={c.seo.description?.trim() ||
+        c.description?.trim() ||
         `Explore DAS ${c.name.toLowerCase()} products and specifications. Contact us for product guidance.`}
     image={c.image}
     canonical={show.url(c.slug)}
@@ -53,6 +54,18 @@
             <p class="eyebrow mb-3">A considered collection</p>
             <h1 class="page-heading">{c.name}</h1>
             <p class="section-intro">{intro}</p>
+            {#if c.subcategories.length > 0}
+                <nav aria-label="Subcategories" class="mt-6 flex flex-wrap gap-2">
+                    {#each c.subcategories as sub (sub.id)}
+                        <Link
+                            href={subcategoryShow.url([c.slug, sub.slug])}
+                            class="rounded-full border bg-background px-3 py-1 text-[11px] hover:border-primary hover:text-primary"
+                        >
+                            {sub.name}
+                        </Link>
+                    {/each}
+                </nav>
+            {/if}
             <div class="mt-7 flex flex-wrap gap-4 text-[10px] text-primary">
                 <Link href={catalogue.url({ query: { category: c.slug } })}>
                     View all in this category →

@@ -21,6 +21,8 @@ export type ProductCard = {
     regularPrice: number | null;
     salePrice: number | null;
     showPrice: boolean;
+    /** The product has a price, but it is only shown to signed-in customers. */
+    priceLoginRequired: boolean;
     showStock: boolean;
     currency: string;
     stockStatus: string | null;
@@ -64,11 +66,19 @@ export type ProductSeo = {
     canonicalUrl: string | null;
 };
 
+/** Optional search-engine title/description set in the CMS. */
+export type PageSeo = { title: string | null; description: string | null };
+
 export type CategorySubcategory = {
     id: number;
     name: string;
     slug: string;
     image: string | null;
+};
+
+export type Subcategory = CategorySubcategory & {
+    description: string | null;
+    seo: PageSeo;
 };
 
 export type Category = {
@@ -79,6 +89,7 @@ export type Category = {
     image: string | null;
     productsCount: number;
     subcategories: CategorySubcategory[];
+    seo: PageSeo;
 };
 
 export type Brand = {
@@ -88,6 +99,7 @@ export type Brand = {
     description: string | null;
     logo: string | null;
     productsCount: number;
+    seo: PageSeo;
 };
 
 export type CatalogueFilters = {
@@ -100,7 +112,7 @@ export type CatalogueFilters = {
     sort?: string | undefined;
 };
 
-type RawProductCard = {
+export type RawProductCard = {
     id: number;
     name: string;
     slug: string;
@@ -113,11 +125,12 @@ type RawProductCard = {
     stock_status: string | null;
     stock_quantity: number | null;
     show_price: boolean;
+    price_login_required?: boolean;
     show_stock: boolean;
     is_featured: boolean;
 };
 
-type RawProductDetail = RawProductCard & {
+export type RawProductDetail = RawProductCard & {
     sku: string | null;
     model_number: string | null;
     status: string;
@@ -156,7 +169,7 @@ function toNumber(value: string | null): number | null {
     return Number.isFinite(parsed) ? parsed : null;
 }
 
-function mapProductCard(raw: RawProductCard): ProductCard {
+export function mapProductCard(raw: RawProductCard): ProductCard {
     return {
         id: raw.id,
         slug: raw.slug,
@@ -167,6 +180,7 @@ function mapProductCard(raw: RawProductCard): ProductCard {
         regularPrice: toNumber(raw.regular_price),
         salePrice: toNumber(raw.sale_price),
         showPrice: raw.show_price,
+        priceLoginRequired: raw.price_login_required ?? false,
         showStock: raw.show_stock,
         currency: raw.currency,
         stockStatus: raw.stock_status,
@@ -175,7 +189,7 @@ function mapProductCard(raw: RawProductCard): ProductCard {
     };
 }
 
-function mapProductDetail(raw: RawProductDetail): ProductDetail {
+export function mapProductDetail(raw: RawProductDetail): ProductDetail {
     return {
         ...mapProductCard(raw),
         sku: raw.sku,
@@ -213,13 +227,32 @@ export type RawCategory = {
     description: string | null;
     image: string | null;
     products_count?: number;
-    subcategories?: {
-        id: number;
-        name: string;
-        slug: string;
-        image: string | null;
-    }[];
+    seo?: PageSeo;
+    subcategories?: RawSubcategory[];
 };
+
+export type RawSubcategory = {
+    id: number;
+    name: string;
+    slug: string;
+    description?: string | null;
+    image: string | null;
+    seo?: PageSeo;
+};
+
+export function mapSubcategory(raw: RawSubcategory): Subcategory {
+    return {
+        id: raw.id,
+        name: raw.name,
+        slug: raw.slug,
+        image: raw.image,
+        description: raw.description ?? null,
+        seo: {
+            title: raw.seo?.title ?? null,
+            description: raw.seo?.description ?? null,
+        },
+    };
+}
 
 export function mapCategory(raw: RawCategory): Category {
     return {
@@ -235,17 +268,24 @@ export function mapCategory(raw: RawCategory): Category {
             slug: s.slug,
             image: s.image,
         })),
+        seo: {
+            title: raw.seo?.title ?? null,
+            description: raw.seo?.description ?? null,
+        },
     };
 }
 
-function mapBrand(raw: {
+export type RawBrand = {
     id: number;
     name: string;
     slug: string;
     description: string | null;
     logo: string | null;
     products_count?: number;
-}): Brand {
+    seo?: PageSeo;
+};
+
+export function mapBrand(raw: RawBrand): Brand {
     return {
         id: raw.id,
         name: raw.name,
@@ -253,6 +293,10 @@ function mapBrand(raw: {
         description: raw.description,
         logo: raw.logo,
         productsCount: raw.products_count ?? 0,
+        seo: {
+            title: raw.seo?.title ?? null,
+            description: raw.seo?.description ?? null,
+        },
     };
 }
 

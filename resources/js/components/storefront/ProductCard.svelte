@@ -52,6 +52,10 @@
                 <div>
                     <div class="product-price">{priceLabel}</div>
                 </div>
+            {:else if p.priceLoginRequired}
+                <Link {href} class="text-[10px] font-medium text-muted-foreground hover:text-primary">
+                    Sign in to see price
+                </Link>
             {/if}
             <Link
                 {href}

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
 use App\Support\PublicDiskImage;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -17,6 +18,8 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property string $slug
  * @property string|null $description
+ * @property string|null $seo_title
+ * @property string|null $seo_description
  * @property string|null $image
  * @property bool $is_active
  * @property int $sort_order
@@ -24,11 +27,11 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  */
-#[Fillable(['name', 'slug', 'description', 'image', 'is_active', 'sort_order'])]
+#[Fillable(['name', 'slug', 'description', 'image', 'is_active', 'sort_order', 'seo_title', 'seo_description'])]
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, LogsModelActivity, SoftDeletes;
 
     /**
      * @return array<string, string>

@@ -74,6 +74,8 @@ class SettingsController extends Controller
         }
         $this->settings->set('seo', 'default_title', $data['default_title'] ?? null);
         $this->settings->set('seo', 'default_description', $data['default_description'] ?? null);
+        $this->settings->set('seo', 'google_site_verification', ($data['google_site_verification'] ?? null) ?: null);
+        $this->settings->set('seo', 'bing_site_verification', ($data['bing_site_verification'] ?? null) ?: null);
 
         return $this->backWithToast('Catalog & SEO settings saved.');
     }

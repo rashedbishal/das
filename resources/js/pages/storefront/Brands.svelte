@@ -5,31 +5,24 @@
     import Breadcrumb from '@/components/storefront/Breadcrumb.svelte';
     import ContactBanner from '@/components/storefront/ContactBanner.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
-    import {
-        brands,
-        fetchProducts,
-        loadBrands,
-        type ProductCard,
-    } from '@/data/catalogue';
-    import { catalogue } from '@/routes';
+    import { fetchProducts, mapBrand, type ProductCard, type RawBrand } from '@/data/catalogue';
+    import { brands as brandsIndex } from '@/routes';
+    import { show as brandShow } from '@/routes/brands';
+
+    // Rendered server-side, so every brand (and its link) is in the HTML.
+    let { brands }: { brands: RawBrand[] } = $props();
+
+    const list = $derived(brands.map(mapBrand));
 
     let q = $state('');
-    let brandsFailed = $state(false);
     let previews = $state<Record<string, ProductCard[]>>({});
     /** Brands whose preview request has started, so each is only fetched once. */
     const requested = new Set<string>();
 
-    function load() {
-        brandsFailed = false;
-        loadBrands().catch(() => (brandsFailed = true));
-    }
-
-    load();
-
-    // Product counts come with the brand list; only the small preview strip is
-    // fetched per brand, and a failed preview just stays empty.
+    // Only the small preview strip is fetched per brand, after the page loads;
+    // a failed preview just stays empty.
     $effect(() => {
-        for (const b of $brands) {
+        for (const b of list) {
             if (!requested.has(b.slug) && b.productsCount > 0) {
                 requested.add(b.slug);
                 fetchProducts({ brand: b.slug }, 1, 3)
@@ -42,7 +35,7 @@
     });
 
     const found = $derived(
-        $brands.filter((b) =>
+        list.filter((b) =>
             `${b.name} ${b.description ?? ''}`
                 .toLowerCase()
                 .includes(q.toLowerCase()),
@@ -53,6 +46,7 @@
 <PageMeta
     title="Brand Directory"
     description="Browse brands available through DAS and explore their dental products."
+    canonical={brandsIndex.url()}
 />
 
 <section class="container-wide pt-10 pb-20">
@@ -75,14 +69,21 @@
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {#each found as b (b.id)}
             <Link
-                href={catalogue.url({ query: { brand: b.slug } })}
+                href={brandShow.url(b.slug)}
                 class="group overflow-hidden rounded-md border"
             >
                 <div class="flex h-40 items-center justify-center bg-secondary">
-                    <span class="brand-word group-hover:text-primary">{b.name}</span>
+                    {#if b.logo}
+                        <img src={b.logo} alt="{b.name} logo" class="max-h-24 max-w-[70%] object-contain" loading="lazy" />
+                    {:else}
+                        <span class="brand-word group-hover:text-primary">{b.name}</span>
+                    {/if}
                 </div>
                 <div class="p-6">
-                    <h2 class="text-lg">{b.description ?? b.name}</h2>
+                    <h2 class="text-lg">{b.name}</h2>
+                    {#if b.description}
+                        <p class="mt-2 line-clamp-3 text-xs leading-6 text-muted-foreground">{b.description}</p>
+                    {/if}
                     <div class="mt-5 flex gap-2">
                         {#each previews[b.slug] ?? [] as p (p.id)}
                             <img
@@ -105,13 +106,10 @@
             </Link>
         {/each}
     </div>
-    {#if brandsFailed}
-        <div class="empty-state" role="alert">
-            We couldn’t load the brand list.
-            <button class="ml-1 underline" onclick={load}>Try again</button>
-        </div>
-    {:else if !found.length && $brands.length}
+    {#if !found.length && list.length}
         <div class="empty-state">No brands found. Try another search.</div>
+    {:else if !list.length}
+        <div class="empty-state">No brands yet.</div>
     {/if}
 </section>
 

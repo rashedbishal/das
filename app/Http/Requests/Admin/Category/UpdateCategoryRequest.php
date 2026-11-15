@@ -22,6 +22,8 @@ class UpdateCategoryRequest extends FormRequest
             'name' => ['required', 'string', FieldLimits::max('category.name')],
             'slug' => ['nullable', 'string', FieldLimits::max('category.slug')],
             'description' => ['nullable', 'string', FieldLimits::max('category.description')],
+            'seo_title' => ['nullable', 'string', FieldLimits::max('category.seo_title')],
+            'seo_description' => ['nullable', 'string', FieldLimits::max('category.seo_description')],
             'image' => ['nullable', 'string', FieldLimits::max('category.image')],
             'image_file' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'is_active' => ['boolean'],

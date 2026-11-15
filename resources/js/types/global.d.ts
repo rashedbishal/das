@@ -1,3 +1,4 @@
+import type { OpeningHoursDay } from '@/lib/business';
 import type { Auth, ContactWidgets } from '@/types/auth';
 
 // Extend ImportMeta interface for Vite...
@@ -29,6 +30,14 @@ declare module '@inertiajs/core' {
                 contactPhone: string | null;
                 contactEmail: string | null;
                 address: string | null;
+                addressCity: string | null;
+                addressRegion: string | null;
+                postalCode: string | null;
+                mapUrl: string | null;
+                latitude: string | number | null;
+                longitude: string | number | null;
+                openingHours: OpeningHoursDay[];
+                socialLinks: Record<string, string>;
                 currency: string;
                 deliveryNote: string | null;
             };
@@ -37,6 +46,8 @@ declare module '@inertiajs/core' {
                 defaultDescription: string | null;
                 canonicalUrl: string;
                 appUrl: string;
+                googleSiteVerification: string | null;
+                bingSiteVerification: string | null;
             };
             [key: string]: unknown;
         };

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Actions\Fortify\CreateNewUser;
 use App\Http\Controllers\Controller;
 use App\Services\AuthenticationService;
+use Illuminate\Auth\Events\Failed;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -44,6 +45,8 @@ class AuthController extends Controller
         $user = $this->authentication->resolveUser($request->string('identifier')->toString(), $request->string('password')->toString());
 
         if ($user === null) {
+            event(new Failed('web', null, ['identifier' => $request->string('identifier')->toString()]));
+
             throw ValidationException::withMessages([
                 'identifier' => 'These credentials do not match our records.',
             ]);

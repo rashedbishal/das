@@ -32,8 +32,6 @@ class AdminUserService
             'updated_by' => $actor->id,
         ]);
 
-        $this->activity->log('admin.created', $admin, "Created admin {$admin->name}");
-
         return $admin;
     }
 
@@ -71,9 +69,13 @@ class AdminUserService
         }
 
         $admin->updated_by = $actor->id;
+        $passwordChanged = $admin->isDirty('password');
         $admin->save();
 
-        $this->activity->log('admin.updated', $admin, "Updated admin {$admin->name}");
+        // The password itself is never logged; only that it changed.
+        if ($passwordChanged) {
+            $this->activity->log('admin.password_changed', $admin, "Changed the password of admin {$admin->name}");
+        }
 
         return $admin;
     }
@@ -84,8 +86,6 @@ class AdminUserService
             throw new AuthorizationException('This account cannot be deleted.');
         }
 
-        $this->activity->log('admin.deleted', $admin, "Deleted admin {$admin->name}");
-
         $admin->delete();
     }
 
@@ -95,7 +95,7 @@ class AdminUserService
             throw new AuthorizationException('This account cannot be deactivated.');
         }
 
-        $admin->update(['is_active' => false, 'updated_by' => $actor->id]);
+        activity()->withoutLogs(fn () => $admin->update(['is_active' => false, 'updated_by' => $actor->id]));
 
         $this->activity->log('admin.deactivated', $admin, "Deactivated admin {$admin->name}");
 
@@ -104,7 +104,7 @@ class AdminUserService
 
     public function reactivateAdmin(User $actor, User $admin): User
     {
-        $admin->update(['is_active' => true, 'updated_by' => $actor->id]);
+        activity()->withoutLogs(fn () => $admin->update(['is_active' => true, 'updated_by' => $actor->id]));
 
         $this->activity->log('admin.reactivated', $admin, "Reactivated admin {$admin->name}");
 
@@ -128,10 +128,10 @@ class AdminUserService
         $motherRoleId = $currentMotherAdmin->role_id;
         $fallbackRoleId = Role::query()->where('slug', 'read-only-admin')->value('id');
 
-        DB::transaction(function () use ($currentMotherAdmin, $newMotherAdmin, $motherRoleId, $fallbackRoleId) {
+        activity()->withoutLogs(fn () => DB::transaction(function () use ($currentMotherAdmin, $newMotherAdmin, $motherRoleId, $fallbackRoleId) {
             $newMotherAdmin->update(['role_id' => $motherRoleId]);
             $currentMotherAdmin->update(['role_id' => $fallbackRoleId]);
-        });
+        }));
 
         $this->activity->log(
             'admin.mother_admin_transferred',

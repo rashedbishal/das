@@ -4,6 +4,7 @@
     import InputError from '@/components/InputError.svelte';
     import LimitedInput from '@/components/dashboard/LimitedInput.svelte';
     import LimitedTextarea from '@/components/dashboard/LimitedTextarea.svelte';
+    import SeoFields, { previewSlug, type SeoCheck } from '@/components/dashboard/SeoFields.svelte';
     import { Input } from '@/components/ui/input';
     import { fieldLimits } from '@/lib/field-limits';
     import { Label } from '@/components/ui/label';
@@ -34,6 +35,7 @@
         category_id: number;
         subcategory_id: number | null;
         tags: { id: number }[];
+        media?: { type: string; alt_text: string | null }[];
     };
 
     let {
@@ -51,6 +53,21 @@
         tags: Option[];
         errors: Record<string, string>;
     } = $props();
+
+    // Image checks only apply when editing (new products add images below the form).
+    const images = $derived((product?.media ?? []).filter((item) => item.type === 'image'));
+    const imageChecks = $derived<SeoCheck[]>(
+        product
+            ? [
+                  { label: 'Has at least one image', ok: images.length > 0, hint: 'Add images in the media section.' },
+                  {
+                      label: 'Every image has alt text',
+                      ok: images.length > 0 && images.every((item) => (item.alt_text ?? '').trim() !== ''),
+                      hint: 'Describe each image in the media section; Google Images uses it.',
+                  },
+              ]
+            : [],
+    );
 
     const selectedTagIds = untrack(() => new Set(product?.tags.map((t) => t.id) ?? []));
 
@@ -247,20 +264,7 @@
     </div>
 </div>
 
-<div class="grid items-start gap-4 sm:grid-cols-3">
-    <div class="grid gap-2">
-        <Label for="stock_quantity">Stock quantity</Label>
-        <Input
-            id="stock_quantity"
-            name="stock_quantity"
-            type="number"
-            required
-            min="0"
-            max={fieldLimits.number.stock_quantity}
-            value={product?.stock_quantity ?? 0}
-        />
-        <InputError message={errors.stock_quantity} />
-    </div>
+<div class="grid items-start gap-4 sm:grid-cols-2">
     <div class="grid gap-2">
         <Label for="stock_status">Stock status</Label>
         <FormSelect
@@ -269,6 +273,7 @@
             value={product?.stock_status ?? 'in_stock'}
             options={labelled(['in_stock', 'out_of_stock', 'backorder', 'on_order'])}
         />
+        <p class="text-xs text-muted-foreground">Stock quantity is managed in Stock Management.</p>
         <InputError message={errors.stock_status} />
     </div>
     <div class="grid gap-2">
@@ -371,3 +376,11 @@
     />
     <InputError message={errors.seo_description} />
 </div>
+<SeoFields
+    withInputs={false}
+    values={product ?? {}}
+    pathFor={(form) => `/products/${(form.slug ?? '').trim() || product?.slug || previewSlug(form.name ?? '')}`}
+    fallbackDescriptionFields={['short_description', 'full_description']}
+    content={{ field: 'full_description', min: 300, label: 'Full description of at least 300 characters' }}
+    checks={imageChecks}
+/>

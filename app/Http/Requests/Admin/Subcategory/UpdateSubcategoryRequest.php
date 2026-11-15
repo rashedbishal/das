@@ -23,6 +23,8 @@ class UpdateSubcategoryRequest extends FormRequest
             'name' => ['required', 'string', FieldLimits::max('subcategory.name')],
             'slug' => ['nullable', 'string', FieldLimits::max('subcategory.slug')],
             'description' => ['nullable', 'string', FieldLimits::max('subcategory.description')],
+            'seo_title' => ['nullable', 'string', FieldLimits::max('subcategory.seo_title')],
+            'seo_description' => ['nullable', 'string', FieldLimits::max('subcategory.seo_description')],
             'image' => ['nullable', 'string', FieldLimits::max('subcategory.image')],
             'image_file' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'is_active' => ['boolean'],

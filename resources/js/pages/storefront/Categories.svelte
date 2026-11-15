@@ -4,20 +4,19 @@
     import Breadcrumb from '@/components/storefront/Breadcrumb.svelte';
     import ContactBanner from '@/components/storefront/ContactBanner.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
-    import { categories, loadCategories } from '@/data/catalogue';
-    import { show } from '@/routes/categories';
+    import { mapCategory, type RawCategory } from '@/data/catalogue';
+    import { index as categoriesIndex, show, subcategory as subcategoryShow } from '@/routes/categories';
 
-    // Product counts come with the category list (one request, not one per category).
-    loadCategories().catch(() => {});
+    // Rendered server-side, so every category (and its links) is in the HTML.
+    let { categories }: { categories: RawCategory[] } = $props();
 
-    const counts = $derived(
-        Object.fromEntries($categories.map((c) => [c.slug, c.productsCount])),
-    );
+    const list = $derived(categories.map(mapCategory));
 </script>
 
 <PageMeta
     title="Equipment Categories"
     description="Browse DAS dental equipment by category, from instruments to laboratory materials."
+    canonical={categoriesIndex.url()}
 />
 
 <section class="container-wide pt-10 pb-16">
@@ -29,7 +28,7 @@
         practice together.
     </p>
     <div class="grid gap-6 md:grid-cols-2">
-        {#each $categories as c, i (c.id)}
+        {#each list as c, i (c.id)}
             <Link
                 href={show.url(c.slug)}
                 class="group grid min-h-60 grid-cols-[1.1fr_1fr] overflow-hidden rounded-md border"
@@ -45,7 +44,7 @@
                     <span
                         class="mt-auto flex items-center gap-2 pt-5 text-[11px] text-primary"
                     >
-                        {counts[c.slug] ?? 0} products
+                        {c.productsCount} products
                         <ArrowUpRight class="size-4" />
                     </span>
                 </div>
@@ -62,6 +61,29 @@
             </Link>
         {/each}
     </div>
+    {#if list.some((c) => c.subcategories.length > 0)}
+        <nav aria-label="Subcategories" class="mt-14 border-t pt-10">
+            <h2 class="mb-6 text-xl">Browse by subcategory</h2>
+            <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                {#each list.filter((c) => c.subcategories.length > 0) as c (c.id)}
+                    <div>
+                        <h3 class="mb-3 text-sm font-semibold">
+                            <Link href={show.url(c.slug)} class="hover:text-primary">{c.name}</Link>
+                        </h3>
+                        <ul class="space-y-2 text-xs text-muted-foreground">
+                            {#each c.subcategories as sub (sub.id)}
+                                <li>
+                                    <Link href={subcategoryShow.url([c.slug, sub.slug])} class="hover:text-primary">
+                                        {sub.name}
+                                    </Link>
+                                </li>
+                            {/each}
+                        </ul>
+                    </div>
+                {/each}
+            </div>
+        </nav>
+    {/if}
 </section>
 
 <ContactBanner />

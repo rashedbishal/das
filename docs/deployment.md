@@ -82,7 +82,7 @@ Then `sudo supervisorctl reread && sudo supervisorctl update`.
 * * * * * cd /var/www/das && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-Scheduled tasks (`routes/console.php`): `backup:clean` 01:00, `backup:run` 01:30, `backup:monitor` 03:00, `inertia:check-ssr` every 5 minutes.
+Scheduled tasks (`routes/console.php`): `backup:clean` 01:00, `backup:run` 01:30, `activitylog:clean` 02:00 (deletes activity log entries older than 365 days), `backup:monitor` 03:00, `inertia:check-ssr` every 5 minutes.
 
 ## 6. Backups
 

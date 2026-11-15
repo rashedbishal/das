@@ -2,13 +2,17 @@
     import { Link, page } from '@inertiajs/svelte';
     import Phone from '@lucide/svelte/icons/phone';
     import Plus from '@lucide/svelte/icons/plus';
-    import { categories, loadCategories } from '@/data/catalogue';
+    import { mapCategory, type RawCategory } from '@/data/catalogue';
+    import { dayLabel, formatTime, orderedHours } from '@/lib/business';
     import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
     import { about, brands, catalogue, contact, home } from '@/routes';
     import { show as categoryShow } from '@/routes/categories';
     import Wordmark from './Wordmark.svelte';
 
-    loadCategories().catch(() => {});
+    // Shared by the server (HandleInertiaRequests), so these links are in the HTML.
+    const footerCategories = $derived(
+        ((page.props.navCategories as RawCategory[] | undefined) ?? []).map(mapCategory).slice(0, 8),
+    );
 
     const phone = $derived(
         resolvePhone(
@@ -18,6 +22,12 @@
     );
     const email = $derived(
         page.props.siteSettings.contactEmail || FALLBACK_CONTACT.email,
+    );
+    const hoursSummary = $derived(
+        orderedHours(page.props.siteSettings.openingHours)
+            .filter((entry) => !entry.closed)
+            .map((entry) => `${dayLabel(entry.day).slice(0, 3)} ${formatTime(entry.opens)}–${formatTime(entry.closes)}`)
+            .join(' · '),
     );
 </script>
 
@@ -48,7 +58,7 @@
             <div>
                 <h3 class="footer-heading">Explore equipment</h3>
                 <div class="footer-links">
-                    {#each $categories.slice(0, 5) as c (c.id)}
+                    {#each footerCategories as c (c.id)}
                         <Link href={categoryShow.url(c.slug)}>
                             {c.name}
                         </Link>
@@ -76,7 +86,18 @@
                         {phone.display}
                     </a>
                     <a href="mailto:{email}">{email}</a>
-                    <span class="leading-6 opacity-65">{FALLBACK_CONTACT.hours}</span>
+                    {#if page.props.siteSettings.address}
+                        <span class="leading-6 opacity-65">
+                            {[page.props.siteSettings.address, page.props.siteSettings.addressCity]
+                                .filter(Boolean)
+                                .join(', ')}
+                        </span>
+                    {/if}
+                    {#if hoursSummary}
+                        <span class="leading-6 opacity-65">{hoursSummary}</span>
+                    {:else}
+                        <span class="leading-6 opacity-65">{FALLBACK_CONTACT.hours}</span>
+                    {/if}
                 </div>
             </div>
         </div>

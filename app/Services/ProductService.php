@@ -18,6 +18,28 @@ class ProductService
     ) {}
 
     /**
+     * Prices are only shown to signed-in customers, so guests can't filter or sort
+     * by price either (that would reveal prices indirectly).
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    public static function withoutPriceFiltersForGuests(array $filters, bool $signedIn): array
+    {
+        if ($signedIn) {
+            return $filters;
+        }
+
+        unset($filters['min_price'], $filters['max_price']);
+
+        if (in_array($filters['sort'] ?? null, ['price_asc', 'price_desc'], true)) {
+            $filters['sort'] = 'newest';
+        }
+
+        return $filters;
+    }
+
+    /**
      * @param  array<string, mixed>  $filters
      * @return LengthAwarePaginator<int, Product>
      */
@@ -116,8 +138,6 @@ class ProductService
 
             $this->syncRelations($product, $data);
 
-            $this->activity->log('product.created', $product, "Created product {$product->name}");
-
             return $product->fresh(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications']);
         });
     }
@@ -148,9 +168,16 @@ class ProductService
             $product->fill($fillData);
             $product->save();
 
-            $this->syncRelations($product, $data);
+            $changed = $this->syncRelations($product, $data);
 
-            $this->activity->log('product.updated', $product, "Updated product {$product->name}");
+            if ($changed !== []) {
+                $this->activity->log(
+                    'product.relations_updated',
+                    $product,
+                    'Updated '.implode(', ', $changed)." of product {$product->name}",
+                    ['changed' => $changed],
+                );
+            }
 
             return $product->fresh(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications']);
         });
@@ -161,16 +188,12 @@ class ProductService
      */
     public function delete(Product $product): void
     {
-        $this->activity->log('product.deleted', $product, "Deleted product {$product->name}");
-
         $product->delete();
     }
 
     public function restore(Product $product): void
     {
         $product->restore();
-
-        $this->activity->log('product.restored', $product, "Restored product {$product->name}");
     }
 
     /**
@@ -179,8 +202,6 @@ class ProductService
      */
     public function forceDelete(Product $product): void
     {
-        $this->activity->log('product.force_deleted', $product, "Permanently deleted product {$product->name}");
-
         $productId = $product->id;
         $product->forceDelete();
 
@@ -198,19 +219,33 @@ class ProductService
 
     /**
      * @param  array<string, mixed>  $data
+     * @return array<int, string> the relations that actually changed ("tags", "related products", "specifications")
      */
-    private function syncRelations(Product $product, array $data): void
+    private function syncRelations(Product $product, array $data): array
     {
+        $changed = [];
+
         if (array_key_exists('tag_ids', $data)) {
-            $product->tags()->sync($data['tag_ids'] ?? []);
+            $result = $product->tags()->sync($data['tag_ids'] ?? []);
+
+            if ($result['attached'] !== [] || $result['detached'] !== []) {
+                $changed[] = 'tags';
+            }
         }
 
         if (array_key_exists('related_product_ids', $data)) {
             $ids = array_values(array_diff($data['related_product_ids'] ?? [], [$product->id]));
-            $product->relatedProducts()->sync($ids);
+            $result = $product->relatedProducts()->sync($ids);
+
+            if ($result['attached'] !== [] || $result['detached'] !== []) {
+                $changed[] = 'related products';
+            }
         }
 
         if (array_key_exists('specifications', $data)) {
+            $before = $product->specifications()->get(['name', 'value'])
+                ->map(fn ($spec) => [$spec->name, $spec->value])->all();
+
             $product->specifications()->delete();
 
             foreach ($data['specifications'] ?? [] as $index => $spec) {
@@ -220,6 +255,14 @@ class ProductService
                     'sort_order' => $spec['sort_order'] ?? $index,
                 ]);
             }
+
+            $after = array_map(fn ($spec) => [$spec['name'], $spec['value']], array_values($data['specifications'] ?? []));
+
+            if ($before !== $after) {
+                $changed[] = 'specifications';
+            }
         }
+
+        return $changed;
     }
 }

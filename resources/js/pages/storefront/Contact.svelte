@@ -8,7 +8,9 @@
     import Breadcrumb from '@/components/storefront/Breadcrumb.svelte';
     import EnquiryForm from '@/components/storefront/EnquiryForm.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
+    import { dayLabel, formatTime, orderedHours } from '@/lib/business';
     import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
+    import { contact } from '@/routes';
 
     const phone = $derived(
         resolvePhone(
@@ -20,8 +22,16 @@
         page.props.siteSettings.contactEmail || FALLBACK_CONTACT.email,
     );
     const address = $derived(
-        page.props.siteSettings.address || FALLBACK_CONTACT.address,
+        [
+            page.props.siteSettings.address,
+            page.props.siteSettings.addressCity,
+            page.props.siteSettings.addressRegion,
+            page.props.siteSettings.postalCode,
+        ]
+            .filter(Boolean)
+            .join(', ') || FALLBACK_CONTACT.address,
     );
+    const hours = $derived(orderedHours(page.props.siteSettings.openingHours));
 
     const details = $derived([
         {
@@ -36,14 +46,22 @@
             value: email,
             href: `mailto:${email}`,
         },
-        { icon: MapPin, label: 'Visit us', value: address },
-        { icon: Clock, label: 'Business hours', value: FALLBACK_CONTACT.hours },
+        {
+            icon: MapPin,
+            label: 'Visit us',
+            value: address,
+            href: page.props.siteSettings.mapUrl ?? undefined,
+        },
+        ...(hours.length
+            ? []
+            : [{ icon: Clock, label: 'Business hours', value: FALLBACK_CONTACT.hours, href: undefined }]),
     ]);
 </script>
 
 <PageMeta
     title="Contact & Product Enquiries"
     description="Talk to DAS about your dental product requirements and send an enquiry."
+    canonical={contact.url()}
 />
 
 <section class="container-wide pt-10 pb-20">
@@ -86,13 +104,22 @@
                     </div>
                 {/each}
             </div>
-            <div class="mt-9 rounded-md border bg-secondary p-5">
-                <p class="eyebrow mb-2">Contact information</p>
-                <p class="text-[11px] leading-7 text-muted-foreground">
-                    Phone and email are maintained in CMS settings. Address
-                    and business hours should be confirmed with the team.
-                </p>
-            </div>
+            {#if hours.length}
+                <div class="mt-9 rounded-md border bg-secondary p-5">
+                    <h3 class="mb-3 flex items-center gap-2 text-sm font-semibold">
+                        <Clock class="size-4 text-primary" />
+                        Business hours
+                    </h3>
+                    <dl class="space-y-1.5 text-xs">
+                        {#each hours as entry (entry.day)}
+                            <div class="flex justify-between gap-4">
+                                <dt class="text-muted-foreground">{dayLabel(entry.day)}</dt>
+                                <dd>{entry.closed ? 'Closed' : `${formatTime(entry.opens)} – ${formatTime(entry.closes)}`}</dd>
+                            </div>
+                        {/each}
+                    </dl>
+                </div>
+            {/if}
         </div>
         <div class="lg:border-l lg:pl-12">
             <h2 class="mb-3 text-xl">Tell us what you’re looking for.</h2>

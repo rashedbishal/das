@@ -21,7 +21,13 @@ class AdminUserController extends Controller
         $this->authorize('viewAnyAdmins', User::class);
 
         return response()->json(
-            User::query()->admins()->with('role')->orderBy('name')->paginate((int) $request->integer('per_page', 25))->toArray(),
+            User::query()
+                ->admins()->with('role')
+                ->search($request->string('search')->toString())
+                ->newestFirst()
+                ->paginate(max(1, min($request->integer('per_page', 25), 100)))
+                ->withQueryString()
+                ->toArray(),
         );
     }
 

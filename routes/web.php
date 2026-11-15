@@ -6,32 +6,23 @@ use App\Http\Controllers\PublicSettingsController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\StorefrontCatalogueController;
 use App\Http\Controllers\StorefrontHomeController;
-use App\Services\SettingsService;
-use Illuminate\Http\Request;
+use App\Http\Controllers\StorefrontProductController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', StorefrontHomeController::class)->name('home');
 Route::get('catalogue', [StorefrontCatalogueController::class, 'catalogue'])->name('catalogue');
-Route::inertia('categories', 'storefront/Categories')->name('categories.index');
+Route::get('categories', [StorefrontCatalogueController::class, 'categories'])->name('categories.index');
 Route::get('categories/{category}', [StorefrontCatalogueController::class, 'category'])->name('categories.show');
+Route::get('categories/{category}/{subcategory}', [StorefrontCatalogueController::class, 'subcategory'])->name('categories.subcategory');
 
 Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
 
-// Not a plain Route::inertia(): guests need the page to stash an intended URL so the
-// inline login modal (see storefront/Product.svelte) returns them here after login.
-Route::get('products/{slug}', function (Request $request, SettingsService $settings) {
-    if (! $request->user()) {
-        $request->session()->put('url.intended', $request->fullUrl());
-    }
+Route::get('products/{slug}', StorefrontProductController::class)->name('products.show');
 
-    return Inertia::render('storefront/Product', [
-        'loginMode' => $settings->loginMode(),
-    ]);
-})->name('products.show');
-
-Route::inertia('brands', 'storefront/Brands')->name('brands');
+Route::get('brands', [StorefrontCatalogueController::class, 'brands'])->name('brands');
+Route::get('brands/{brand}', [StorefrontCatalogueController::class, 'brand'])->name('brands.show');
 Route::inertia('about', 'storefront/About')->name('about');
 Route::inertia('contact', 'storefront/Contact')->name('contact');
 

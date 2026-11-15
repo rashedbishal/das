@@ -17,9 +17,9 @@ class ProductController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $products = $this->products->paginate($request->only([
+        $products = $this->products->paginate(ProductService::withoutPriceFiltersForGuests($request->only([
             'search', 'category', 'subcategory', 'brand', 'min_price', 'max_price', 'stock_status', 'sort', 'per_page',
-        ]));
+        ]), $request->user() !== null));
 
         return response()->json(ProductCardResource::collection($products)->response()->getData(true));
     }

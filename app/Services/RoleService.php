@@ -25,17 +25,21 @@ class RoleService
             ? SlugGenerator::unique('roles', $data['slug'])
             : SlugGenerator::unique('roles', $data['name']);
 
-        $role = Role::query()->create([
+        // Logged once below, together with the permissions it was given.
+        $role = activity()->withoutLogs(fn () => Role::query()->create([
             'name' => $data['name'],
             'slug' => $slug,
             'is_system' => false,
-        ]);
+        ]));
 
         $role->permissions()->sync(
             Permission::query()->whereIn('slug', $permissionSlugs)->pluck('id'),
         );
 
-        $this->activity->log('role.created', $role, "Created role {$role->name}");
+        $this->activity->log('role.created', $role, "Created role {$role->name}", [
+            'attributes' => ['name' => $role->name, 'slug' => $role->slug],
+            'permissions' => $role->permissions()->orderBy('slug')->pluck('slug')->all(),
+        ]);
 
         return $role;
     }
@@ -54,11 +58,18 @@ class RoleService
 
         $role->update(Arr::only($data, ['name', 'slug']));
 
-        $role->permissions()->sync(
+        $result = $role->permissions()->sync(
             Permission::query()->whereIn('slug', $permissionSlugs)->pluck('id'),
         );
 
-        $this->activity->log('role.updated', $role, "Updated role {$role->name}");
+        if ($result['attached'] !== [] || $result['detached'] !== []) {
+            $slugs = fn (array $ids) => Permission::query()->whereKey($ids)->orderBy('slug')->pluck('slug')->all();
+
+            $this->activity->log('role.permissions_updated', $role, "Changed the permissions of role {$role->name}", [
+                'granted' => $slugs($result['attached']),
+                'revoked' => $slugs($result['detached']),
+            ]);
+        }
 
         return $role;
     }
@@ -72,8 +83,6 @@ class RoleService
         if ($role->users()->exists()) {
             throw new AuthorizationException('This role is still assigned to one or more admins and cannot be deleted.');
         }
-
-        $this->activity->log('role.deleted', $role, "Deleted role {$role->name}");
 
         $role->delete();
     }

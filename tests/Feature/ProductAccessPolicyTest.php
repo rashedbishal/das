@@ -5,11 +5,17 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 
-test('guests are denied product detail access regardless of status', function (string $status) {
+test('guests can view a published product', function () {
+    $product = Product::factory()->published()->create();
+
+    expect(Gate::forUser(null)->allows('view', $product))->toBeTrue();
+});
+
+test('guests cannot view a draft or archived product', function (string $status) {
     $product = Product::factory()->create(['status' => $status]);
 
     expect(Gate::forUser(null)->denies('view', $product))->toBeTrue();
-})->with(['draft', 'published', 'archived']);
+})->with(['draft', 'archived']);
 
 test('authenticated customers can view a published product', function () {
     $customer = User::factory()->create();

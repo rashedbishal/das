@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AdminActivityLog;
+use App\Models\Activity;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Subcategory;
 use App\Models\User;
+use App\Services\PageViewService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request): Response|RedirectResponse
+    public function __invoke(Request $request, PageViewService $pageViews): Response|RedirectResponse
     {
         $user = $request->user();
 
@@ -39,8 +40,17 @@ class DashboardController extends Controller
             'activity' => $user->hasPermission('activity_logs.view'),
         ];
 
+        // Storefront traffic is shown to every admin; it holds no customer data.
+        $viewTrend = $pageViews->lastDays(14);
+        $lastSeven = array_slice($viewTrend, -7);
+
         return Inertia::render('Dashboard', [
             'permissions' => $can,
+            'pageViews' => [
+                'today' => end($viewTrend)['value'] ?? 0,
+                'lastSevenDays' => array_sum(array_column($lastSeven, 'value')),
+                'trend' => array_map(fn (array $day) => ['label' => $day['label'], 'value' => $day['value']], $viewTrend),
+            ],
             'stats' => [
                 'products' => $can['products'] ? [
                     'total' => Product::query()->count(),
@@ -75,11 +85,19 @@ class DashboardController extends Controller
                     ->get(['id', 'name', 'sku', 'stock_quantity', 'stock_status'])
                 : null,
             'recentActivity' => $can['activity']
-                ? AdminActivityLog::query()
-                    ->with('user:id,name')
+                ? Activity::query()
+                    ->with('causer')
                     ->latest()
+                    ->orderByDesc('id')
                     ->limit(8)
-                    ->get(['id', 'user_id', 'action', 'description', 'created_at'])
+                    ->get()
+                    ->map(fn (Activity $activity) => [
+                        'id' => $activity->id,
+                        'action' => $activity->event ?? $activity->description,
+                        'description' => $activity->description,
+                        'created_at' => $activity->created_at?->toIso8601String(),
+                        'user' => $activity->causer instanceof User ? ['name' => $activity->causer->name] : null,
+                    ])
                 : null,
         ]);
     }

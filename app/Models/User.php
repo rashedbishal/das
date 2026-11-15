@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsModelActivity;
+use App\Support\PhoneNumber;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -37,7 +39,31 @@ use Illuminate\Support\Carbon;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, LogsModelActivity, Notifiable {
+        LogsModelActivity::activityDescription as defaultActivityDescription;
+    }
+
+    protected string $activityLogName = 'users';
+
+    /** @var array<int, string> */
+    protected array $activityLogExcept = ['password'];
+
+    protected function activityType(): string
+    {
+        return $this->user_type === 'admin' ? 'admin' : 'customer';
+    }
+
+    /**
+     * A customer account created by a signed-out visitor is a self-registration.
+     */
+    protected function activityDescription(string $eventName): string
+    {
+        if ($eventName === 'created' && $this->user_type === 'customer' && auth()->guest()) {
+            return "Customer {$this->name} registered an account";
+        }
+
+        return $this->defaultActivityDescription($eventName);
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -101,5 +127,51 @@ class User extends Authenticatable implements MustVerifyEmail
     public function scopeCustomers(Builder $query): Builder
     {
         return $query->where('user_type', 'customer');
+    }
+
+    /**
+     * Matches name, email or phone. A term with digits also matches the phone in its
+     * stored (normalised) form, so "+880 1712-345678" finds "01712345678".
+     *
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        $escape = fn (string $value) => '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value).'%';
+        $pattern = $escape($term);
+        $digits = preg_replace('/\D+/', '', $term) ?? '';
+
+        return $query->where(function (Builder $inner) use ($pattern, $digits, $term, $escape) {
+            $inner->whereRaw("name like ? escape '!'", [$pattern])
+                ->orWhereRaw("email like ? escape '!'", [$pattern])
+                ->orWhereRaw("phone like ? escape '!'", [$pattern]);
+
+            if (strlen($digits) >= 3) {
+                $inner->orWhereRaw("phone like ? escape '!'", [$escape($digits)]);
+
+                $normalized = PhoneNumber::normalizeBangladeshi($term);
+                if ($normalized !== null && $normalized !== $digits && preg_match('/^[\d\s()+-]+$/', $term) === 1) {
+                    $inner->orWhereRaw("phone like ? escape '!'", [$escape($normalized)]);
+                }
+            }
+        });
+    }
+
+    /**
+     * Newest accounts first; id breaks ties between accounts created in the same second.
+     *
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeNewestFirst(Builder $query): Builder
+    {
+        return $query->orderByDesc('created_at')->orderByDesc('id');
     }
 }

@@ -15,6 +15,23 @@ class UpdateCatalogSeoSettingsRequest extends FormRequest
     }
 
     /**
+     * Admins often paste the whole verification tag
+     * (<meta name="google-site-verification" content="abc123" />); keep just the code.
+     */
+    protected function prepareForValidation(): void
+    {
+        foreach (['google_site_verification', 'bing_site_verification'] as $field) {
+            $value = $this->input($field);
+
+            if (is_string($value)) {
+                $this->merge([$field => preg_match('/content\s*=\s*["\']([^"\']+)["\']/i', $value, $match) === 1
+                    ? trim($match[1])
+                    : trim($value)]);
+            }
+        }
+    }
+
+    /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
@@ -25,6 +42,8 @@ class UpdateCatalogSeoSettingsRequest extends FormRequest
             'delivery_note' => ['sometimes', 'required', 'string', FieldLimits::max('settings.delivery_note')],
             'default_title' => ['nullable', 'string', FieldLimits::max('settings.default_title')],
             'default_description' => ['nullable', 'string', FieldLimits::max('settings.default_description')],
+            'google_site_verification' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-]+$/', FieldLimits::max('settings.site_verification')],
+            'bing_site_verification' => ['nullable', 'string', 'regex:/^[A-Za-z0-9_\-]+$/', FieldLimits::max('settings.site_verification')],
         ];
     }
 }

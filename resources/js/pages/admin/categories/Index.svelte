@@ -21,6 +21,8 @@
     import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
     import LimitedInput from '@/components/dashboard/LimitedInput.svelte';
+    import LimitedTextarea from '@/components/dashboard/LimitedTextarea.svelte';
+    import SeoFields, { previewSlug } from '@/components/dashboard/SeoFields.svelte';
     import { fieldLimits } from '@/lib/field-limits';
     import { Label } from '@/components/ui/label';
     import { bulk as bulkCategories, destroy, store, update } from '@/routes/admin/categories';
@@ -34,6 +36,10 @@
     type CategoryRow = {
         id: number;
         name: string;
+        slug: string;
+        description: string | null;
+        seo_title: string | null;
+        seo_description: string | null;
         image: string | null;
         is_active: boolean;
         sort_order: number;
@@ -44,8 +50,12 @@
     type SubcategoryRow = {
         id: number;
         category_id: number;
-        category: { id: number; name: string };
+        category: { id: number; name: string; slug: string };
         name: string;
+        slug: string;
+        description: string | null;
+        seo_title: string | null;
+        seo_description: string | null;
         image: string | null;
         is_active: boolean;
         sort_order: number;
@@ -61,6 +71,13 @@
         subcategories: SubcategoryRow[];
         initialTab?: 'categories' | 'subcategories';
     } = $props();
+
+    const categorySlugs = $derived(new Map(categories.map((category) => [String(category.id), category.slug])));
+
+    function subcategoryPath(form: Record<string, string>, slug?: string): string {
+        const categorySlug = categorySlugs.get(form.category_id ?? '') ?? 'category';
+        return `/categories/${categorySlug}/${slug ?? previewSlug(form.name ?? '')}`;
+    }
 
     const categoryOptions = $derived(
         categories.map((category) => ({ value: String(category.id), label: category.name })),
@@ -322,7 +339,7 @@
 </div>
 
 <Dialog bind:open={createCategoryOpen}>
-    <DialogContent>
+    <DialogContent class="max-h-[85vh] overflow-y-auto">
         <DialogTitle>Create category</DialogTitle>
         <Form {...store.form()} class="space-y-4" resetOnSuccess onSuccess={() => (createCategoryOpen = false)}>
             {#snippet children({ errors, processing })}
@@ -330,6 +347,19 @@
                     <Label for="name">Name</Label>
                     <LimitedInput id="name" name="name" required limit={fieldLimits.category.name} />
                     <InputError message={errors.name} />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="create_category_description">Description</Label>
+                    <LimitedTextarea
+                        id="create_category_description"
+                        name="description"
+                        rows={3}
+                        limit={fieldLimits.category.description}
+                        value={''}
+                        placeholder="Shown at the top of the page. A few sentences about what's in it help it rank."
+                    />
+                    <InputError message={errors.description} />
                 </div>
 
                 <div class="grid gap-2">
@@ -350,6 +380,15 @@
                     Active
                 </label>
 
+                <SeoFields
+                    idPrefix="create_category"
+                    titleLimit={fieldLimits.category.seo_title}
+                    descriptionLimit={fieldLimits.category.seo_description}
+                    {errors}
+                    pathFor={(form) => `/categories/${previewSlug(form.name ?? '')}`}
+                    content={{ field: 'description', min: 120, label: 'Description of at least 120 characters' }}
+                />
+
                 <DialogFooter>
                     <Button type="button" variant="outline" onclick={() => (createCategoryOpen = false)}>Cancel</Button>
                     <Button type="submit" disabled={processing}>Create category</Button>
@@ -360,7 +399,7 @@
 </Dialog>
 
 <Dialog bind:open={categoryDialogOpen}>
-    <DialogContent>
+    <DialogContent class="max-h-[85vh] overflow-y-auto">
         <DialogTitle>Edit category</DialogTitle>
         {#if editingCategory}
             {@const category = editingCategory}
@@ -380,6 +419,19 @@
                             limit={fieldLimits.category.name}
                         />
                         <InputError message={errors.name} />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="edit_category_description">Description</Label>
+                        <LimitedTextarea
+                            id="edit_category_description"
+                            name="description"
+                            rows={3}
+                            limit={fieldLimits.category.description}
+                            value={category.description ?? ''}
+                            placeholder="Shown at the top of the page. A few sentences about what's in it help it rank."
+                        />
+                        <InputError message={errors.description} />
                     </div>
 
                     <div class="grid gap-2">
@@ -417,6 +469,17 @@
                         <InputError message={errors.sort_order} />
                     </div>
 
+                    <SeoFields
+                        idPrefix="edit_category"
+                        titleLimit={fieldLimits.category.seo_title}
+                        descriptionLimit={fieldLimits.category.seo_description}
+                        values={category}
+                        {errors}
+                        pathFor={() => `/categories/${category.slug}`}
+                        content={{ field: 'description', min: 120, label: 'Description of at least 120 characters' }}
+                        checks={[{ label: 'Has an image', ok: !!category.image, hint: 'Used when the page is shared.' }]}
+                    />
+
                     <DialogFooter>
                         <Button type="button" variant="outline" onclick={() => (categoryDialogOpen = false)}>Cancel</Button>
                         <Button type="submit" disabled={processing}>Save</Button>
@@ -428,7 +491,7 @@
 </Dialog>
 
 <Dialog bind:open={createSubcategoryOpen}>
-    <DialogContent>
+    <DialogContent class="max-h-[85vh] overflow-y-auto">
         <DialogTitle>Create subcategory</DialogTitle>
         <Form {...storeSubcategory.form()} class="space-y-4" resetOnSuccess onSuccess={() => (createSubcategoryOpen = false)}>
             {#snippet children({ errors, processing })}
@@ -451,6 +514,19 @@
                 </div>
 
                 <div class="grid gap-2">
+                    <Label for="create_subcategory_description">Description</Label>
+                    <LimitedTextarea
+                        id="create_subcategory_description"
+                        name="description"
+                        rows={3}
+                        limit={fieldLimits.subcategory.description}
+                        value={''}
+                        placeholder="Shown at the top of the page. A few sentences about what's in it help it rank."
+                    />
+                    <InputError message={errors.description} />
+                </div>
+
+                <div class="grid gap-2">
                     <Label for="subcategory_image_file">Image</Label>
                     <input
                         id="subcategory_image_file"
@@ -468,6 +544,15 @@
                     Active
                 </label>
 
+                <SeoFields
+                    idPrefix="create_subcategory"
+                    titleLimit={fieldLimits.subcategory.seo_title}
+                    descriptionLimit={fieldLimits.subcategory.seo_description}
+                    {errors}
+                    pathFor={(form) => subcategoryPath(form)}
+                    content={{ field: 'description', min: 120, label: 'Description of at least 120 characters' }}
+                />
+
                 <DialogFooter>
                     <Button type="button" variant="outline" onclick={() => (createSubcategoryOpen = false)}>Cancel</Button>
                     <Button type="submit" disabled={processing}>Create subcategory</Button>
@@ -478,7 +563,7 @@
 </Dialog>
 
 <Dialog bind:open={subcategoryDialogOpen}>
-    <DialogContent>
+    <DialogContent class="max-h-[85vh] overflow-y-auto">
         <DialogTitle>Edit subcategory</DialogTitle>
         {#if editingSubcategory}
             {@const subcategory = editingSubcategory}
@@ -510,6 +595,19 @@
                             limit={fieldLimits.subcategory.name}
                         />
                         <InputError message={errors.name} />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="edit_subcategory_description">Description</Label>
+                        <LimitedTextarea
+                            id="edit_subcategory_description"
+                            name="description"
+                            rows={3}
+                            limit={fieldLimits.subcategory.description}
+                            value={subcategory.description ?? ''}
+                            placeholder="Shown at the top of the page. A few sentences about what's in it help it rank."
+                        />
+                        <InputError message={errors.description} />
                     </div>
 
                     <div class="grid gap-2">
@@ -546,6 +644,17 @@
                         />
                         <InputError message={errors.sort_order} />
                     </div>
+
+                    <SeoFields
+                        idPrefix="edit_subcategory"
+                        titleLimit={fieldLimits.subcategory.seo_title}
+                        descriptionLimit={fieldLimits.subcategory.seo_description}
+                        values={subcategory}
+                        {errors}
+                        pathFor={(form) => subcategoryPath(form, subcategory.slug)}
+                        content={{ field: 'description', min: 120, label: 'Description of at least 120 characters' }}
+                        checks={[{ label: 'Has an image', ok: !!subcategory.image, hint: 'Used when the page is shared.' }]}
+                    />
 
                     <DialogFooter>
                         <Button type="button" variant="outline" onclick={() => (subcategoryDialogOpen = false)}>Cancel</Button>

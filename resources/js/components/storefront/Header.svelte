@@ -32,7 +32,11 @@
         login,
         logout,
     } from '@/routes';
-    import { index as categoriesIndex, show as categoryShow } from '@/routes/categories';
+    import {
+        index as categoriesIndex,
+        show as categoryShow,
+        subcategory as subcategoryShow,
+    } from '@/routes/categories';
     import { show as productShow } from '@/routes/products';
     import Button from './Button.svelte';
     import { buttonClass } from './button';
@@ -354,9 +358,7 @@
                                 {#each activeCategory.subcategories as s, i (s.id)}
                                     <div class="mega-slide" style="--slide-delay: {60 + i * 80}ms">
                                         <Link
-                                            href={catalogue.url({
-                                                query: { category: activeCategory.slug, subcategory: s.slug },
-                                            })}
+                                            href={subcategoryShow.url([activeCategory.slug, s.slug])}
                                             onclick={() => {
                                                 mega = false;
                                                 expandedCategory = null;

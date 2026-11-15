@@ -40,7 +40,7 @@ class StoreProductRequest extends FormRequest
             'regular_price' => ['nullable', 'numeric', 'min:0', 'max:'.FieldLimits::get('number.price')],
             'sale_price' => ['nullable', 'numeric', 'min:0', 'max:'.FieldLimits::get('number.price'), 'lt:regular_price'],
             'currency' => ['nullable', 'string', 'size:3'],
-            'stock_quantity' => ['required', 'integer', 'min:0', 'max:'.FieldLimits::get('number.stock_quantity')],
+            'stock_quantity' => ['sometimes', 'integer', 'min:0', 'max:'.FieldLimits::get('number.stock_quantity')],
             'stock_status' => ['required', Rule::in(['in_stock', 'out_of_stock', 'backorder', 'on_order'])],
             'seo_title' => ['nullable', 'string', FieldLimits::max('product.seo_title')],
             'seo_description' => ['nullable', 'string', FieldLimits::max('product.seo_description')],

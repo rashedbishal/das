@@ -20,6 +20,8 @@
     import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
     import LimitedInput from '@/components/dashboard/LimitedInput.svelte';
+    import LimitedTextarea from '@/components/dashboard/LimitedTextarea.svelte';
+    import SeoFields, { previewSlug } from '@/components/dashboard/SeoFields.svelte';
     import { fieldLimits } from '@/lib/field-limits';
     import { Label } from '@/components/ui/label';
     import { bulk as bulkBrands, destroy, store, update } from '@/routes/admin/brands';
@@ -27,6 +29,11 @@
     type BrandRow = {
         id: number;
         name: string;
+        slug: string;
+        logo: string | null;
+        description: string | null;
+        seo_title: string | null;
+        seo_description: string | null;
         website_url: string | null;
         is_active: boolean;
         products_count: number;
@@ -146,7 +153,7 @@
 </div>
 
 <Dialog bind:open={createOpen}>
-    <DialogContent>
+    <DialogContent class="max-h-[85vh] overflow-y-auto">
         <DialogTitle>Create brand</DialogTitle>
         <Form {...store.form()} class="space-y-4" resetOnSuccess onSuccess={() => (createOpen = false)}>
             {#snippet children({ errors, processing })}
@@ -162,10 +169,38 @@
                     <InputError message={errors.website_url} />
                 </div>
 
+                <div class="grid gap-2">
+                    <Label for="create_brand_description">Description</Label>
+                    <LimitedTextarea
+                        id="create_brand_description"
+                        name="description"
+                        rows={3}
+                        limit={fieldLimits.brand.description}
+                        value={''}
+                        placeholder="Shown on the brand page: who they are and what they make."
+                    />
+                    <InputError message={errors.description} />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="create_brand_logo">Logo URL</Label>
+                    <LimitedInput id="create_brand_logo" name="logo" type="url" limit={fieldLimits.brand.logo} value={''} />
+                    <InputError message={errors.logo} />
+                </div>
+
                 <label class="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="is_active" value="1" checked />
                     Active
                 </label>
+
+                <SeoFields
+                    idPrefix="create_brand"
+                    titleLimit={fieldLimits.brand.seo_title}
+                    descriptionLimit={fieldLimits.brand.seo_description}
+                    {errors}
+                    pathFor={(form) => `/brands/${previewSlug(form.name ?? '')}`}
+                    content={{ field: 'description', min: 120, label: 'Description of at least 120 characters' }}
+                />
 
                 <DialogFooter>
                     <Button type="button" variant="outline" onclick={() => (createOpen = false)}>Cancel</Button>
@@ -177,7 +212,7 @@
 </Dialog>
 
 <Dialog bind:open={editOpen}>
-    <DialogContent>
+    <DialogContent class="max-h-[85vh] overflow-y-auto">
         <DialogTitle>Edit brand</DialogTitle>
         {#if editingBrand}
             {@const brand = editingBrand}
@@ -201,10 +236,40 @@
                         <InputError message={errors.website_url} />
                     </div>
 
+                    <div class="grid gap-2">
+                        <Label for="edit_brand_description">Description</Label>
+                        <LimitedTextarea
+                            id="edit_brand_description"
+                            name="description"
+                            rows={3}
+                            limit={fieldLimits.brand.description}
+                            value={brand.description ?? ''}
+                            placeholder="Shown on the brand page: who they are and what they make."
+                        />
+                        <InputError message={errors.description} />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="edit_brand_logo">Logo URL</Label>
+                        <LimitedInput id="edit_brand_logo" name="logo" type="url" limit={fieldLimits.brand.logo} value={brand.logo ?? ''} />
+                        <InputError message={errors.logo} />
+                    </div>
+
                     <label class="flex items-center gap-2 text-sm">
                         <input type="checkbox" name="is_active" value="1" checked={brand.is_active} />
                         Active
                     </label>
+
+                    <SeoFields
+                        idPrefix="edit_brand"
+                        titleLimit={fieldLimits.brand.seo_title}
+                        descriptionLimit={fieldLimits.brand.seo_description}
+                        values={brand}
+                        {errors}
+                        pathFor={() => `/brands/${brand.slug}`}
+                        content={{ field: 'description', min: 120, label: 'Description of at least 120 characters' }}
+                        checks={[{ label: 'Has a logo', ok: !!brand.logo, hint: 'Shown on the brand page and when shared.' }]}
+                    />
 
                     <DialogFooter>
                         <Button type="button" variant="outline" onclick={() => (editOpen = false)}>Cancel</Button>

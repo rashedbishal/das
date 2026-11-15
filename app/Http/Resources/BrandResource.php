@@ -23,6 +23,10 @@ class BrandResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
+            'seo' => [
+                'title' => $this->seo_title,
+                'description' => $this->seo_description,
+            ],
             'logo' => $this->logo,
             'website_url' => $this->website_url,
             'products_count' => $this->whenCounted('products'),
