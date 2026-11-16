@@ -124,7 +124,10 @@
 </fieldset>
 
 <fieldset class="grid gap-3 rounded-md border p-4">
-    <legend class="px-1 text-sm font-medium">Opening hours</legend>
+    <legend class="px-1 text-sm font-medium">Business hours</legend>
+    <p class="text-xs text-muted-foreground">
+        Shown on the Contact page and to search engines. Until set, the Contact page says hours are available on request.
+    </p>
     {#each hours as entry, index (entry.day)}
         <div class="grid grid-cols-[6.5rem_auto] items-center gap-3 sm:grid-cols-[6.5rem_6rem_1fr_1fr]">
             <span class="text-sm">{dayLabel(entry.day)}</span>

@@ -283,20 +283,24 @@
         if (!editingAdmin) return;
         error = null;
 
-        if (isEditingSelf && editAdminForm.password && editAdminForm.password !== editAdminForm.password_confirmation) {
+        if (editAdminForm.password && editAdminForm.password !== editAdminForm.password_confirmation) {
             error = 'Password confirmation does not match.';
             return;
         }
 
         try {
+            const passwordChange = editAdminForm.password
+                ? { password: editAdminForm.password, password_confirmation: editAdminForm.password_confirmation }
+                : {};
             const payload = isEditingSelf
-                ? {
+                ? { name: editAdminForm.name, ...passwordChange }
+                : {
                       name: editAdminForm.name,
-                      ...(editAdminForm.password
-                          ? { password: editAdminForm.password, password_confirmation: editAdminForm.password_confirmation }
-                          : {}),
-                  }
-                : { name: editAdminForm.name, email: editAdminForm.email, phone: editAdminForm.phone || null, role_id: Number(editAdminForm.role_id) };
+                      email: editAdminForm.email,
+                      phone: editAdminForm.phone || null,
+                      role_id: Number(editAdminForm.role_id),
+                      ...passwordChange,
+                  };
 
             await apiFetch(adminsApi.update.url(editingAdmin.id), {
                 method: 'PUT',
@@ -787,30 +791,7 @@
                         bind:value={editAdminForm.name}
                     />
                 </div>
-                {#if isEditingSelf}
-                    <div class="grid gap-2">
-                        <Label for="edit_admin_password">New password</Label>
-                        <Input
-                            id="edit_admin_password"
-                            type="password"
-                            maxlength={fieldLimits.admin.password}
-                            placeholder="Leave blank to keep current password"
-                            bind:value={editAdminForm.password}
-                        />
-                    </div>
-                    {#if editAdminForm.password}
-                        <div class="grid gap-2">
-                            <Label for="edit_admin_password_confirmation">Confirm new password</Label>
-                            <Input
-                                id="edit_admin_password_confirmation"
-                                type="password"
-                                required
-                                maxlength={fieldLimits.admin.password}
-                                bind:value={editAdminForm.password_confirmation}
-                            />
-                        </div>
-                    {/if}
-                {:else}
+                {#if !isEditingSelf}
                     <div class="grid gap-2">
                         <Label for="edit_admin_email">Email</Label>
                         <LimitedInput
@@ -839,6 +820,33 @@
                             options={roles
                                 .filter((role) => !role.is_system)
                                 .map((role) => ({ value: String(role.id), label: role.name }))}
+                        />
+                    </div>
+                {/if}
+                <div class="grid gap-2">
+                    <Label for="edit_admin_password">{isEditingSelf ? 'New password' : 'Set a new password'}</Label>
+                    <Input
+                        id="edit_admin_password"
+                        type="password"
+                        autocomplete="new-password"
+                        maxlength={fieldLimits.admin.password}
+                        placeholder={isEditingSelf ? 'Leave blank to keep current password' : 'Leave blank to keep their current password'}
+                        bind:value={editAdminForm.password}
+                    />
+                    {#if !isEditingSelf}
+                        <p class="text-xs text-muted-foreground">They'll be signed out everywhere and need the new password to sign in.</p>
+                    {/if}
+                </div>
+                {#if editAdminForm.password}
+                    <div class="grid gap-2">
+                        <Label for="edit_admin_password_confirmation">Confirm new password</Label>
+                        <Input
+                            id="edit_admin_password_confirmation"
+                            type="password"
+                            autocomplete="new-password"
+                            required
+                            maxlength={fieldLimits.admin.password}
+                            bind:value={editAdminForm.password_confirmation}
                         />
                     </div>
                 {/if}

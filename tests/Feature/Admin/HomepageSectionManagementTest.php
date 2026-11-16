@@ -193,3 +193,53 @@ test('a landscape banner upload produces desktop, tablet and mobile renditions',
     expect([$section->image, $section->image_tablet, $section->image_mobile])->each->not->toBeNull()
         ->and(Storage::disk('public')->allFiles('banners'))->toHaveCount(3);
 });
+
+test('two banners cannot share an order number', function () {
+    $admin = adminUser(['content.manage']);
+    HomepageSection::factory()->create(['type' => 'banner', 'sort_order' => 3]);
+
+    $this->actingAs($admin)->post(route('admin.homepage-sections.store'), [
+        'type' => 'banner',
+        'title' => 'Duplicate order',
+        'sort_order' => 3,
+    ])->assertSessionHasErrors(['sort_order' => 'Another banner already uses order 3. Choose a different number.']);
+
+    expect(HomepageSection::query()->where('title', 'Duplicate order')->exists())->toBeFalse();
+});
+
+test('a banner keeps its own order number when edited, but cannot take another banner\'s', function () {
+    $admin = adminUser(['content.manage']);
+    HomepageSection::factory()->create(['type' => 'banner', 'sort_order' => 1]);
+    $banner = HomepageSection::factory()->create(['type' => 'banner', 'sort_order' => 2]);
+    $payload = ['type' => 'banner', 'title' => 'Renamed'];
+
+    $this->actingAs($admin)->put(route('admin.homepage-sections.update', $banner), [...$payload, 'sort_order' => 2])
+        ->assertSessionHasNoErrors();
+    $this->actingAs($admin)->put(route('admin.homepage-sections.update', $banner), [...$payload, 'sort_order' => 1])
+        ->assertSessionHasErrors('sort_order');
+
+    expect($banner->fresh()->sort_order)->toBe(2);
+});
+
+test('a banner and a section may use the same order number', function () {
+    $admin = adminUser(['content.manage']);
+    HomepageSection::factory()->create(['type' => 'section', 'sort_order' => 1]);
+
+    $this->actingAs($admin)->post(route('admin.homepage-sections.store'), [
+        'type' => 'banner',
+        'title' => 'First banner',
+        'sort_order' => 1,
+    ])->assertSessionHasNoErrors();
+});
+
+test('a banner created without an order number goes after the last banner', function () {
+    $admin = adminUser(['content.manage']);
+    HomepageSection::factory()->create(['type' => 'banner', 'sort_order' => 7]);
+
+    $this->actingAs($admin)->post(route('admin.homepage-sections.store'), [
+        'type' => 'banner',
+        'title' => 'No order given',
+    ])->assertSessionHasNoErrors();
+
+    expect(HomepageSection::query()->where('title', 'No order given')->value('sort_order'))->toBe(8);
+});

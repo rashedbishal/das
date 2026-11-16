@@ -74,6 +74,7 @@
     let mega = $state(false);
     let expandedCategory = $state<Category | null>(null);
     let matches = $state<ProductCard[]>([]);
+    let suggestionsHeight = $state(0);
     let closeMegaTimeout: ReturnType<typeof setTimeout> | undefined;
     // Bumped every time the menu genuinely opens from closed, so the keyed
     // category grid remounts (and replays its slide-in) even if the panel
@@ -108,6 +109,11 @@
             megaOpenId += 1;
             mega = true;
         }
+    }
+
+    function closeMega() {
+        mega = false;
+        expandedCategory = null;
     }
 
     function selectCategory(category: Category) {
@@ -323,46 +329,69 @@
                     {#key megaOpenId}
                         <div class="grid grid-cols-4 gap-5">
                             {#each $categories as c, i (c.id)}
-                                <button
-                                    type="button"
-                                    class="mega-slide group flex items-center gap-3 text-left transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:text-primary"
-                                    style="--slide-delay: {80 + i * 80}ms"
-                                    onclick={() => selectCategory(c)}
-                                >
-                                    <img
-                                        src={c.image}
-                                        alt=""
-                                        class="h-14 w-14 rounded-md bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
-                                    />
-                                    <span class="text-xs">{c.name}</span>
-                                    {#if c.subcategories.length}
+                                {#if c.subcategories.length}
+                                    <button
+                                        type="button"
+                                        class="mega-slide group flex items-center gap-3 text-left transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:text-primary"
+                                        style="--slide-delay: {80 + i * 80}ms"
+                                        onclick={() => selectCategory(c)}
+                                    >
+                                        <img
+                                            src={c.image}
+                                            alt=""
+                                            class="h-14 w-14 rounded-md bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
+                                        />
+                                        <span class="text-xs">{c.name}</span>
                                         <ChevronDown class="-ml-1 size-3 -rotate-90 text-muted-foreground" />
-                                    {/if}
-                                </button>
+                                    </button>
+                                {:else}
+                                    <!-- Nothing to drill into, so go straight to the category page. -->
+                                    <div class="mega-slide" style="--slide-delay: {80 + i * 80}ms">
+                                        <Link
+                                            href={categoryShow.url(c.slug)}
+                                            onclick={closeMega}
+                                            class="group flex items-center gap-3 transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:text-primary"
+                                        >
+                                            <img
+                                                src={c.image}
+                                                alt=""
+                                                class="h-14 w-14 rounded-md bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
+                                            />
+                                            <span class="text-xs">{c.name}</span>
+                                        </Link>
+                                    </div>
+                                {/if}
                             {/each}
                         </div>
                     {/key}
                 {:else}
                     {@const activeCategory = expandedCategory}
                     <div in:viewSwap>
-                        <button
-                            type="button"
-                            class="mb-5 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary"
-                            onclick={() => (expandedCategory = null)}
-                        >
-                            <ChevronLeft class="size-3" />
-                            Back to categories
-                        </button>
+                        <div class="mb-5 flex items-center justify-between gap-4">
+                            <button
+                                type="button"
+                                class="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary"
+                                onclick={() => (expandedCategory = null)}
+                            >
+                                <ChevronLeft class="size-3" />
+                                Back to categories
+                            </button>
+                            <Link
+                                href={categoryShow.url(activeCategory.slug)}
+                                onclick={closeMega}
+                                class="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                            >
+                                View all {activeCategory.name}
+                                <ArrowUpRight class="size-3" />
+                            </Link>
+                        </div>
                         {#if activeCategory.subcategories.length}
                             <div class="grid grid-cols-4 gap-5">
                                 {#each activeCategory.subcategories as s, i (s.id)}
                                     <div class="mega-slide" style="--slide-delay: {60 + i * 80}ms">
                                         <Link
                                             href={subcategoryShow.url([activeCategory.slug, s.slug])}
-                                            onclick={() => {
-                                                mega = false;
-                                                expandedCategory = null;
-                                            }}
+                                            onclick={closeMega}
                                             class="group flex items-center gap-3 transition-transform duration-200 ease-out hover:-translate-y-0.5 hover:text-primary"
                                         >
                                             <img
@@ -465,7 +494,7 @@
     bind:open={searchOpen}
     title="Find your next piece of equipment."
     description="Search products, brands or specifications."
-    class="max-w-2xl"
+    class="top-4 max-h-[calc(100dvh-2rem)] max-w-2xl translate-y-0 overflow-y-auto sm:top-[12vh] sm:max-h-[76vh]"
 >
     <form
         onsubmit={(event) => {
@@ -497,25 +526,33 @@
             </Link>
         {/each}
     </div>
-    {#if matches.length}
-        <div class="mt-3">
-            {#each matches as p (p.id)}
-                <Link
-                    href={productShow.url(p.slug)}
-                    onclick={() => (searchOpen = false)}
-                    class="flex items-center gap-4 border-t py-3 text-xs"
-                >
-                    <img
-                        src={p.image}
-                        class="size-12 bg-secondary object-contain"
-                        alt=""
-                    />
-                    {p.name}
-                    <ArrowRight class="ml-auto size-4" />
-                </Link>
-            {/each}
+    <!-- Grows and shrinks smoothly to fit the suggestions instead of jumping. -->
+    <div
+        class="overflow-hidden transition-[height] duration-300 ease-out motion-reduce:transition-none"
+        style:height="{suggestionsHeight}px"
+    >
+        <div bind:clientHeight={suggestionsHeight}>
+            {#if matches.length}
+                <div class="mt-3" transition:fade={{ duration: 180 }}>
+                    {#each matches as p (p.id)}
+                        <Link
+                            href={productShow.url(p.slug)}
+                            onclick={() => (searchOpen = false)}
+                            class="flex items-center gap-4 border-t py-3 text-xs"
+                        >
+                            <img
+                                src={p.image}
+                                class="size-12 bg-secondary object-contain"
+                                alt=""
+                            />
+                            {p.name}
+                            <ArrowRight class="ml-auto size-4" />
+                        </Link>
+                    {/each}
+                </div>
+            {/if}
         </div>
-    {/if}
+    </div>
 </Modal>
 
 <style>

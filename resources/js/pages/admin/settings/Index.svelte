@@ -97,7 +97,7 @@
         <Card>
             <CardHeader>
                 <CardTitle>General</CardTitle>
-                <CardDescription>Site identity and contact details shown across the catalog.</CardDescription>
+                <CardDescription>Site identity, contact details, address, business hours and social profiles shown across the catalog.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Form {...SettingsController.updateGeneral.form()} class="space-y-4">

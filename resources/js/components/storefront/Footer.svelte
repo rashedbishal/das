@@ -72,7 +72,7 @@
                     <Link href={brands.url()}>Our Brands</Link>
                     <Link href={catalogue.url()}>Product Catalogue</Link>
                     <Link href={contact.url()}>Contact Us</Link>
-                    <Link href={contact.url()}>Request a Quote</Link>
+                    <Link href={`${contact.url({ query: { quote: 1 } })}#enquiry`}>Request a Quote</Link>
                 </div>
             </div>
             <div class="col-span-2 sm:col-span-1">

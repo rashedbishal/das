@@ -120,6 +120,7 @@
     let createOpen = $state(false);
     let editingProductId = $state<number | null>(null);
     let editOpen = $state(false);
+    let savingEdit = $state(false);
     const editTarget = $derived(products.data.find((p) => p.id === editingProductId) ?? null);
 
     let deleteTarget = $state<ProductRow | null>(null);
@@ -350,12 +351,14 @@
 </div>
 
 <Dialog bind:open={createOpen}>
-    <DialogContent class="max-h-[85vh] max-w-2xl overflow-y-auto">
-        <DialogTitle>New product</DialogTitle>
+    <DialogContent class="flex max-h-[85vh] max-w-2xl flex-col p-0">
+        <div class="border-b px-6 py-4">
+            <DialogTitle>New product</DialogTitle>
+        </div>
         <!-- novalidate: the server names each missing field (the browser's bubble doesn't, and can be off-screen). -->
         <Form
             {...store.form()}
-            class="space-y-6"
+            class="flex min-h-0 flex-1 flex-col"
             novalidate
             enctype="multipart/form-data"
             onSuccess={() => {
@@ -363,45 +366,64 @@
             }}
         >
             {#snippet children({ errors, processing })}
-                <FormErrorSummary {errors} />
-                <FormFields {brands} {categories} {subcategories} {tags} {errors} />
+                <div class="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">
+                    <FormErrorSummary {errors} />
+                    <FormFields {brands} {categories} {subcategories} {tags} {errors} />
 
-                <CreateImagePicker limits={mediaLimits.image} {errors} />
+                    <CreateImagePicker limits={mediaLimits.image} {errors} />
+                </div>
 
-                <DialogFooter>
-                    <Button type="button" variant="outline" onclick={() => (createOpen = false)}>Cancel</Button>
-                    <Button type="submit" disabled={processing}>
-                        {#if processing}<Spinner />{/if}
-                        Create product
-                    </Button>
-                </DialogFooter>
+                <div class="border-t px-6 py-4">
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onclick={() => (createOpen = false)}>Cancel</Button>
+                        <Button type="submit" disabled={processing}>
+                            {#if processing}<Spinner />{/if}
+                            Create product
+                        </Button>
+                    </DialogFooter>
+                </div>
             {/snippet}
         </Form>
     </DialogContent>
 </Dialog>
 
+<!-- Title and footer stay put; only the middle scrolls. Save sits below every section. -->
 <Dialog bind:open={editOpen}>
-    <DialogContent class="max-h-[85vh] max-w-2xl overflow-y-auto">
-        <DialogTitle>Edit product</DialogTitle>
+    <DialogContent class="flex max-h-[85vh] max-w-2xl flex-col p-0">
+        <div class="border-b px-6 py-4">
+            <DialogTitle>Edit product</DialogTitle>
+        </div>
         {#if editTarget}
             {@const product = editTarget}
-            <Form {...update.form(product.id)} class="space-y-6" novalidate>
-                {#snippet children({ errors, processing })}
-                    <FormErrorSummary {errors} />
-                    <FormFields {product} {brands} {categories} {subcategories} {tags} {errors} />
+            <div class="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">
+                <Form
+                    {...update.form(product.id)}
+                    id="edit-product-form"
+                    class="space-y-6"
+                    novalidate
+                    onStart={() => (savingEdit = true)}
+                    onFinish={() => (savingEdit = false)}
+                >
+                    {#snippet children({ errors })}
+                        <FormErrorSummary {errors} />
+                        <FormFields {product} {brands} {categories} {subcategories} {tags} {errors} />
+                    {/snippet}
+                </Form>
 
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onclick={() => (editOpen = false)}>Cancel</Button>
-                        <Button type="submit" disabled={processing}>
-                            {#if processing}<Spinner />{/if}
-                            Save changes
-                        </Button>
-                    </DialogFooter>
-                {/snippet}
-            </Form>
+                <!-- Outside the form: images upload and delete on their own, without "Save changes". -->
+                <div class="border-t pt-6">
+                    <MediaManager productId={product.id} media={product.media} limits={mediaLimits} />
+                </div>
+            </div>
 
-            <div class="border-t pt-6">
-                <MediaManager productId={product.id} media={product.media} limits={mediaLimits} />
+            <div class="border-t px-6 py-4">
+                <DialogFooter>
+                    <Button type="button" variant="outline" onclick={() => (editOpen = false)}>Cancel</Button>
+                    <Button type="submit" form="edit-product-form" disabled={savingEdit}>
+                        {#if savingEdit}<Spinner />{/if}
+                        Save changes
+                    </Button>
+                </DialogFooter>
             </div>
         {/if}
     </DialogContent>

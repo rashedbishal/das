@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
@@ -134,3 +135,24 @@ test('related product suggestions are capped at 8', function () {
         ->assertOk()
         ->assertJsonCount(8, 'data.related_products');
 });
+
+test('a product drafted or archived while a visitor is on its page is a 404 on their next request', function (string $status, bool $signedIn) {
+    $product = Product::factory()->published()->create();
+    if ($signedIn) {
+        $this->actingAs(User::factory()->create());
+    }
+
+    $this->get(route('products.show', $product->slug))->assertOk();
+
+    $product->update(['status' => $status]);
+
+    // A full reload, and an Inertia (client-side) visit, both see the change.
+    $this->get(route('products.show', $product->slug))->assertNotFound();
+    $this->withHeaders(['X-Inertia' => 'true', 'X-Inertia-Version' => app(HandleInertiaRequests::class)->version(request())])
+        ->get(route('products.show', $product->slug))
+        ->assertNotFound();
+})->with([
+    'drafted, guest' => ['draft', false],
+    'drafted, customer' => ['draft', true],
+    'archived, customer' => ['archived', true],
+]);

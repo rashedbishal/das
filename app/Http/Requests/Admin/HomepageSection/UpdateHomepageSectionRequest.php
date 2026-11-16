@@ -31,10 +31,26 @@ class UpdateHomepageSectionRequest extends FormRequest
             'link_url' => ['nullable', 'url:http,https', FieldLimits::max('banner.link_url')],
             'link_label' => ['nullable', 'string', FieldLimits::max('banner.link_label')],
             'show_text' => ['boolean'],
-            'sort_order' => ['integer', 'min:0', 'max:'.FieldLimits::get('number.sort_order')],
+            // Each banner (and each section) needs its own position in the order.
+            'sort_order' => [
+                'integer', 'min:0', 'max:'.FieldLimits::get('number.sort_order'),
+                Rule::unique('homepage_sections', 'sort_order')->where('type', $this->input('type'))->ignore($this->route('homepage_section')),
+            ],
             'is_active' => ['boolean'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        $kind = $this->input('type') === 'section' ? 'section' : 'banner';
+
+        return [
+            'sort_order.unique' => "Another {$kind} already uses order {$this->input('sort_order')}. Choose a different number.",
         ];
     }
 }

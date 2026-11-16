@@ -14,6 +14,8 @@
     // Clicking through to the product morphs this photo into the product page.
     const morph = () => markMorph(p.slug);
     const priceLabel = $derived(formatPrice(p));
+    // "Call for Price" only makes sense when the card isn't already showing a price.
+    const showsPrice = $derived(p.showPrice && (p.salePrice ?? p.regularPrice) !== null);
     const phone = $derived(
         resolvePhone(
             page.props.contactWidgets.whatsapp,
@@ -75,12 +77,14 @@
                 <ArrowRight class="size-3.5" />
             </Link>
         </div>
-        <a
-            href="tel:{phone.tel}"
-            class="mt-3 inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary"
-        >
-            <Phone class="size-3" />
-            Call for Price
-        </a>
+        {#if !showsPrice}
+            <a
+                href="tel:{phone.tel}"
+                class="mt-3 inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary"
+            >
+                <Phone class="size-3" />
+                Call for Price
+            </a>
+        {/if}
     </div>
 </article>

@@ -220,9 +220,9 @@
     >
         {#snippet cell(enquiry, column)}
             {#if column.key === 'name'}
-                <div class="font-medium">{enquiry.name}</div>
+                <div class="max-w-48 font-medium [overflow-wrap:anywhere]">{enquiry.name}</div>
                 {#if enquiry.business_name}
-                    <div class="text-xs text-muted-foreground">{enquiry.business_name}</div>
+                    <div class="max-w-48 text-xs [overflow-wrap:anywhere] text-muted-foreground">{enquiry.business_name}</div>
                 {/if}
             {:else if column.key === 'contact'}
                 <div>{enquiry.phone}</div>
@@ -230,11 +230,13 @@
                     <div class="break-all text-xs text-muted-foreground">{enquiry.email}</div>
                 {/if}
             {:else if column.key === 'product'}
-                {enquiry.product_name ?? 'General enquiry'}
+                <span class="line-clamp-2 max-w-48 [overflow-wrap:anywhere]">{enquiry.product_name ?? 'General enquiry'}</span>
             {:else if column.key === 'message'}
+                <!-- A two-line preview; long words and URLs wrap instead of stretching the table. -->
                 <button
                     type="button"
-                    class="max-w-64 text-left text-muted-foreground hover:text-foreground"
+                    class="line-clamp-2 max-w-64 text-left [overflow-wrap:anywhere] text-muted-foreground hover:text-foreground"
+                    title="Open the full enquiry"
                     onclick={() => {
                         selectedEnquiry = enquiry;
                         detailOpen = true;
@@ -338,9 +340,9 @@
                     {/if}
                 </dd>
                 <dt class="text-muted-foreground">Product</dt>
-                <dd>{selectedEnquiry.product_name ?? 'General enquiry'}</dd>
+                <dd class="[overflow-wrap:anywhere]">{selectedEnquiry.product_name ?? 'General enquiry'}</dd>
                 <dt class="text-muted-foreground">Message</dt>
-                <dd class="whitespace-pre-wrap break-words">{selectedEnquiry.message || 'No message provided'}</dd>
+                <dd class="max-h-[50vh] overflow-y-auto whitespace-pre-wrap [overflow-wrap:anywhere]">{selectedEnquiry.message || 'No message provided'}</dd>
             </dl>
         {/if}
         <DialogFooter>

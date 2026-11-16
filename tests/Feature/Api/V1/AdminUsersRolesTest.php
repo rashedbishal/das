@@ -3,6 +3,8 @@
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 test('an admin with admins.manage can create another admin through the api', function () {
     $permission = Permission::factory()->create(['slug' => 'products.view', 'group' => 'products']);
@@ -214,4 +216,47 @@ test('a non mother admin cannot transfer mother admin ownership', function () {
 
     $response->assertForbidden();
     expect($motherAdmin->fresh()->isMotherAdmin())->toBeTrue();
+});
+
+test('an admin with admins.manage can set another admin\'s password, which signs that admin out', function () {
+    $manager = adminUser(['admins.manage', 'products.view']);
+    $subAdmin = adminUser(['products.view']);
+    DB::table('sessions')->insert([
+        'id' => 'sub-admin-session',
+        'user_id' => $subAdmin->id,
+        'payload' => '',
+        'last_activity' => now()->getTimestamp(),
+    ]);
+    config(['session.driver' => 'database']);
+
+    $this->actingAs($manager)->putJson(route('api.v1.admin.admins.update', $subAdmin), [
+        'password' => 'brand-new-password',
+        'password_confirmation' => 'brand-new-password',
+    ])->assertOk();
+
+    expect(Hash::check('brand-new-password', $subAdmin->fresh()->password))->toBeTrue()
+        ->and(DB::table('sessions')->where('user_id', $subAdmin->id)->exists())->toBeFalse();
+});
+
+test('an admin cannot set the password of an admin whose role grants permissions they lack', function () {
+    $manager = adminUser(['admins.manage']);
+    $morePowerful = adminUser(['settings.manage']);
+    $originalHash = $morePowerful->password;
+
+    $this->actingAs($manager)->putJson(route('api.v1.admin.admins.update', $morePowerful), [
+        'password' => 'brand-new-password',
+        'password_confirmation' => 'brand-new-password',
+    ])->assertForbidden();
+
+    expect($morePowerful->fresh()->password)->toBe($originalHash);
+});
+
+test('setting another admin\'s password requires a matching confirmation', function () {
+    $manager = adminUser(['admins.manage']);
+    $subAdmin = adminUser();
+
+    $this->actingAs($manager)->putJson(route('api.v1.admin.admins.update', $subAdmin), [
+        'password' => 'brand-new-password',
+        'password_confirmation' => 'different',
+    ])->assertUnprocessable()->assertJsonValidationErrors('password');
 });

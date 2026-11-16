@@ -43,6 +43,7 @@
     } = $props();
 
     const p = $derived(mapProductDetail(product));
+    const showsPrice = $derived(p.showPrice && (p.salePrice ?? p.regularPrice) !== null);
     const phone = $derived(
         resolvePhone(
             page.props.contactWidgets.whatsapp,
@@ -151,7 +152,8 @@
     <section class="container-wide pt-9 pb-16">
         <Breadcrumb items={breadcrumbs} />
         <div class="grid gap-9 lg:grid-cols-2 lg:gap-16">
-            <div>
+            <!-- min-w-0: grid columns otherwise grow to fit wide content instead of shrinking. -->
+            <div class="min-w-0">
                 <div
                     class="relative aspect-square overflow-hidden rounded-md bg-photo"
                     data-morph={motion.morphSlug === p.slug ? '' : undefined}
@@ -186,13 +188,14 @@
                     {/if}
                 </div>
                 {#if gallery.length > 1}
-                    <div class="mt-4 flex gap-3 overflow-x-auto">
+                    <!-- Wraps onto more rows however many images there are, so it never widens the page. -->
+                    <div class="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-5 sm:gap-3 lg:grid-cols-6">
                         {#each gallery as item, i (i)}
                             <button
                                 type="button"
                                 onclick={() => (activeIndex = i)}
                                 class={[
-                                    'relative h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-photo',
+                                    'relative aspect-square w-full overflow-hidden rounded-md border-2 bg-photo transition-colors',
                                     i === activeIndex
                                         ? 'border-primary'
                                         : 'border-transparent',
@@ -229,7 +232,7 @@
                     </div>
                 {/if}
             </div>
-            <div class="lg:pt-4">
+            <div class="min-w-0 lg:pt-4">
                 {#if p.brand}
                     <Link href={brandShow.url(p.brand.slug)} class="eyebrow mb-4 block hover:underline">
                         {p.brand.name}
@@ -319,7 +322,7 @@
                             class={buttonClass({ class: 'h-12 px-7 shadow-none' })}
                         >
                             <Phone />
-                            Call for Price
+                            {showsPrice ? 'Call Sales' : 'Call for Price'}
                         </a>
                         {#key p.slug}
                             <QuoteDialog product={p.name} />

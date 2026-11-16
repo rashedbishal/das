@@ -7,7 +7,10 @@
     import ProductPicker from './ProductPicker.svelte';
     import { store as storeEnquiry } from '@/routes/contact/enquiries';
 
-    let { product = '' }: { product?: string } = $props();
+    let {
+        product = '',
+        messagePlaceholder = 'Tell us a little about your equipment needs…',
+    }: { product?: string; messagePlaceholder?: string } = $props();
 
     let submitted = $state(false);
 
@@ -114,7 +117,7 @@
                     required
                     maxlength="5000"
                     class="field min-h-24"
-                    placeholder="Tell us a little about your equipment needs…"
+                    placeholder={messagePlaceholder}
                     rows={3}
                 ></textarea>
                 <InputError message={formErrors.message} />

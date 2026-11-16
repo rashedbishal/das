@@ -22,7 +22,7 @@ class HomepageSectionFactory extends Factory
             'image' => null,
             'link_url' => null,
             'content' => null,
-            'sort_order' => 0,
+            'sort_order' => fake()->unique()->numberBetween(1, 1_000_000),
             'is_active' => true,
             'starts_at' => null,
             'ends_at' => null,

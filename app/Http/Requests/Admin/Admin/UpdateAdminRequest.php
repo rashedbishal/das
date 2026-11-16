@@ -36,6 +36,8 @@ class UpdateAdminRequest extends FormRequest
             'email' => ['sometimes', 'required', 'string', 'email', FieldLimits::max('admin.email'), Rule::unique('users', 'email')->ignore($admin)],
             'phone' => ['sometimes', 'nullable', new BangladeshiPhoneNumber, Rule::unique('users', 'phone')->ignore($admin)],
             'role_id' => ['sometimes', 'required', 'integer', 'exists:roles,id'],
+            // Resetting another admin's password; AdminUserService enforces who may do it.
+            'password' => ['sometimes', 'nullable', 'string', FieldLimits::max('admin.password'), 'confirmed', Password::default()],
         ];
     }
 }

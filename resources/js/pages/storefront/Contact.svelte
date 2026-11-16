@@ -33,6 +33,9 @@
     );
     const hours = $derived(orderedHours(page.props.siteSettings.openingHours));
 
+    // The footer's "Request a Quote" link opens this page at the form, framed as a quote request.
+    const isQuoteRequest = $derived(new URL(page.url, 'http://localhost').searchParams.get('quote') === '1');
+
     const details = $derived([
         {
             icon: Phone,
@@ -121,12 +124,23 @@
                 </div>
             {/if}
         </div>
-        <div class="lg:border-l lg:pl-12">
-            <h2 class="mb-3 text-xl">Tell us what you’re looking for.</h2>
-            <p class="mb-7 text-xs leading-7 text-muted-foreground">
-                Send us your details and our team will follow up about your requirements.
-            </p>
-            <EnquiryForm />
+        <div id="enquiry" class="scroll-mt-24 lg:border-l lg:pl-12">
+            {#if isQuoteRequest}
+                <h2 class="mb-3 text-xl">Request a quote.</h2>
+                <p class="mb-7 text-xs leading-7 text-muted-foreground">
+                    Tell us which products and quantities you need, and our team will send you a quote.
+                </p>
+            {:else}
+                <h2 class="mb-3 text-xl">Tell us what you’re looking for.</h2>
+                <p class="mb-7 text-xs leading-7 text-muted-foreground">
+                    Send us your details and our team will follow up about your requirements.
+                </p>
+            {/if}
+            <EnquiryForm
+                messagePlaceholder={isQuoteRequest
+                    ? 'Which products do you need a quote for, and how many?'
+                    : undefined}
+            />
         </div>
     </div>
 </section>

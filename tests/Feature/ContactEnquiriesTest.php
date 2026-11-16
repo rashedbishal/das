@@ -240,3 +240,19 @@ test('an enquiry needs a message saying how we can help', function (?string $mes
 
     expect(ContactEnquiry::query()->count())->toBe(0);
 })->with(['missing' => [null], 'only spaces' => ['   ']]);
+
+test('an enquiry phone must be a standard 11-digit bangladeshi mobile number', function (string $phone) {
+    $this->from(route('contact'))->post(route('contact.enquiries.store'), [
+        'name' => 'Customer',
+        'phone' => $phone,
+        'message' => 'Please send a quote.',
+    ])->assertSessionHasErrors('phone');
+
+    expect(ContactEnquiry::query()->count())->toBe(0);
+})->with([
+    'too long' => ['017123456789'],
+    'too long with country code' => ['+88017123456789'],
+    'too short' => ['0171234567'],
+    'not a mobile prefix' => ['01212345678'],
+    'letters' => ['01712abc678'],
+]);

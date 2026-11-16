@@ -3,7 +3,7 @@
     import type { Snippet } from 'svelte';
     import { fade } from 'svelte/transition';
     import { cn } from '@/lib/utils';
-    import { focusFirst, lockScroll, zoom } from './overlay';
+    import { focusFirst, lockScroll, prefersReducedMotion, zoom } from './overlay';
 
     let {
         open = $bindable(false),
@@ -48,10 +48,10 @@
 
 {#if open}
     <div
-        class="fixed inset-0 z-50 bg-black/80"
+        class="modal-backdrop fixed inset-0 z-50 bg-black/80"
         aria-hidden="true"
         onclick={() => (open = false)}
-        transition:fade={{ duration: 200 }}
+        out:fade={{ duration: prefersReducedMotion() ? 0 : 180 }}
     ></div>
     <div
         bind:this={content}
@@ -60,10 +60,10 @@
         aria-labelledby="{id}-title"
         aria-describedby={description ? `${id}-description` : undefined}
         class={cn(
-            'fixed top-[50%] left-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg sm:rounded-lg',
+            'modal-panel fixed top-[50%] left-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg sm:rounded-lg',
             className,
         )}
-        transition:zoom
+        out:zoom
     >
         {#if header}
             {@render header({
@@ -97,3 +97,37 @@
         </button>
     </div>
 {/if}
+
+<style>
+    /* Opening uses CSS keyframes, which replay on every insertion (Svelte intro
+       transitions can fail to re-fire in runes mode); closing uses the out:
+       transitions above. Only `transform` is animated: the centring uses the
+       separate `translate` property, so the two don't clash. */
+    .modal-backdrop {
+        animation: modal-fade-in 220ms ease-out both;
+    }
+
+    .modal-panel {
+        animation: modal-pop-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes modal-fade-in {
+        from {
+            opacity: 0;
+        }
+    }
+
+    @keyframes modal-pop-in {
+        from {
+            opacity: 0;
+            transform: translateY(12px) scale(0.96);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .modal-backdrop,
+        .modal-panel {
+            animation: none;
+        }
+    }
+</style>

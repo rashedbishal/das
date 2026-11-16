@@ -17,6 +17,9 @@ class HomepageSectionService
     {
         $section = new HomepageSection;
 
+        // Order numbers are unique per type, so an unspecified one goes after the last.
+        $data['sort_order'] ??= (int) HomepageSection::query()->where('type', $data['type'])->max('sort_order') + 1;
+
         return $this->save($section, $data);
     }
 

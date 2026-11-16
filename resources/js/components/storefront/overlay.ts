@@ -19,12 +19,20 @@ export function focusFirst(container: HTMLElement | undefined) {
     target?.focus();
 }
 
+export function prefersReducedMotion(): boolean {
+    return (
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
+}
+
+/** Closing counterpart of the `.modal-panel` opening animation in Modal.svelte. */
 export function zoom(_node: Element, { duration = 200 } = {}) {
     return {
-        duration,
+        duration: prefersReducedMotion() ? 0 : duration,
         easing: cubicOut,
         css: (t: number) =>
-            `opacity: ${t}; transform: scale(${0.95 + 0.05 * t});`,
+            `opacity: ${t}; transform: translateY(${(1 - t) * 12}px) scale(${0.96 + 0.04 * t});`,
     };
 }
 

@@ -8,6 +8,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AdminUserService
 {
@@ -66,6 +67,13 @@ class AdminUserService
             }
 
             $admin->fill(Arr::only($data, ['name', 'email', 'phone', 'role_id']));
+
+            if (! empty($data['password'])) {
+                $this->assertCanResetPassword($actor, $admin);
+                $admin->password = $data['password'];
+                // Sign the admin out everywhere, so whoever knew the old password loses access.
+                $admin->setRememberToken(Str::random(60));
+            }
         }
 
         $admin->updated_by = $actor->id;
@@ -75,6 +83,10 @@ class AdminUserService
         // The password itself is never logged; only that it changed.
         if ($passwordChanged) {
             $this->activity->log('admin.password_changed', $admin, "Changed the password of admin {$admin->name}");
+
+            if (! $isSelf && config('session.driver') === 'database') {
+                DB::table(config('session.table', 'sessions'))->where('user_id', $admin->id)->delete();
+            }
         }
 
         return $admin;
@@ -140,6 +152,28 @@ class AdminUserService
         );
 
         return $newMotherAdmin->fresh();
+    }
+
+    /**
+     * Setting someone's password lets you sign in as them, so (like assigning a role) an
+     * admin may only do it for admins whose role grants nothing they don't hold themselves.
+     *
+     * @throws AuthorizationException
+     */
+    private function assertCanResetPassword(User $actor, User $admin): void
+    {
+        if ($actor->isMotherAdmin()) {
+            return;
+        }
+
+        // Their role before this update; a newly assigned role is checked by assertCanAssignRole().
+        $currentRole = Role::query()->with('permissions')->find($admin->getOriginal('role_id'));
+
+        foreach ($currentRole->permissions ?? [] as $permission) {
+            if (! $actor->hasPermission($permission->slug)) {
+                throw new AuthorizationException("You cannot change {$admin->name}'s password because their role grants the \"{$permission->slug}\" permission, which you do not hold.");
+            }
+        }
     }
 
     private function assertCanAssignRole(User $actor, Role $role): void
