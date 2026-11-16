@@ -1,11 +1,30 @@
 import { cubicInOut, cubicOut } from 'svelte/easing';
 
+let scrollLocks = 0;
+let overflowBeforeLock = '';
+
+/**
+ * Stops the page scrolling behind a modal. Counted, so one modal closing while
+ * another opens (search result → login modal) can't leave the page stuck.
+ */
 export function lockScroll() {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    if (scrollLocks++ === 0) {
+        overflowBeforeLock = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+    }
+
+    let released = false;
 
     return () => {
-        document.body.style.overflow = previous;
+        if (released) {
+            return;
+        }
+
+        released = true;
+
+        if (--scrollLocks === 0) {
+            document.body.style.overflow = overflowBeforeLock;
+        }
     };
 }
 

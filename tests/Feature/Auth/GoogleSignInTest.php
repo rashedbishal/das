@@ -139,3 +139,19 @@ test('google sign-in is hidden and unreachable until credentials are configured'
 test('the login page offers google sign-in when configured', function () {
     $this->get(route('login'))->assertInertia(fn ($page) => $page->where('googleSignIn', true));
 });
+
+test('google sign-in from the login modal returns to the product the guest clicked', function () {
+    Socialite::fake('google');
+    $this->get(route('auth.google.redirect', ['intended' => '/products/dental-chair']));
+
+    fakeGoogleUser();
+    $this->get(route('auth.google.callback'))->assertRedirect(url('/products/dental-chair'));
+});
+
+test('google sign-in ignores an intended address on another site', function () {
+    Socialite::fake('google');
+    $this->get(route('auth.google.redirect', ['intended' => '//evil.example']));
+
+    fakeGoogleUser();
+    $this->get(route('auth.google.callback'))->assertRedirect(route('home'));
+});

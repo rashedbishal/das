@@ -5,6 +5,7 @@
     let {
         title,
         description = null,
+        keywords = null,
         image = null,
         canonical = null,
         noindex = false,
@@ -15,6 +16,8 @@
         /** Use the title as-is, without the " | Site name" suffix (e.g. the home page). */
         exactTitle?: boolean;
         description?: string | null;
+        /** Comma-separated keywords set in the CMS; the tag is omitted when blank. */
+        keywords?: string | null;
         image?: string | null;
         /** Path or absolute URL of the preferred version of this page (query string dropped by default). */
         canonical?: string | null;
@@ -27,6 +30,7 @@
     const metaDescription = $derived(
         (description?.trim() || seo.defaultDescription || '').replace(/\s+/g, ' ').slice(0, 300),
     );
+    const metaKeywords = $derived((keywords ?? '').replace(/\s+/g, ' ').trim());
     // Always absolute: search engines and social networks expect full URLs.
     const canonicalUrl = $derived(absoluteUrl(seo.appUrl, canonical || seo.canonicalUrl));
     const imageUrl = $derived(image ? absoluteUrl(seo.appUrl, image) : null);
@@ -41,6 +45,9 @@
         <meta name="description" content={metaDescription} />
         <meta property="og:description" content={metaDescription} />
         <meta name="twitter:description" content={metaDescription} />
+    {/if}
+    {#if metaKeywords}
+        <meta name="keywords" content={metaKeywords} />
     {/if}
     <meta name="robots" content={robots} />
     {#if !noindex}

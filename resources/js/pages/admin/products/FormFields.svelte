@@ -33,6 +33,7 @@
         stock_status: string;
         seo_title: string | null;
         seo_description: string | null;
+        seo_keywords: string | null;
         category_id: number;
         subcategory_id: number | null;
         tags: { id: number }[];
@@ -378,6 +379,17 @@
         value={product?.seo_description ?? ''}
     />
     <InputError message={errors.seo_description} />
+</div>
+<div class="grid gap-2">
+    <Label for="seo_keywords">SEO keywords</Label>
+    <LimitedInput
+        id="seo_keywords"
+        name="seo_keywords"
+        limit={fieldLimits.product.seo_keywords}
+        value={product?.seo_keywords ?? ''}
+        placeholder="e.g. curing light, dental LED"
+    />
+    <InputError message={errors.seo_keywords} />
 </div>
 <SeoFields
     withInputs={false}

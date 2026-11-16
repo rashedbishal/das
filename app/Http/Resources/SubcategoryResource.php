@@ -28,6 +28,7 @@ class SubcategoryResource extends JsonResource
                 'description' => $this->seo_description,
             ],
             'image' => $this->image,
+            'products_count' => $this->whenCounted('products'),
             'category' => $this->whenLoaded('category', fn () => $this->category ? [
                 'name' => $this->category->name,
                 'slug' => $this->category->slug,

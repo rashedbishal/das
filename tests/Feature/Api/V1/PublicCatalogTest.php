@@ -3,6 +3,7 @@
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Subcategory;
 use App\Models\User;
 
 test('the public products api returns only published products with summary fields', function () {
@@ -17,22 +18,11 @@ test('the public products api returns only published products with summary field
     $response->assertDontSee('SECRET INTERNAL DETAIL');
 });
 
-test('a guest receives product detail from the api without prices', function () {
-    $product = Product::factory()->published()->create(['regular_price' => 1500, 'show_price' => true]);
+test('a guest cannot read product detail from the api', function (string $status) {
+    $product = Product::factory()->create(['status' => $status]);
 
-    $this->getJson(route('api.v1.products.show', $product))
-        ->assertOk()
-        ->assertJsonPath('data.sku', $product->sku)
-        ->assertJsonPath('data.regular_price', null)
-        ->assertJsonPath('data.show_price', false)
-        ->assertJsonPath('data.price_login_required', true);
-});
-
-test('a guest receives a 404 for a draft product via the api', function () {
-    $product = Product::factory()->create(['status' => 'draft']);
-
-    $this->getJson(route('api.v1.products.show', $product))->assertNotFound();
-});
+    $this->getJson(route('api.v1.products.show', $product))->assertUnauthorized();
+})->with(['published', 'draft']);
 
 test('an authenticated customer receives full product detail from the api', function () {
     $product = Product::factory()->published()->create();
@@ -99,4 +89,44 @@ test('product search treats percent and underscore literally', function () {
     $this->getJson(route('api.v1.products.index', ['search' => '%']))
         ->assertOk()
         ->assertJsonCount(1, 'data');
+});
+
+test('the subcategories endpoint lists only subcategories holding the brand\'s published products', function () {
+    $brand = Brand::factory()->create();
+    $otherBrand = Brand::factory()->create();
+    $category = Category::factory()->create(['is_active' => true]);
+    $otherCategory = Category::factory()->create(['is_active' => true]);
+
+    $withBrand = Subcategory::factory()->for($category)->create();
+    $otherBrandOnly = Subcategory::factory()->for($category)->create();
+    $draftOnly = Subcategory::factory()->for($category)->create();
+    $inactive = Subcategory::factory()->for($category)->inactive()->create();
+    $inOtherCategory = Subcategory::factory()->for($otherCategory)->create();
+
+    Product::factory()->published()->for($brand)->for($category)->for($withBrand)->count(2)->create();
+    Product::factory()->published()->for($otherBrand)->for($category)->for($otherBrandOnly)->create();
+    Product::factory()->for($brand)->for($category)->for($draftOnly)->create(['status' => 'draft']);
+    Product::factory()->published()->for($brand)->for($category)->for($inactive)->create();
+    Product::factory()->published()->for($brand)->for($otherCategory)->for($inOtherCategory)->create();
+
+    $all = $this->getJson(route('api.v1.subcategories.index', ['brand' => $brand->slug]))
+        ->assertOk()
+        ->collect('data');
+
+    expect($all->pluck('slug')->sort()->values()->all())
+        ->toBe(collect([$withBrand->slug, $inOtherCategory->slug])->sort()->values()->all())
+        ->and($all->firstWhere('slug', $withBrand->slug))
+        ->toMatchArray(['products_count' => 2, 'category' => ['name' => $category->name, 'slug' => $category->slug]]);
+
+    $narrowed = $this->getJson(route('api.v1.subcategories.index', ['brand' => $brand->slug, 'category' => $category->slug]))
+        ->assertOk()
+        ->collect('data');
+
+    expect($narrowed->pluck('slug')->all())->toBe([$withBrand->slug]);
+});
+
+test('the subcategories endpoint requires a brand', function () {
+    $this->getJson(route('api.v1.subcategories.index'))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('brand');
 });

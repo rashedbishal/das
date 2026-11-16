@@ -13,9 +13,9 @@ use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
- * The public product page, rendered with the product as props so its name,
- * description, images and specifications are in the server-rendered HTML for
- * search engines. Prices are left out for guests (see ProductResource).
+ * The product page, rendered with the product as props. It is only reachable by
+ * signed-in users: the route's `auth` middleware sends guests to sign in and
+ * remembers the product so they come back to it afterwards.
  */
 class StorefrontProductController extends Controller
 {
@@ -35,11 +35,6 @@ class StorefrontProductController extends Controller
 
         $product->load(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'variants']);
         $product->setRelation('relatedProducts', $this->products->relatedFor($product));
-
-        // A guest signing in from this page ("Sign in to see price") comes back here.
-        if (! $request->user()) {
-            $request->session()->put('url.intended', $request->fullUrl());
-        }
 
         return Inertia::render('storefront/Product', [
             'product' => (new ProductResource($product))->resolve($request),

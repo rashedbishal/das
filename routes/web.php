@@ -20,7 +20,8 @@ Route::get('categories/{category}/{subcategory}', [StorefrontCatalogueController
 Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
 
-Route::get('products/{slug}', StorefrontProductController::class)->name('products.show');
+// Product details are for signed-in visitors only; guests are sent to sign in and brought back.
+Route::get('products/{slug}', StorefrontProductController::class)->middleware('auth')->name('products.show');
 
 Route::get('brands', [StorefrontCatalogueController::class, 'brands'])->name('brands');
 Route::get('brands/{brand}', [StorefrontCatalogueController::class, 'brand'])->name('brands.show');

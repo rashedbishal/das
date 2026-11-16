@@ -10,12 +10,14 @@
     import {
         brands,
         categories,
+        fetchBrandSubcategories,
         fetchProducts,
         filterQuery,
         loadBrands,
         loadCategories,
         parseFilters,
         stockLabel,
+        type BrandSubcategory,
         type CatalogueFilters,
         type ProductCard as ProductCardType,
         type ProductPage,
@@ -84,6 +86,41 @@
                   }),
         };
     }
+
+    // Once a brand is chosen (or fixed by the page), offer the subcategories that
+    // hold that brand's products, narrowed to the current category if any.
+    const subcategoryBrand = $derived(fixedBrand ?? filters.brand);
+    const subcategoryCategory = $derived(fixedCategory ?? filters.category);
+    let brandSubcategories = $state<BrandSubcategory[]>([]);
+    let latestSubcategoryRequest = 0;
+
+    $effect(() => {
+        const brand = subcategoryBrand;
+        const category = subcategoryCategory;
+        const request = ++latestSubcategoryRequest;
+
+        if (fixedSubcategory || !brand) {
+            brandSubcategories = [];
+
+            return;
+        }
+
+        fetchBrandSubcategories(brand, category)
+            .then((result) => {
+                if (request === latestSubcategoryRequest) {
+                    brandSubcategories = result;
+                }
+            })
+            .catch(() => {
+                if (request === latestSubcategoryRequest) {
+                    brandSubcategories = [];
+                }
+            });
+    });
+
+    const subcategoryCounts = $derived(
+        Object.fromEntries(brandSubcategories.map((s) => [s.slug, s.productsCount])),
+    );
 
     const categoryCounts = $derived(
         Object.fromEntries($categories.map((c) => [c.slug, c.productsCount])),
@@ -180,7 +217,14 @@
     }
 
     function update(key: FilterKey, value: string | number | undefined) {
-        onChange({ ...filters, [key]: value || undefined });
+        const next = { ...filters, [key]: value || undefined };
+
+        // A chosen subcategory belongs to the old brand/category scope.
+        if ((key === 'brand' || key === 'category') && !fixedSubcategory) {
+            next.subcategory = undefined;
+        }
+
+        onChange(next);
     }
 
     function clear() {
@@ -215,6 +259,18 @@
                   },
               ]
             : []),
+        ...(brandSubcategories.length > 0
+            ? [
+                  {
+                      key: 'subcategory' as FilterKey,
+                      name: 'Subcategory',
+                      options: brandSubcategories.map((s) => ({
+                          value: s.slug,
+                          label: s.name,
+                      })),
+                  },
+              ]
+            : []),
         {
             key: 'stockStatus' as FilterKey,
             name: 'Availability',
@@ -232,6 +288,10 @@
 
         if (key === 'brand') {
             return $brands.find((b) => b.slug === value)?.name;
+        }
+
+        if (key === 'subcategory') {
+            return brandSubcategories.find((s) => s.slug === value)?.name ?? value;
         }
 
         if (key === 'stockStatus') {
@@ -278,6 +338,10 @@
                             {#if group.key === 'category'}
                                 <span class="ml-auto text-muted-foreground">
                                     {categoryCounts[o.value] ?? 0}
+                                </span>
+                            {:else if group.key === 'subcategory'}
+                                <span class="ml-auto text-muted-foreground">
+                                    {subcategoryCounts[o.value] ?? 0}
                                 </span>
                             {/if}
                         </label>

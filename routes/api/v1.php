@@ -26,14 +26,17 @@ Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttl
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
     Route::get('auth/user', [AuthController::class, 'user'])->name('auth.user');
+
+    // Like the product page, full product details need a signed-in user.
+    Route::get('products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 });
 
 Route::get('products', [ProductController::class, 'index'])->name('products.index');
-Route::get('products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 
 Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::get('categories/{category:slug}', [CategoryController::class, 'show'])->name('categories.show');
 
+Route::get('subcategories', [SubcategoryController::class, 'index'])->name('subcategories.index');
 Route::get('subcategories/{subcategory:slug}', [SubcategoryController::class, 'show'])->name('subcategories.show');
 
 Route::get('brands', [BrandController::class, 'index'])->name('brands.index');

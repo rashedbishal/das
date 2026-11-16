@@ -2,9 +2,11 @@
     import { page } from '@inertiajs/svelte';
     import type { Snippet } from 'svelte';
     import ContactWidgets from '@/components/ContactWidgets.svelte';
+    import LoginModal from '@/components/LoginModal.svelte';
     import Footer from '@/components/storefront/Footer.svelte';
     import Header from '@/components/storefront/Header.svelte';
     import { openingHoursSpecification } from '@/lib/business';
+    import { loginPrompt } from '@/lib/login-prompt.svelte';
     import { enableMotion } from '@/lib/motion.svelte';
     import { absoluteUrl, jsonLdScript } from '@/lib/seo';
 
@@ -93,4 +95,6 @@
     </main>
     <Footer />
     <ContactWidgets />
+    <!-- Opened by product links for guests (see ProductLink), instead of leaving the page. -->
+    <LoginModal bind:open={loginPrompt.open} intended={loginPrompt.intended} product={loginPrompt.product} />
 </div>

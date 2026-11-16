@@ -159,3 +159,29 @@ test('users are rate limited', function () {
 
     $response->assertTooManyRequests();
 });
+
+test('signing in from the login modal goes to the product the guest clicked', function () {
+    $user = User::factory()->create();
+    Product::factory()->published()->create(['slug' => 'dental-chair']);
+
+    $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+        'intended' => '/products/dental-chair',
+    ])->assertRedirect(url('/products/dental-chair'));
+});
+
+test('the login modal cannot send a customer to another site or into the admin area', function (string $intended) {
+    $user = User::factory()->create();
+
+    $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+        'intended' => $intended,
+    ])->assertRedirect(route('home'));
+})->with([
+    'full url' => ['https://evil.example/products/x'],
+    'protocol-relative' => ['//evil.example/products/x'],
+    'backslash' => ['/\\evil.example'],
+    'admin area' => ['/admin/settings'],
+]);

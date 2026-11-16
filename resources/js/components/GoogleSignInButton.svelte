@@ -8,10 +8,13 @@
         label = 'Continue with Google',
         divider = 'or use your email or phone',
         class: className = '',
+        intended = null,
     }: {
         label?: string;
         divider?: string;
         class?: string;
+        /** Page to return to after signing in, e.g. the product that opened the login modal. */
+        intended?: string | null;
     } = $props();
 </script>
 
@@ -19,7 +22,7 @@
     <div class={cn('grid gap-5', className)}>
         <!-- A plain link, not an Inertia visit: the redirect leaves the site for Google. -->
         <a
-            href={redirect.url()}
+            href={redirect.url(intended ? { query: { intended } } : undefined)}
             class={cn(buttonVariants({ variant: 'outline' }), 'h-10 w-full gap-2')}
             data-test="google-sign-in"
         >

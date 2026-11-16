@@ -64,9 +64,9 @@ Native `roles` / `permissions` tables (no third-party package), chosen so the Mo
 
 Enforced on the backend (not just the frontend), on **both** the Inertia routes and the `/api/v1` routes:
 
-- **Published products are public**, so search engines can index them. `/products/{slug}` (`StorefrontProductController`) renders the full product (description, specifications, images, brand, category) server-side; `GET /api/v1/products/{slug}` returns the same detail.
+- **Product details need sign-in.** Guests can browse the catalogue (product cards: name, image, brand), but `/products/{slug}` (`StorefrontProductController`, behind `auth`) sends them to `/login`, and `GET /api/v1/products/{slug}` (behind `auth:sanctum`) returns `401`. Product pages are therefore left out of the sitemap.
 - **Prices are for signed-in users only.** `ProductResource` and `ProductCardResource` return `regular_price`/`sale_price` (and variant prices) only when a user is signed in; for guests they are `null` and `price_login_required` is `true`, and the storefront shows "Sign in to see price". Guests also can't filter or sort by price (`ProductService::withoutPriceFiltersForGuests`). The call/quote buttons on the product page are shown after sign-in. Stock status follows each product's "show stock" setting for everyone.
-- A guest who signs in from a product page returns to it (`session(['url.intended' => ...])`, consumed by Fortify's `redirect()->intended()`).
+- A guest sent to sign in from a product page returns to it afterwards (the `auth` middleware stores the intended URL).
 - Unknown, draft and archived products are a real `404` for guests and customers; admins can preview drafts (the page is marked as a preview and `noindex`).
 
 ## SEO
@@ -149,7 +149,7 @@ npm run check                       # svelte-check + eslint, if configured
 npm run build                       # production asset build
 ```
 
-The suite covers: Mother Admin bootstrap/idempotency, role/permission anti-escalation, all three customer login modes with Bangladeshi phone validation and duplicate-normalization, the product access rules (public published products, prices for signed-in users only, admin draft preview) on both Inertia and API routes, full catalog CRUD + media upload + search/filter/sort/pagination, settings/homepage-section management, contact-widget exposure, and targeted mass-assignment/IDOR checks.
+The suite covers: Mother Admin bootstrap/idempotency, role/permission anti-escalation, all three customer login modes with Bangladeshi phone validation and duplicate-normalization, the product access rules (product details for signed-in users only, prices for signed-in users only, admin draft preview) on both Inertia and API routes, full catalog CRUD + media upload + search/filter/sort/pagination, settings/homepage-section management, contact-widget exposure, and targeted mass-assignment/IDOR checks.
 
 ## Deployment Notes
 

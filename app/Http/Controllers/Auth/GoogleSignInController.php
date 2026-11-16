@@ -23,9 +23,15 @@ class GoogleSignInController extends Controller
 
     public function __construct(private readonly GoogleSignInService $googleSignIn) {}
 
-    public function redirect(): SymfonyRedirectResponse
+    public function redirect(Request $request): SymfonyRedirectResponse
     {
         abort_unless($this->googleSignIn->isEnabled(), 404);
+
+        // The login modal passes the product the customer clicked, to return to afterwards.
+        $intended = self::localPath($request->query('intended'));
+        if ($intended !== null) {
+            $request->session()->put('url.intended', url($intended));
+        }
 
         return Socialite::driver('google')->redirect();
     }

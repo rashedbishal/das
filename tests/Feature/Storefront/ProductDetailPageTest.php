@@ -9,18 +9,27 @@ use App\Models\Role;
 use App\Models\Tag;
 use App\Models\User;
 
-test('a guest sees the full product page, server-rendered, without the price', function () {
+test('a guest is sent to sign in instead of seeing the product page', function () {
+    $product = Product::factory()->published()->create(['full_description' => 'A cordless LED curing light.']);
+
+    $this->get(route('products.show', $product->slug))
+        ->assertRedirect(route('login'));
+
+    $this->get(route('products.show', 'no-such-product'))
+        ->assertRedirect(route('login'));
+});
+
+test('a signed-in customer sees the full product page, server-rendered', function () {
     $product = Product::factory()->published()->create([
         'name' => 'Curing Light X',
         'full_description' => 'A cordless LED curing light.',
-        'regular_price' => 4500,
-        'show_price' => true,
         'brand_id' => Brand::factory(),
         'category_id' => Category::factory(),
     ]);
     ProductSpecification::factory()->for($product)->create(['name' => 'Wavelength', 'value' => '420-480 nm']);
 
-    $this->get(route('products.show', $product->slug))
+    $this->actingAs(User::factory()->create())
+        ->get(route('products.show', $product->slug))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('storefront/Product')
@@ -29,9 +38,7 @@ test('a guest sees the full product page, server-rendered, without the price', f
             ->where('product.name', 'Curing Light X')
             ->where('product.full_description', 'A cordless LED curing light.')
             ->where('product.specifications.0.value', '420-480 nm')
-            ->where('product.brand.slug', $product->brand->slug)
-            ->where('product.regular_price', null)
-            ->where('product.price_login_required', true));
+            ->where('product.brand.slug', $product->brand->slug));
 });
 
 test('a signed-in customer sees the price on the product page', function () {
@@ -47,7 +54,8 @@ test('a signed-in customer sees the price on the product page', function () {
 test('unknown, draft and archived products return a real 404', function (?string $status) {
     $slug = $status === null ? 'no-such-product' : Product::factory()->create(['status' => $status])->slug;
 
-    $this->get(route('products.show', $slug))
+    $this->actingAs(User::factory()->create())
+        ->get(route('products.show', $slug))
         ->assertNotFound()
         ->assertInertia(fn ($page) => $page->component('storefront/NotFound'));
 })->with(['unknown' => [null], 'draft' => ['draft'], 'archived' => ['archived']]);
@@ -96,7 +104,8 @@ test('related products reach the product page as a plain list of published produ
     $draft = Product::factory()->create(['status' => 'draft']);
     $product->relatedProducts()->attach([$related->id, $draft->id]);
 
-    $this->get(route('products.show', $product->slug))
+    $this->actingAs(User::factory()->create())
+        ->get(route('products.show', $product->slug))
         ->assertInertia(fn ($page) => $page
             ->has('product.related_products', 1)
             ->where('product.related_products.0.slug', $related->slug));
@@ -119,7 +128,8 @@ test('related products are suggested automatically: picked ones, then shared tag
     $draftWithTag->tags()->attach($tagA->id);
     Product::factory()->published()->create();
 
-    $this->get(route('products.show', $product->slug))
+    $this->actingAs(User::factory()->create())
+        ->get(route('products.show', $product->slug))
         ->assertInertia(fn ($page) => $page->where(
             'product.related_products',
             fn ($related) => collect($related)->pluck('slug')->all() === [$picked->slug, $bothTags->slug, $oneTag->slug, $sameCategory->slug],
@@ -131,16 +141,15 @@ test('related product suggestions are capped at 8', function () {
     $product = Product::factory()->published()->for($category)->create();
     Product::factory()->count(10)->published()->for($category)->create();
 
-    $this->getJson(route('api.v1.products.show', $product))
+    $this->actingAs(User::factory()->create())
+        ->getJson(route('api.v1.products.show', $product))
         ->assertOk()
         ->assertJsonCount(8, 'data.related_products');
 });
 
-test('a product drafted or archived while a visitor is on its page is a 404 on their next request', function (string $status, bool $signedIn) {
+test('a product drafted or archived while a customer is on its page is a 404 on their next request', function (string $status) {
     $product = Product::factory()->published()->create();
-    if ($signedIn) {
-        $this->actingAs(User::factory()->create());
-    }
+    $this->actingAs(User::factory()->create());
 
     $this->get(route('products.show', $product->slug))->assertOk();
 
@@ -152,7 +161,23 @@ test('a product drafted or archived while a visitor is on its page is a 404 on t
         ->get(route('products.show', $product->slug))
         ->assertNotFound();
 })->with([
-    'drafted, guest' => ['draft', false],
-    'drafted, customer' => ['draft', true],
-    'archived, customer' => ['archived', true],
+    'drafted' => ['draft'],
+    'archived' => ['archived'],
 ]);
+
+test('the product page receives the CMS SEO title, description and keywords', function () {
+    $product = Product::factory()->published()->create([
+        'seo_title' => 'Cordless Curing Light',
+        'seo_description' => 'Buy a cordless LED curing light in Bangladesh.',
+        'seo_keywords' => 'curing light, dental LED',
+    ]);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('products.show', $product->slug))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('storefront/Product')
+            ->where('product.seo.title', 'Cordless Curing Light')
+            ->where('product.seo.description', 'Buy a cordless LED curing light in Bangladesh.')
+            ->where('product.seo.keywords', 'curing light, dental LED'));
+});

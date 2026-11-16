@@ -84,6 +84,7 @@
         stock_status: string;
         seo_title: string | null;
         seo_description: string | null;
+        seo_keywords: string | null;
         category_id: number;
         subcategory_id: number | null;
         tags: { id: number }[];

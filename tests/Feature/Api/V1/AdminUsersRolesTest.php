@@ -121,6 +121,33 @@ test('an admin with roles.manage can create a role through the api', function ()
     $response->assertCreated()->assertJsonPath('data.name', 'API Role');
 });
 
+test('the mother admin can rename a role and change its permissions through the api', function () {
+    $kept = Permission::factory()->create(['slug' => 'products.view', 'group' => 'products']);
+    $removed = Permission::factory()->create(['slug' => 'brands.view', 'group' => 'brands']);
+    Permission::factory()->create(['slug' => 'tags.manage', 'group' => 'tags']);
+    $role = Role::factory()->create(['name' => 'Old Name']);
+    $role->permissions()->attach([$kept->id, $removed->id]);
+
+    $response = $this->actingAs(User::factory()->motherAdmin()->create())
+        ->putJson(route('api.v1.admin.roles.update', $role), [
+            'name' => 'New Name',
+            'permissions' => ['products.view', 'tags.manage'],
+        ]);
+
+    $response->assertOk()->assertJsonPath('data.name', 'New Name');
+    expect($role->fresh()->permissions->pluck('slug')->sort()->values()->all())->toBe(['products.view', 'tags.manage']);
+});
+
+test('the mother admin role itself cannot be edited through the api', function () {
+    $motherAdmin = User::factory()->motherAdmin()->create();
+
+    $this->actingAs($motherAdmin)
+        ->putJson(route('api.v1.admin.roles.update', $motherAdmin->role), ['name' => 'Renamed', 'permissions' => []])
+        ->assertForbidden();
+
+    expect($motherAdmin->role->fresh()->name)->not->toBe('Renamed');
+});
+
 test('a customer manager can deactivate a customer through the api', function () {
     $admin = adminUser(['customers.manage']);
     $customer = User::factory()->create();

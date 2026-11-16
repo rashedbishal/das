@@ -518,3 +518,44 @@ test('products with the same name each get a unique slug', function () {
     expect(Product::query()->whereIn('sku', ['SKU-MIRROR-A', 'SKU-MIRROR-B', 'SKU-MIRROR-C'])->orderBy('id')->pluck('slug')->all())
         ->toBe(['dental-mirror', 'dental-mirror-2', 'dental-mirror-3']);
 });
+
+test('an admin can set and clear a product\'s SEO title, description and keywords', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+
+    $payload = fn (array $seo) => [
+        'name' => $product->name,
+        'sku' => $product->sku,
+        'stock_quantity' => $product->stock_quantity,
+        'stock_status' => $product->stock_status,
+        'status' => $product->status,
+        'category_id' => $product->category_id,
+        ...$seo,
+    ];
+
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), $payload([
+            'seo_title' => 'Cordless Curing Light',
+            'seo_description' => 'Buy a cordless LED curing light in Bangladesh.',
+            'seo_keywords' => 'curing light, dental LED',
+        ]))
+        ->assertSessionHasNoErrors();
+
+    expect($product->fresh())
+        ->seo_title->toBe('Cordless Curing Light')
+        ->seo_description->toBe('Buy a cordless LED curing light in Bangladesh.')
+        ->seo_keywords->toBe('curing light, dental LED');
+
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), $payload([
+            'seo_title' => '',
+            'seo_description' => '',
+            'seo_keywords' => '',
+        ]))
+        ->assertSessionHasNoErrors();
+
+    expect($product->fresh())
+        ->seo_title->toBeNull()
+        ->seo_description->toBeNull()
+        ->seo_keywords->toBeNull();
+});

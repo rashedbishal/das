@@ -4,15 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Brand;
 use App\Models\Category;
-use App\Models\Product;
-use App\Models\ProductMedia;
 use Illuminate\Http\Response;
 
 class SeoController extends Controller
 {
     /**
-     * Every public, indexable page: the fixed storefront pages, active categories,
-     * subcategories and brands, and every published product with its images.
+     * Every public, indexable page: the fixed storefront pages and active categories,
+     * subcategories and brands. Product pages need a signed-in user, so they are left out.
      */
     public function sitemap(): Response
     {
@@ -42,25 +40,6 @@ class SeoController extends Controller
 
         foreach (Brand::query()->active()->orderBy('name')->get(['slug', 'updated_at']) as $brand) {
             $urls[] = ['loc' => route('brands.show', $brand->slug), 'lastmod' => $brand->updated_at?->toAtomString()];
-        }
-
-        $products = Product::query()
-            ->published()
-            ->with(['media' => fn ($query) => $query->where('type', 'image')])
-            ->orderByDesc('updated_at')
-            ->get(['id', 'name', 'slug', 'updated_at']);
-
-        foreach ($products as $product) {
-            $urls[] = [
-                'loc' => route('products.show', $product->slug),
-                'lastmod' => $product->updated_at?->toAtomString(),
-                'images' => $product->media
-                    ->map(fn (ProductMedia $media) => $media->resolvedUrl())
-                    ->filter()
-                    ->map(fn (string $url) => ['loc' => url($url), 'title' => $product->name])
-                    ->values()
-                    ->all(),
-            ];
         }
 
         $entries = implode("\n", array_map(function (array $url): string {

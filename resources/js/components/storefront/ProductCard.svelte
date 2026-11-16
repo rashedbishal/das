@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Link, page } from '@inertiajs/svelte';
+    import { page } from '@inertiajs/svelte';
     import ArrowRight from '@lucide/svelte/icons/arrow-right';
     import Phone from '@lucide/svelte/icons/phone';
     import { formatPrice } from '@/data/catalogue';
@@ -7,12 +7,20 @@
     import { resolvePhone } from '@/lib/contact';
     import { markMorph, motion } from '@/lib/motion.svelte';
     import { show } from '@/routes/products';
+    import ProductLink from './ProductLink.svelte';
 
     let { product: p }: { product: ProductCardType } = $props();
 
     const href = $derived(show.url(p.slug));
-    // Clicking through to the product morphs this photo into the product page.
-    const morph = () => markMorph(p.slug);
+    // Clicking through to the product morphs this photo into the product page
+    // (guests get the login modal instead, so nothing to morph).
+    const morph = () => {
+        if (page.props.auth.user) {
+            markMorph(p.slug);
+        }
+    };
+    // Shown in the login modal when a guest clicks this card.
+    const promptProduct = $derived({ name: p.name, image: p.image });
     const priceLabel = $derived(formatPrice(p));
     // "Call for Price" only makes sense when the card isn't already showing a price.
     const showsPrice = $derived(p.showPrice && (p.salePrice ?? p.regularPrice) !== null);
@@ -25,8 +33,9 @@
 </script>
 
 <article class="product-card">
-    <Link
+    <ProductLink
         {href}
+        product={promptProduct}
         onclick={morph}
         class="product-photo"
         aria-label="View {p.name}"
@@ -40,16 +49,16 @@
                 FEATURED
             </span>
         {/if}
-    </Link>
+    </ProductLink>
     <div class="product-body">
         <div class="flex items-center gap-2 text-[9px] text-muted-foreground">
             <span class="font-semibold tracking-[1px] text-primary uppercase"
                 >{p.brand?.name}</span
             >
         </div>
-        <Link {href} onclick={morph}>
+        <ProductLink {href} product={promptProduct} onclick={morph}>
             <h3 class="product-title" title={p.name}>{p.name}</h3>
-        </Link>
+        </ProductLink>
         <p class="product-spec">{p.shortDescription}</p>
         {#if p.showStock && p.stockQuantity !== null}
             <p class="mt-2 text-[10px] text-muted-foreground">
@@ -64,18 +73,19 @@
                     <div class="product-price">{priceLabel}</div>
                 </div>
             {:else if p.priceLoginRequired}
-                <Link {href} onclick={morph} class="text-[10px] font-medium text-muted-foreground hover:text-primary">
+                <ProductLink {href} product={promptProduct} onclick={morph} class="text-[10px] font-medium text-muted-foreground hover:text-primary">
                     Sign in to see price
-                </Link>
+                </ProductLink>
             {/if}
-            <Link
+            <ProductLink
                 {href}
+                product={promptProduct}
                 onclick={morph}
                 class="detail-link flex items-center gap-1.5 text-[10px] font-semibold text-primary"
             >
                 View Details
                 <ArrowRight class="size-3.5" />
-            </Link>
+            </ProductLink>
         </div>
         {#if !showsPrice}
             <a

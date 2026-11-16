@@ -42,6 +42,7 @@
     import { buttonClass } from './button';
     import Drawer from './Drawer.svelte';
     import Modal from './Modal.svelte';
+    import ProductLink from './ProductLink.svelte';
     import Wordmark from './Wordmark.svelte';
 
     loadCategories().catch(() => {});
@@ -535,8 +536,9 @@
             {#if matches.length}
                 <div class="mt-3" transition:fade={{ duration: 180 }}>
                     {#each matches as p (p.id)}
-                        <Link
+                        <ProductLink
                             href={productShow.url(p.slug)}
+                            product={{ name: p.name, image: p.image }}
                             onclick={() => (searchOpen = false)}
                             class="flex items-center gap-4 border-t py-3 text-xs"
                         >
@@ -547,7 +549,7 @@
                             />
                             {p.name}
                             <ArrowRight class="ml-auto size-4" />
-                        </Link>
+                        </ProductLink>
                     {/each}
                 </div>
             {/if}

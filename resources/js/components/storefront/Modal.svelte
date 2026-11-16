@@ -10,6 +10,7 @@
         title,
         description,
         class: className = '',
+        premium = false,
         header,
         children,
     }: {
@@ -17,6 +18,8 @@
         title: string;
         description?: string;
         class?: string;
+        /** A softer, blurred backdrop and a springier entrance (the login modal). */
+        premium?: boolean;
         /** Replaces the default title/description; receives the ids to use for them. */
         header?: Snippet<[{ titleId: string; descriptionId: string }]>;
         children?: Snippet;
@@ -48,7 +51,10 @@
 
 {#if open}
     <div
-        class="modal-backdrop fixed inset-0 z-50 bg-black/80"
+        class={cn(
+            'modal-backdrop fixed inset-0 z-50',
+            premium ? 'premium bg-black/55 backdrop-blur-md' : 'bg-black/80',
+        )}
         aria-hidden="true"
         onclick={() => (open = false)}
         out:fade={{ duration: prefersReducedMotion() ? 0 : 180 }}
@@ -61,6 +67,7 @@
         aria-describedby={description ? `${id}-description` : undefined}
         class={cn(
             'modal-panel fixed top-[50%] left-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg sm:rounded-lg',
+            premium && 'premium',
             className,
         )}
         out:zoom
@@ -111,6 +118,36 @@
         animation: modal-pop-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
+    /* Premium: the backdrop blurs in, and the panel rises out of a soft blur with a
+       slight overshoot, like a card being lifted towards you. */
+    .modal-backdrop.premium {
+        animation: modal-blur-in 420ms ease-out both;
+    }
+
+    .modal-panel.premium {
+        animation: modal-lift-in 620ms cubic-bezier(0.2, 1.25, 0.35, 1) both;
+    }
+
+    @keyframes modal-blur-in {
+        from {
+            opacity: 0;
+            backdrop-filter: blur(0);
+        }
+    }
+
+    @keyframes modal-lift-in {
+        from {
+            opacity: 0;
+            transform: translateY(28px) scale(0.92);
+            filter: blur(6px);
+        }
+
+        55% {
+            opacity: 1;
+            filter: blur(0);
+        }
+    }
+
     @keyframes modal-fade-in {
         from {
             opacity: 0;
@@ -126,7 +163,9 @@
 
     @media (prefers-reduced-motion: reduce) {
         .modal-backdrop,
-        .modal-panel {
+        .modal-panel,
+        .modal-backdrop.premium,
+        .modal-panel.premium {
             animation: none;
         }
     }

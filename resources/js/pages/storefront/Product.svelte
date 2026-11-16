@@ -137,6 +137,7 @@
 <PageMeta
     title={p.seo.title?.trim() || p.name}
     description={metaDescription}
+    keywords={p.seo.keywords}
     image={images[0] ?? null}
     {canonical}
     noindex={isPreview}

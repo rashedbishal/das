@@ -137,7 +137,9 @@
     }
 
     let createAdminOpen = $state(false);
-    let createRoleOpen = $state(false);
+    let roleDialogOpen = $state(false);
+    let editingRole = $state<Role | null>(null);
+    let savingRole = $state(false);
     let deleteRoleTarget = $state<Role | null>(null);
     let deleteRoleOpen = $state(false);
     let editAdminOpen = $state(false);
@@ -336,19 +338,43 @@
             : [...newRole.permissions, slug];
     }
 
-    async function createRole(event: SubmitEvent) {
+    function openCreateRole() {
+        editingRole = null;
+        newRole = { name: '', permissions: [] };
+        roleDialogOpen = true;
+    }
+
+    function openEditRole(role: Role) {
+        editingRole = role;
+        newRole = { name: role.name, permissions: role.permissions.map((permission) => permission.slug) };
+        roleDialogOpen = true;
+    }
+
+    async function saveRole(event: SubmitEvent) {
         event.preventDefault();
         error = null;
+        savingRole = true;
         try {
-            await apiFetch(rolesApi.store.url(), {
-                method: 'POST',
-                body: JSON.stringify(newRole),
-            });
+            if (editingRole) {
+                await apiFetch(rolesApi.update.url(editingRole.id), {
+                    method: 'PUT',
+                    body: JSON.stringify(newRole),
+                });
+                success = `Role "${newRole.name}" updated.`;
+            } else {
+                await apiFetch(rolesApi.store.url(), {
+                    method: 'POST',
+                    body: JSON.stringify(newRole),
+                });
+            }
             newRole = { name: '', permissions: [] };
-            createRoleOpen = false;
+            editingRole = null;
+            roleDialogOpen = false;
             await loadRoles();
         } catch (e) {
-            error = e instanceof ApiError ? e.message : 'Failed to create role';
+            error = e instanceof ApiError ? e.message : editingRole ? 'Failed to update role' : 'Failed to create role';
+        } finally {
+            savingRole = false;
         }
     }
 
@@ -549,7 +575,7 @@
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-xl font-semibold">Roles</h1>
             {#if canManageRoles}
-                <Button onclick={() => (createRoleOpen = true)}>Create role</Button>
+                <Button onclick={openCreateRole}>Create role</Button>
             {/if}
         </div>
 
@@ -605,14 +631,22 @@
                             </div>
                         </div>
                         {#if canManageRoles && !role.is_system}
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                class="text-destructive hover:text-destructive"
-                                onclick={() => askDeleteRole(role)}
-                            >
-                                Delete
-                            </Button>
+                            <div class="flex shrink-0 items-center gap-1">
+                                <Button variant="ghost" size="sm" onclick={() => openEditRole(role)}>
+                                    <Pencil class="size-4" />
+                                    Edit
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    class="text-destructive hover:text-destructive"
+                                    onclick={() => askDeleteRole(role)}
+                                >
+                                    Delete
+                                </Button>
+                            </div>
+                        {:else if role.is_system}
+                            <Badge variant="secondary" class="shrink-0">All permissions</Badge>
                         {/if}
                     </div>
                 </div>
@@ -859,10 +893,10 @@
     </DialogContent>
 </Dialog>
 
-<Dialog bind:open={createRoleOpen}>
+<Dialog bind:open={roleDialogOpen}>
     <DialogContent>
-        <DialogTitle>Create role</DialogTitle>
-        <form onsubmit={createRole} class="space-y-4">
+        <DialogTitle>{editingRole ? `Edit role: ${editingRole.name}` : 'Create role'}</DialogTitle>
+        <form onsubmit={saveRole} class="space-y-4">
             <div class="grid gap-2">
                 <Label for="role_name">Name</Label>
                 <LimitedInput id="role_name" required limit={fieldLimits.role.name} bind:value={newRole.name} />
@@ -881,8 +915,11 @@
                 {/each}
             </fieldset>
             <DialogFooter>
-                <Button type="button" variant="outline" onclick={() => (createRoleOpen = false)}>Cancel</Button>
-                <Button type="submit">Create role</Button>
+                <Button type="button" variant="outline" onclick={() => (roleDialogOpen = false)}>Cancel</Button>
+                <Button type="submit" disabled={savingRole}>
+                    {#if savingRole}<Spinner />{/if}
+                    {editingRole ? 'Save changes' : 'Create role'}
+                </Button>
             </DialogFooter>
         </form>
     </DialogContent>

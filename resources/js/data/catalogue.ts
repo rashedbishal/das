@@ -3,6 +3,7 @@ import { ApiError, apiFetch } from '@/lib/api';
 import { homepage as homepageApi } from '@/routes/api/v1';
 import { index as brandsIndex } from '@/routes/api/v1/brands';
 import { index as categoriesIndex } from '@/routes/api/v1/categories';
+import { index as subcategoriesIndex } from '@/routes/api/v1/subcategories';
 import {
     index as productsIndex,
     show as productShow,
@@ -63,6 +64,7 @@ export type ProductDetail = ProductCard & {
 export type ProductSeo = {
     title: string | null;
     description: string | null;
+    keywords: string | null;
     canonicalUrl: string | null;
 };
 
@@ -155,6 +157,7 @@ export type RawProductDetail = RawProductCard & {
     seo: {
         title: string | null;
         description: string | null;
+        keywords: string | null;
         canonical_url: string | null;
     } | null;
 };
@@ -215,6 +218,7 @@ export function mapProductDetail(raw: RawProductDetail): ProductDetail {
         seo: {
             title: raw.seo?.title ?? null,
             description: raw.seo?.description ?? null,
+            keywords: raw.seo?.keywords ?? null,
             canonicalUrl: raw.seo?.canonical_url ?? null,
         },
     };
@@ -385,6 +389,28 @@ export async function fetchFeaturedProducts(): Promise<ProductCard[]> {
     );
 
     return (result?.featured_products ?? []).map(mapProductCard);
+}
+
+export type BrandSubcategory = {
+    name: string;
+    slug: string;
+    productsCount: number;
+};
+
+/** Subcategories holding the brand's published products, optionally within one category. */
+export async function fetchBrandSubcategories(
+    brand: string,
+    category?: string,
+): Promise<BrandSubcategory[]> {
+    const result = await apiFetch<{
+        data: { name: string; slug: string; products_count?: number }[];
+    }>(subcategoriesIndex.url({ query: { brand, category } }));
+
+    return (result?.data ?? []).map((s) => ({
+        name: s.name,
+        slug: s.slug,
+        productsCount: s.products_count ?? 0,
+    }));
 }
 
 export const categories = writable<Category[]>([]);
