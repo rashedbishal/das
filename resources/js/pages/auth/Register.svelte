@@ -15,6 +15,7 @@
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
     import { Spinner } from '@/components/ui/spinner';
+    import GoogleSignInButton from '@/components/GoogleSignInButton.svelte';
     import { login } from '@/routes';
     import { store } from '@/routes/register';
 
@@ -43,6 +44,8 @@
         <TextLink href={login()}>Log in</TextLink>
     </p>
 {:else}
+    <GoogleSignInButton label="Sign up with Google" class="mb-5" />
+
     <Form
         {...store.form()}
         resetOnSuccess={['password', 'password_confirmation']}

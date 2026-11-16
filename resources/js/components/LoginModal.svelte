@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Form, Link } from '@inertiajs/svelte';
     import LockKeyhole from '@lucide/svelte/icons/lock-keyhole';
+    import GoogleSignInButton from '@/components/GoogleSignInButton.svelte';
     import InputError from '@/components/InputError.svelte';
     import PasswordInput from '@/components/PasswordInput.svelte';
     import Button from '@/components/storefront/Button.svelte';
@@ -63,6 +64,8 @@
             </p>
         </div>
     {/snippet}
+
+    <GoogleSignInButton class="mt-7" />
 
     <Form
         {...store.form()}

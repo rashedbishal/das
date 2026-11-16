@@ -20,8 +20,9 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property string|null $email
  * @property Carbon|null $email_verified_at
- * @property string $password
+ * @property string|null $password
  * @property string|null $phone
+ * @property string|null $google_id
  * @property string $user_type
  * @property int|null $role_id
  * @property bool $is_active
@@ -35,7 +36,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  */
 #[Fillable(['name', 'email', 'phone', 'password', 'user_type', 'role_id', 'is_active', 'created_by', 'updated_by', 'email_verified_at'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Hidden(['password', 'google_id', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */

@@ -16,6 +16,7 @@
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
     import { Spinner } from '@/components/ui/spinner';
+    import GoogleSignInButton from '@/components/GoogleSignInButton.svelte';
     import { register } from '@/routes';
     import { store } from '@/routes/login';
     import { request } from '@/routes/password';
@@ -55,6 +56,8 @@
         {status}
     </div>
 {/if}
+
+<GoogleSignInButton class="mb-5" />
 
 <Form {...store.form()} resetOnSuccess={['password']} class="grid gap-5">
     {#snippet children({ errors, processing })}

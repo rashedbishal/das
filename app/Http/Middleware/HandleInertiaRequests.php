@@ -6,6 +6,7 @@ use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use App\Models\Permission;
 use App\Models\User;
+use App\Services\GoogleSignInService;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -50,6 +51,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'permissions' => $this->permissionsFor($request->user()),
             ],
+            'googleSignIn' => app(GoogleSignInService::class)->isEnabled(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'contactWidgets' => [
                 'whatsapp' => $settings->whatsappWidget(),

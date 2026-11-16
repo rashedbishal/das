@@ -23,6 +23,7 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            googleSignIn: boolean;
             contactWidgets: ContactWidgets;
             siteSettings: {
                 name: string;

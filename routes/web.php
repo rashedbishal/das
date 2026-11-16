@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\GoogleSignInController;
 use App\Http\Controllers\ContactEnquirySubmissionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PublicSettingsController;
@@ -34,6 +35,12 @@ Route::get('contact-widgets', [PublicSettingsController::class, 'widgets'])->nam
 Route::post('contact/enquiries', [ContactEnquirySubmissionController::class, 'store'])
     ->middleware('throttle:5,1')
     ->name('contact.enquiries.store');
+
+// Customer "Continue with Google" (admins keep using /admin/login).
+Route::middleware(['guest', 'throttle:10,1'])->prefix('auth/google')->name('auth.google.')->group(function () {
+    Route::get('redirect', [GoogleSignInController::class, 'redirect'])->name('redirect');
+    Route::get('callback', [GoogleSignInController::class, 'callback'])->name('callback');
+});
 
 require __DIR__.'/admin.php';
 
