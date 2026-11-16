@@ -116,13 +116,13 @@ test('a customer can log in with a phone number in a different format than it wa
     $this->assertAuthenticated();
 });
 
-test('an inactive customer cannot log in', function () {
+test('an inactive customer cannot log in and is told the account is deactivated', function () {
     User::factory()->create(['email' => 'inactive@example.com', 'password' => 'password', 'is_active' => false]);
 
     $this->post(route('login.store'), [
         'email' => 'inactive@example.com',
         'password' => 'password',
-    ]);
+    ])->assertSessionHasErrors(['email' => 'Your account has been deactivated. Please contact us if you think this is a mistake.']);
 
     $this->assertGuest();
 });

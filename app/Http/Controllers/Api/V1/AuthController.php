@@ -42,15 +42,18 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $user = $this->authentication->resolveUser($request->string('identifier')->toString(), $request->string('password')->toString());
+        $identifier = $request->string('identifier')->toString();
+        $user = $this->authentication->resolveUser($identifier, $request->string('password')->toString());
 
         if ($user === null) {
-            event(new Failed('web', null, ['identifier' => $request->string('identifier')->toString()]));
+            event(new Failed('web', null, ['identifier' => $identifier]));
 
             throw ValidationException::withMessages([
                 'identifier' => 'These credentials do not match our records.',
             ]);
         }
+
+        $this->authentication->rejectIfDeactivated($user, 'identifier', $identifier);
 
         $this->ensureStateful($request);
 

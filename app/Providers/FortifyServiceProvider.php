@@ -50,17 +50,20 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::createUsersUsing(CreateNewUser::class);
 
         Fortify::authenticateUsing(function (Request $request) {
-            $user = app(AuthenticationService::class)->resolveUser(
-                (string) $request->input(Fortify::username()),
-                (string) $request->input('password'),
-            );
+            $authentication = app(AuthenticationService::class);
+            $identifier = (string) $request->input(Fortify::username());
+            $user = $authentication->resolveUser($identifier, (string) $request->input('password'));
 
             // Admins sign in at /admin/login and customers at /login. An account on the
             // wrong form fails exactly like a wrong password, so neither form reveals
             // which kind of account an identifier belongs to.
-            return $user !== null && $user->isAdmin() === $request->routeIs('admin.login.store')
-                ? $user
-                : null;
+            if ($user === null || $user->isAdmin() !== $request->routeIs('admin.login.store')) {
+                return null;
+            }
+
+            $authentication->rejectIfDeactivated($user, Fortify::username(), $identifier);
+
+            return $user;
         });
     }
 
