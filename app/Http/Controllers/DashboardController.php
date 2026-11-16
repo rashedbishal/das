@@ -6,6 +6,7 @@ use App\Models\Activity;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Setting;
 use App\Models\Subcategory;
 use App\Models\User;
 use App\Services\PageViewService;
@@ -35,7 +36,7 @@ class DashboardController extends Controller
             'enquiries' => $user->hasPermission('enquiries.view') || $user->hasPermission('enquiries.manage'),
             'customers' => $user->hasPermission('customers.view'),
             'admins' => $user->hasPermission('admins.view'),
-            'settings' => $user->hasPermission('settings.view'),
+            'settings' => $user->can('view', Setting::class),
             'roles' => $user->hasPermission('roles.view'),
             'activity' => $user->hasPermission('activity_logs.view'),
         ];

@@ -28,11 +28,9 @@ class ProductController extends Controller
     {
         abort_unless(Gate::allows('view', $product), 404);
 
-        $product->load([
-            'brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'variants',
-            // Only published products may be recommended; drafts and archived ones stay hidden.
-            'relatedProducts' => fn ($query) => $query->published()->with(['brand', 'media']),
-        ]);
+        $product->load(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'variants']);
+        // Same suggestions as the storefront page: hand-picked, then shared tags, subcategory, category.
+        $product->setRelation('relatedProducts', $this->products->relatedFor($product));
 
         return response()->json(['data' => new ProductResource($product)]);
     }

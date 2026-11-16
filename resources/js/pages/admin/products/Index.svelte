@@ -8,13 +8,12 @@
 
 <script lang="ts">
     import { Form, Link, router } from '@inertiajs/svelte';
+    import { can } from '@/lib/permissions.svelte';
     import Pencil from '@lucide/svelte/icons/pencil';
     import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
     import { untrack } from 'svelte';
     import ImageIcon from '@lucide/svelte/icons/image';
     import Trash2 from '@lucide/svelte/icons/trash-2';
-    import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
-    import { Alert, AlertDescription } from '@/components/ui/alert';
     import AppHead from '@/components/AppHead.svelte';
     import BulkActions from '@/components/dashboard/BulkActions.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
@@ -34,7 +33,8 @@
         update,
     } from '@/routes/admin/products';
     import FormFields from './FormFields.svelte';
-    import { imageWarnings } from './media';
+    import FormErrorSummary from '@/components/dashboard/FormErrorSummary.svelte';
+    import CreateImagePicker from './CreateImagePicker.svelte';
     import MediaManager from './MediaManager.svelte';
 
     type Option = { id: number; name: string };
@@ -118,23 +118,6 @@
 
     let search = $state(untrack(() => filters.search ?? ''));
     let createOpen = $state(false);
-    let createImageWarnings = $state<string[]>([]);
-    let createPreviews = $state<{ name: string; url: string }[]>([]);
-
-    function setCreatePreviews(files: File[]) {
-        createPreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
-        createPreviews = files.map((file) => ({ name: file.name, url: URL.createObjectURL(file) }));
-    }
-
-    $effect(() => {
-        if (!createOpen) {
-            untrack(() => {
-                setCreatePreviews([]);
-                createImageWarnings = [];
-            });
-        }
-    });
-
     let editingProductId = $state<number | null>(null);
     let editOpen = $state(false);
     const editTarget = $derived(products.data.find((p) => p.id === editingProductId) ?? null);
@@ -202,9 +185,50 @@
             },
         );
     }
+
+    const canCreate = $derived(can('products.create'));
+    const canUpdate = $derived(can('products.update'));
+    const canDelete = $derived(can('products.delete'));
+    const canPublish = $derived(can('products.publish'));
+    const canBulk = $derived(!viewingTrash && (canUpdate || canDelete || canPublish));
+    const hasRowActions = $derived(viewingTrash ? canDelete : canUpdate || canDelete);
 </script>
 
 <AppHead title="Products" />
+
+{#snippet rowActions(product: ProductRow)}
+    {#if viewingTrash}
+        <Button variant="ghost" size="sm" aria-label="Restore {product.name}" onclick={() => restoreProduct(product)}>
+            <RotateCcw class="size-4" />
+        </Button>
+        <Button
+            variant="ghost"
+            size="sm"
+            class="text-destructive hover:text-destructive"
+            aria-label="Delete {product.name} permanently"
+            onclick={() => askForceDeleteProduct(product)}
+        >
+            <Trash2 class="size-4" />
+        </Button>
+    {:else}
+        {#if canUpdate}
+            <Button variant="ghost" size="sm" aria-label="Edit {product.name}" onclick={() => askEditProduct(product)}>
+                <Pencil class="size-4" />
+            </Button>
+        {/if}
+        {#if canDelete}
+            <Button
+                variant="ghost"
+                size="sm"
+                class="text-destructive hover:text-destructive"
+                aria-label="Delete {product.name}"
+                onclick={() => askDeleteProduct(product)}
+            >
+                <Trash2 class="size-4" />
+            </Button>
+        {/if}
+    {/if}
+{/snippet}
 
 <div class="w-full p-4">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -217,7 +241,9 @@
                     <Trash2 class="size-4" />
                     Trash
                 </Link>
-                <Button onclick={() => (createOpen = true)}>New product</Button>
+                {#if canCreate}
+                    <Button onclick={() => (createOpen = true)}>New product</Button>
+                {/if}
             {/if}
         </div>
     </div>
@@ -238,28 +264,32 @@
         </p>
     {/if}
 
-    <BulkActions
-        count={viewingTrash ? 0 : selectedIds.length}
-        error={bulkError}
-        onClear={() => {
-            selectedIds = [];
-            bulkError = null;
-        }}
-    >
-        {#snippet children()}
-            <Button size="sm" onclick={() => runBulkAction('publish')}>Publish</Button>
-            <Button size="sm" variant="outline" onclick={() => runBulkAction('draft')}>Move to draft</Button>
-            <Button size="sm" variant="outline" onclick={() => runBulkAction('show_price')}>Show price</Button>
-            <Button size="sm" variant="outline" onclick={() => runBulkAction('hide_price')}>Hide price</Button>
-            <Button size="sm" variant="outline" onclick={() => runBulkAction('show_stock')}>Show stock</Button>
-            <Button size="sm" variant="outline" onclick={() => runBulkAction('hide_stock')}>Hide stock</Button>
-            <Button
-                size="sm"
-                variant="destructive"
-                onclick={() => (bulkDeleteOpen = true)}
-            >Delete</Button>
-        {/snippet}
-    </BulkActions>
+    {#if canBulk}
+        <BulkActions
+            count={viewingTrash ? 0 : selectedIds.length}
+            error={bulkError}
+            onClear={() => {
+                selectedIds = [];
+                bulkError = null;
+            }}
+        >
+            {#snippet children()}
+                {#if canPublish}
+                    <Button size="sm" onclick={() => runBulkAction('publish')}>Publish</Button>
+                    <Button size="sm" variant="outline" onclick={() => runBulkAction('draft')}>Move to draft</Button>
+                {/if}
+                {#if canUpdate}
+                    <Button size="sm" variant="outline" onclick={() => runBulkAction('show_price')}>Show price</Button>
+                    <Button size="sm" variant="outline" onclick={() => runBulkAction('hide_price')}>Hide price</Button>
+                    <Button size="sm" variant="outline" onclick={() => runBulkAction('show_stock')}>Show stock</Button>
+                    <Button size="sm" variant="outline" onclick={() => runBulkAction('hide_stock')}>Hide stock</Button>
+                {/if}
+                {#if canDelete}
+                    <Button size="sm" variant="destructive" onclick={() => (bulkDeleteOpen = true)}>Delete</Button>
+                {/if}
+            {/snippet}
+        </BulkActions>
+    {/if}
 
     <ResponsiveTable
         items={products.data}
@@ -268,12 +298,14 @@
             { key: 'name', label: 'Name' },
             { key: 'sku', label: 'SKU' },
             { key: 'status', label: 'Status' },
-            { key: 'price', label: 'Price', class: 'text-right' },
+            { key: 'price', label: 'Regular price', class: 'text-right' },
+            { key: 'sale_price', label: 'Selling price', class: 'text-right' },
             { key: 'stock', label: 'Stock', class: 'text-right' },
         ]}
         empty="No products found."
-        selectedKeys={selectedIds}
-        onSelectionChange={(keys) => (selectedIds = keys.map(Number))}
+        selectedKeys={canBulk ? selectedIds : undefined}
+        onSelectionChange={canBulk ? (keys) => (selectedIds = keys.map(Number)) : undefined}
+        actions={hasRowActions ? rowActions : undefined}
     >
         {#snippet cell(product, column)}
             {#if column.key === 'name'}
@@ -296,37 +328,10 @@
                 <Badge variant="outline" class="capitalize">{product.status}</Badge>
             {:else if column.key === 'price'}
                 {product.regular_price ?? 'Contact for price'}
+            {:else if column.key === 'sale_price'}
+                {product.sale_price ?? '—'}
             {:else}
                 {product.stock_quantity}
-            {/if}
-        {/snippet}
-        {#snippet actions(product)}
-            {#if viewingTrash}
-                <Button variant="ghost" size="sm" aria-label="Restore {product.name}" onclick={() => restoreProduct(product)}>
-                    <RotateCcw class="size-4" />
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    class="text-destructive hover:text-destructive"
-                    aria-label="Delete {product.name} permanently"
-                    onclick={() => askForceDeleteProduct(product)}
-                >
-                    <Trash2 class="size-4" />
-                </Button>
-            {:else}
-                <Button variant="ghost" size="sm" aria-label="Edit {product.name}" onclick={() => askEditProduct(product)}>
-                    <Pencil class="size-4" />
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    class="text-destructive hover:text-destructive"
-                    aria-label="Delete {product.name}"
-                    onclick={() => askDeleteProduct(product)}
-                >
-                    <Trash2 class="size-4" />
-                </Button>
             {/if}
         {/snippet}
     </ResponsiveTable>
@@ -347,67 +352,21 @@
 <Dialog bind:open={createOpen}>
     <DialogContent class="max-h-[85vh] max-w-2xl overflow-y-auto">
         <DialogTitle>New product</DialogTitle>
+        <!-- novalidate: the server names each missing field (the browser's bubble doesn't, and can be off-screen). -->
         <Form
             {...store.form()}
             class="space-y-6"
+            novalidate
             enctype="multipart/form-data"
             onSuccess={() => {
                 createOpen = false;
             }}
         >
             {#snippet children({ errors, processing })}
+                <FormErrorSummary {errors} />
                 <FormFields {brands} {categories} {subcategories} {tags} {errors} />
 
-                <div class="grid gap-2 rounded-md border p-4">
-                    <label for="images" class="text-sm font-medium">Product images</label>
-                    <input
-                        id="images"
-                        name="images[]"
-                        type="file"
-                        multiple
-                        accept="image/webp,image/jpeg,image/png"
-                        class="text-sm"
-                        onchange={async (event) => {
-                            const files = Array.from(event.currentTarget.files ?? []);
-                            setCreatePreviews(files);
-                            createImageWarnings = await imageWarnings(files, mediaLimits.image);
-                        }}
-                    />
-                    {#if createPreviews.length > 0}
-                        <div class="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                            {#each createPreviews as preview, index (preview.url)}
-                                <div class="relative aspect-square overflow-hidden rounded-md border bg-muted">
-                                    <img src={preview.url} alt={preview.name} class="size-full object-cover" />
-                                    {#if index === 0}
-                                        <span
-                                            class="absolute top-1 left-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground"
-                                        >Main</span>
-                                    {/if}
-                                </div>
-                            {/each}
-                        </div>
-                    {/if}
-                    <p class="text-xs text-muted-foreground">
-                        WebP, JPG or PNG (converted to WebP), up to {mediaLimits.image.max} images. Recommended:
-                        {mediaLimits.image.requiredDimension}×{mediaLimits.image.requiredDimension}px and
-                        {mediaLimits.image.targetSizeKb} KB or less. Other sizes are resized to fit, and files up to
-                        {mediaLimits.image.maxSizeKb / 1024} MB are accepted and compressed by the server. The first
-                        image becomes the main image.
-                    </p>
-                    {#if createImageWarnings.length > 0}
-                        <Alert>
-                            <TriangleAlert />
-                            <AlertDescription>
-                                {#each createImageWarnings as warning (warning)}
-                                    <p>{warning}</p>
-                                {/each}
-                            </AlertDescription>
-                        </Alert>
-                    {/if}
-                    {#each Object.entries(errors).filter(([key]) => key === 'images' || key.startsWith('images.')) as [key, message] (key)}
-                        <p class="text-sm text-destructive">{message}</p>
-                    {/each}
-                </div>
+                <CreateImagePicker limits={mediaLimits.image} {errors} />
 
                 <DialogFooter>
                     <Button type="button" variant="outline" onclick={() => (createOpen = false)}>Cancel</Button>
@@ -426,8 +385,9 @@
         <DialogTitle>Edit product</DialogTitle>
         {#if editTarget}
             {@const product = editTarget}
-            <Form {...update.form(product.id)} class="space-y-6">
+            <Form {...update.form(product.id)} class="space-y-6" novalidate>
                 {#snippet children({ errors, processing })}
+                    <FormErrorSummary {errors} />
                     <FormFields {product} {brands} {categories} {subcategories} {tags} {errors} />
 
                     <DialogFooter>

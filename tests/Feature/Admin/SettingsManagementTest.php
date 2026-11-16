@@ -53,22 +53,9 @@ test('updating the login mode changes the configured auth setting', function () 
     $this->actingAs($admin)->put(route('admin.settings.auth.update'), [
         'login_mode' => 'phone',
         'registration_enabled' => true,
-        'require_email_verification' => true,
     ]);
 
     expect(app(SettingsService::class)->loginMode())->toBe('phone');
-});
-
-test('disabling email verification updates the configured auth setting', function () {
-    $admin = adminUser(['settings.manage']);
-
-    $this->actingAs($admin)->put(route('admin.settings.auth.update'), [
-        'login_mode' => 'both',
-        'registration_enabled' => true,
-        'require_email_verification' => false,
-    ]);
-
-    expect(app(SettingsService::class)->emailVerificationRequired())->toBeFalse();
 });
 
 test('whatsapp settings normalize the phone number before saving', function () {
@@ -146,4 +133,30 @@ test('tracking scripts are injected into storefront pages but never admin pages'
         ->get(route('admin.settings.edit'))
         ->assertOk()
         ->assertDontSee('window.gtmMarker', escape: false);
+});
+
+test('the mother admin receives the saved tracking scripts on the settings page', function () {
+    app(SettingsService::class)->set('tracking', 'head_scripts', '<script>window.gtmMarker = 1;</script>');
+
+    $this->actingAs(User::factory()->motherAdmin()->create())
+        ->get(route('admin.settings.edit'))
+        ->assertInertia(fn ($page) => $page->where('tracking.head_scripts', '<script>window.gtmMarker = 1;</script>'));
+});
+
+test('admins who cannot edit tracking scripts do not receive them', function () {
+    app(SettingsService::class)->set('tracking', 'head_scripts', '<script>window.gtmMarker = 1;</script>');
+
+    $this->actingAs(adminUser(['settings.manage']))
+        ->get(route('admin.settings.edit'))
+        ->assertInertia(fn ($page) => $page->where('tracking', []));
+});
+
+test('settings.manage alone is enough to open the settings page and api', function () {
+    $admin = adminUser(['settings.manage']);
+
+    $this->actingAs($admin)->get(route('admin.settings.edit'))->assertOk();
+    $this->actingAs($admin)->getJson(route('api.v1.admin.settings.show'))->assertOk();
+    $this->actingAs($admin)
+        ->get(route('dashboard'))
+        ->assertInertia(fn ($page) => $page->where('permissions.settings', true));
 });

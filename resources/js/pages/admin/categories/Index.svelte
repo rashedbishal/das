@@ -8,12 +8,15 @@
 
 <script lang="ts">
     import { Form, router } from '@inertiajs/svelte';
+    import { toast } from 'svelte-sonner';
+    import { can } from '@/lib/permissions.svelte';
     import Pencil from '@lucide/svelte/icons/pencil';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
     import BulkActions from '@/components/dashboard/BulkActions.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
     import FormSelect from '@/components/dashboard/FormSelect.svelte';
+    import ImageFileInput from '@/components/dashboard/ImageFileInput.svelte';
     import ResponsiveTable from '@/components/dashboard/ResponsiveTable.svelte';
     import InputError from '@/components/InputError.svelte';
     import { Badge } from '@/components/ui/badge';
@@ -124,6 +127,12 @@
         categoryDialogOpen = true;
     }
 
+    const canManage = $derived(can('categories.manage'));
+
+    function showErrors(errors: Record<string, string>) {
+        toast.error(Object.values(errors).join(' '));
+    }
+
     function askDeleteCategory(category: CategoryRow) {
         deleteCategoryTarget = category;
         deleteCategoryOpen = true;
@@ -131,7 +140,7 @@
 
     function confirmDeleteCategory() {
         if (deleteCategoryTarget) {
-            router.delete(destroy.url(deleteCategoryTarget.id));
+            router.delete(destroy.url(deleteCategoryTarget.id), { onError: showErrors });
         }
     }
 
@@ -147,7 +156,7 @@
 
     function confirmDeleteSubcategory() {
         if (deleteSubcategoryTarget) {
-            router.delete(destroySubcategory.url(deleteSubcategoryTarget.id));
+            router.delete(destroySubcategory.url(deleteSubcategoryTarget.id), { onError: showErrors });
         }
     }
 
@@ -189,6 +198,14 @@
     </Button>
 {/snippet}
 
+{#snippet categoryActions(category: CategoryRow)}
+    {@render rowActions(category.name, () => editCategory(category), () => askDeleteCategory(category))}
+{/snippet}
+
+{#snippet subcategoryActions(subcategory: SubcategoryRow)}
+    {@render rowActions(subcategory.name, () => editSubcategory(subcategory), () => askDeleteSubcategory(subcategory))}
+{/snippet}
+
 {#snippet activeBadge(isActive: boolean)}
     <Badge variant={isActive ? 'default' : 'secondary'}>
         {isActive ? 'Active' : 'Inactive'}
@@ -222,25 +239,29 @@
     {#if tab === 'categories'}
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-xl font-semibold">Categories</h1>
-            <Button onclick={() => (createCategoryOpen = true)}>Create category</Button>
+            {#if canManage}
+                <Button onclick={() => (createCategoryOpen = true)}>Create category</Button>
+            {/if}
         </div>
 
         <Input bind:value={categorySearch} placeholder="Search categories..." class="mb-4 sm:max-w-sm" />
 
-        <BulkActions
-            count={selectedCategoryIds.length}
-            error={bulkError}
-            onClear={() => {
-                selectedCategoryIds = [];
-                bulkError = null;
-            }}
-        >
-            {#snippet children()}
-                <Button size="sm" onclick={() => runBulkAction('activate')}>Activate</Button>
-                <Button size="sm" variant="outline" onclick={() => runBulkAction('deactivate')}>Deactivate</Button>
-                <Button size="sm" variant="destructive" onclick={() => (bulkDeleteOpen = true)}>Delete</Button>
-            {/snippet}
-        </BulkActions>
+        {#if canManage}
+            <BulkActions
+                count={selectedCategoryIds.length}
+                error={bulkError}
+                onClear={() => {
+                    selectedCategoryIds = [];
+                    bulkError = null;
+                }}
+            >
+                {#snippet children()}
+                    <Button size="sm" onclick={() => runBulkAction('activate')}>Activate</Button>
+                    <Button size="sm" variant="outline" onclick={() => runBulkAction('deactivate')}>Deactivate</Button>
+                    <Button size="sm" variant="destructive" onclick={() => (bulkDeleteOpen = true)}>Delete</Button>
+                {/snippet}
+            </BulkActions>
+        {/if}
 
         <ResponsiveTable
             items={filteredCategories}
@@ -253,8 +274,9 @@
                 { key: 'products', label: 'Products', class: 'text-right' },
             ]}
             empty="No categories found."
-            selectedKeys={selectedCategoryIds}
-            onSelectionChange={(keys) => (selectedCategoryIds = keys.map(Number))}
+            selectedKeys={canManage ? selectedCategoryIds : undefined}
+            onSelectionChange={canManage ? (keys) => (selectedCategoryIds = keys.map(Number)) : undefined}
+            actions={canManage ? categoryActions : undefined}
         >
             {#snippet cell(category, column)}
                 {#if column.key === 'image'}
@@ -269,36 +291,33 @@
                     {category.products_count}
                 {/if}
             {/snippet}
-            {#snippet actions(category)}
-                {@render rowActions(
-                    category.name,
-                    () => editCategory(category),
-                    () => askDeleteCategory(category),
-                )}
-            {/snippet}
         </ResponsiveTable>
     {:else if tab === 'subcategories'}
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-xl font-semibold">Subcategories</h1>
-            <Button onclick={() => (createSubcategoryOpen = true)}>Create subcategory</Button>
+            {#if canManage}
+                <Button onclick={() => (createSubcategoryOpen = true)}>Create subcategory</Button>
+            {/if}
         </div>
 
         <Input bind:value={subcategorySearch} placeholder="Search subcategories..." class="mb-4 sm:max-w-sm" />
 
-        <BulkActions
-            count={selectedSubcategoryIds.length}
-            error={bulkError}
-            onClear={() => {
-                selectedSubcategoryIds = [];
-                bulkError = null;
-            }}
-        >
-            {#snippet children()}
-                <Button size="sm" onclick={() => runBulkAction('activate')}>Activate</Button>
-                <Button size="sm" variant="outline" onclick={() => runBulkAction('deactivate')}>Deactivate</Button>
-                <Button size="sm" variant="destructive" onclick={() => (bulkDeleteOpen = true)}>Delete</Button>
-            {/snippet}
-        </BulkActions>
+        {#if canManage}
+            <BulkActions
+                count={selectedSubcategoryIds.length}
+                error={bulkError}
+                onClear={() => {
+                    selectedSubcategoryIds = [];
+                    bulkError = null;
+                }}
+            >
+                {#snippet children()}
+                    <Button size="sm" onclick={() => runBulkAction('activate')}>Activate</Button>
+                    <Button size="sm" variant="outline" onclick={() => runBulkAction('deactivate')}>Deactivate</Button>
+                    <Button size="sm" variant="destructive" onclick={() => (bulkDeleteOpen = true)}>Delete</Button>
+                {/snippet}
+            </BulkActions>
+        {/if}
 
         <ResponsiveTable
             items={filteredSubcategories}
@@ -311,8 +330,9 @@
                 { key: 'products', label: 'Products', class: 'text-right' },
             ]}
             empty="No subcategories found."
-            selectedKeys={selectedSubcategoryIds}
-            onSelectionChange={(keys) => (selectedSubcategoryIds = keys.map(Number))}
+            selectedKeys={canManage ? selectedSubcategoryIds : undefined}
+            onSelectionChange={canManage ? (keys) => (selectedSubcategoryIds = keys.map(Number)) : undefined}
+            actions={canManage ? subcategoryActions : undefined}
         >
             {#snippet cell(subcategory, column)}
                 {#if column.key === 'image'}
@@ -326,13 +346,6 @@
                 {:else}
                     {subcategory.products_count}
                 {/if}
-            {/snippet}
-            {#snippet actions(subcategory)}
-                {@render rowActions(
-                    subcategory.name,
-                    () => editSubcategory(subcategory),
-                    () => askDeleteSubcategory(subcategory),
-                )}
             {/snippet}
         </ResponsiveTable>
     {/if}
@@ -364,13 +377,7 @@
 
                 <div class="grid gap-2">
                     <Label for="image_file">Image</Label>
-                    <input
-                        id="image_file"
-                        name="image_file"
-                        type="file"
-                        accept="image/*"
-                        class="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-medium"
-                    />
+                    <ImageFileInput id="image_file" />
                     <InputError message={errors.image_file} />
                 </div>
 
@@ -436,16 +443,7 @@
 
                     <div class="grid gap-2">
                         <Label for="edit_category_image_file">Image</Label>
-                        {#if category.image}
-                            <img src={category.image} alt={category.name} class="h-16 w-16 rounded-md object-cover" />
-                        {/if}
-                        <input
-                            id="edit_category_image_file"
-                            name="image_file"
-                            type="file"
-                            accept="image/*"
-                            class="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-medium"
-                        />
+                        <ImageFileInput id="edit_category_image_file" currentImage={category.image} alt={category.name} />
                         <p class="text-xs text-muted-foreground">Leave blank to keep the current image.</p>
                         <InputError message={errors.image_file} />
                     </div>
@@ -528,13 +526,7 @@
 
                 <div class="grid gap-2">
                     <Label for="subcategory_image_file">Image</Label>
-                    <input
-                        id="subcategory_image_file"
-                        name="image_file"
-                        type="file"
-                        accept="image/*"
-                        class="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-medium"
-                    />
+                    <ImageFileInput id="subcategory_image_file" />
                     <InputError message={errors.image_file} />
                 </div>
 
@@ -612,16 +604,7 @@
 
                     <div class="grid gap-2">
                         <Label for="edit_subcategory_image_file">Image</Label>
-                        {#if subcategory.image}
-                            <img src={subcategory.image} alt={subcategory.name} class="h-16 w-16 rounded-md object-cover" />
-                        {/if}
-                        <input
-                            id="edit_subcategory_image_file"
-                            name="image_file"
-                            type="file"
-                            accept="image/*"
-                            class="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-sm file:font-medium"
-                        />
+                        <ImageFileInput id="edit_subcategory_image_file" currentImage={subcategory.image} alt={subcategory.name} />
                         <p class="text-xs text-muted-foreground">Leave blank to keep the current image.</p>
                         <InputError message={errors.image_file} />
                     </div>

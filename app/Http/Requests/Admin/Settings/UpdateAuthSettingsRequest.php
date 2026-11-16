@@ -22,7 +22,6 @@ class UpdateAuthSettingsRequest extends FormRequest
         return [
             'login_mode' => ['required', Rule::in(['email', 'phone', 'both'])],
             'registration_enabled' => ['required', 'boolean'],
-            'require_email_verification' => ['required', 'boolean'],
         ];
     }
 }

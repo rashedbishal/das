@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
+use App\Services\ProductService;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -18,7 +19,10 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
  */
 class StorefrontProductController extends Controller
 {
-    public function __construct(private readonly SettingsService $settings) {}
+    public function __construct(
+        private readonly SettingsService $settings,
+        private readonly ProductService $products,
+    ) {}
 
     public function __invoke(Request $request, string $slug): Response|HttpResponse
     {
@@ -29,10 +33,8 @@ class StorefrontProductController extends Controller
             return Inertia::render('storefront/NotFound')->toResponse($request)->setStatusCode(404);
         }
 
-        $product->load([
-            'brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'variants',
-            'relatedProducts' => fn ($query) => $query->published()->with(['brand', 'media'])->limit(8),
-        ]);
+        $product->load(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'variants']);
+        $product->setRelation('relatedProducts', $this->products->relatedFor($product));
 
         // A guest signing in from this page ("Sign in to see price") comes back here.
         if (! $request->user()) {

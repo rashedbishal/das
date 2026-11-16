@@ -8,6 +8,8 @@
 
 <script lang="ts">
     import { Form, router } from '@inertiajs/svelte';
+    import { toast } from 'svelte-sonner';
+    import { can } from '@/lib/permissions.svelte';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
     import BulkActions from '@/components/dashboard/BulkActions.svelte';
@@ -43,7 +45,9 @@
 
     function confirmDeleteTag() {
         if (deleteTarget) {
-            router.delete(destroy.url(deleteTarget.id));
+            router.delete(destroy.url(deleteTarget.id), {
+                onError: (errors) => toast.error(Object.values(errors).join(' ')),
+            });
         }
     }
 
@@ -63,30 +67,48 @@
             },
         );
     }
+
+    const canManage = $derived(can('tags.manage'));
 </script>
 
 <AppHead title="Tags" />
 
+{#snippet rowActions(tag: TagRow)}
+    <Button
+        variant="ghost"
+        size="sm"
+        class="text-destructive hover:text-destructive"
+        aria-label="Delete {tag.name}"
+        onclick={() => askDeleteTag(tag)}
+    >
+        <Trash2 class="size-4" />
+    </Button>
+{/snippet}
+
 <div class="w-full p-4">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-xl font-semibold">Tags</h1>
-        <Button onclick={() => (createOpen = true)}>Create tag</Button>
+        {#if canManage}
+            <Button onclick={() => (createOpen = true)}>Create tag</Button>
+        {/if}
     </div>
 
     <Input bind:value={search} placeholder="Search tags..." class="mb-4 sm:max-w-sm" />
 
-    <BulkActions
-        count={selectedIds.length}
-        error={bulkError}
-        onClear={() => {
-            selectedIds = [];
-            bulkError = null;
-        }}
-    >
-        {#snippet children()}
-            <Button size="sm" variant="destructive" onclick={() => (bulkDeleteOpen = true)}>Delete</Button>
-        {/snippet}
-    </BulkActions>
+    {#if canManage}
+        <BulkActions
+            count={selectedIds.length}
+            error={bulkError}
+            onClear={() => {
+                selectedIds = [];
+                bulkError = null;
+            }}
+        >
+            {#snippet children()}
+                <Button size="sm" variant="destructive" onclick={() => (bulkDeleteOpen = true)}>Delete</Button>
+            {/snippet}
+        </BulkActions>
+    {/if}
 
     <ResponsiveTable
         items={filteredTags}
@@ -96,8 +118,9 @@
             { key: 'products', label: 'Products', class: 'text-right' },
         ]}
         empty="No tags found."
-        selectedKeys={selectedIds}
-        onSelectionChange={(keys) => (selectedIds = keys.map(Number))}
+        selectedKeys={canManage ? selectedIds : undefined}
+        onSelectionChange={canManage ? (keys) => (selectedIds = keys.map(Number)) : undefined}
+        actions={canManage ? rowActions : undefined}
     >
         {#snippet cell(tag, column)}
             {#if column.key === 'name'}
@@ -105,17 +128,6 @@
             {:else}
                 {tag.products_count}
             {/if}
-        {/snippet}
-        {#snippet actions(tag)}
-            <Button
-                variant="ghost"
-                size="sm"
-                class="text-destructive hover:text-destructive"
-                aria-label="Delete {tag.name}"
-                onclick={() => askDeleteTag(tag)}
-            >
-                <Trash2 class="size-4" />
-            </Button>
         {/snippet}
     </ResponsiveTable>
 </div>

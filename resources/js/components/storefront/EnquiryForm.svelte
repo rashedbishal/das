@@ -2,20 +2,14 @@
     import { Form } from '@inertiajs/svelte';
     import ArrowRight from '@lucide/svelte/icons/arrow-right';
     import MessageSquare from '@lucide/svelte/icons/message-square';
-    import { fetchProducts, type ProductCard } from '@/data/catalogue';
     import InputError from '@/components/InputError.svelte';
     import Button from './Button.svelte';
+    import ProductPicker from './ProductPicker.svelte';
     import { store as storeEnquiry } from '@/routes/contact/enquiries';
 
     let { product = '' }: { product?: string } = $props();
 
     let submitted = $state(false);
-    let products = $state<ProductCard[]>([]);
-
-    // Optional product picker; if the list can't load, the free-text field still works.
-    fetchProducts({}, 1, 100)
-        .then((result) => (products = result.items))
-        .catch(() => {});
 
 </script>
 
@@ -75,14 +69,23 @@
                 </label>
                 <label>
                     <span class="form-label">Phone number *</span>
+                    <!-- Bangladeshi mobile: 11 digits starting 013–019. Non-digits are removed as you type. -->
                     <input
                         name="phone"
                         required
                         type="tel"
-                        maxlength="40"
-                        autocomplete="tel"
+                        inputmode="numeric"
+                        maxlength="16"
+                        pattern={'01[3-9][0-9]{8}'}
+                        title="An 11-digit Bangladeshi mobile number, e.g. 01712345678"
+                        autocomplete="tel-national"
                         class="field"
-                        placeholder="Your phone number"
+                        placeholder="01XXXXXXXXX"
+                        oninput={(event) => {
+                            // "+880 1712-345678" (pasted) becomes "01712345678".
+                            const digits = event.currentTarget.value.replace(/\D/g, '');
+                            event.currentTarget.value = (digits.startsWith('880') ? `0${digits.slice(3)}` : digits).slice(0, 11);
+                        }}
                     />
                     <InputError message={formErrors.phone} />
                 </label>
@@ -99,20 +102,16 @@
                     <InputError message={formErrors.email} />
                 </label>
             </div>
-            <label class="block">
-                <span class="form-label">Product of interest</span>
-                <select name="product_name" class="field" value={product}>
-                    <option value="">General equipment enquiry</option>
-                    {#each products as p (p.id)}
-                        <option value={p.name}>{p.name}</option>
-                    {/each}
-                </select>
+            <div>
+                <label class="form-label block" for="enquiry-product">Product of interest</label>
+                <ProductPicker id="enquiry-product" name="product_name" value={product} />
                 <InputError message={formErrors.product_name} />
-            </label>
+            </div>
             <label class="block">
-                <span class="form-label">How can we help?</span>
+                <span class="form-label">How can we help? *</span>
                 <textarea
                     name="message"
+                    required
                     maxlength="5000"
                     class="field min-h-24"
                     placeholder="Tell us a little about your equipment needs…"

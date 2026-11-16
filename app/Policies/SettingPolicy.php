@@ -6,9 +6,14 @@ use App\Models\User;
 
 class SettingPolicy
 {
+    /**
+     * Anyone who may change settings may also see them, so settings.manage implies settings.view.
+     */
     public function view(User $user): bool
     {
-        return $user->hasPermission('settings.view') || $user->hasPermission('seo.manage');
+        return $user->hasPermission('settings.view')
+            || $user->hasPermission('settings.manage')
+            || $user->hasPermission('seo.manage');
     }
 
     public function manageGeneral(User $user): bool

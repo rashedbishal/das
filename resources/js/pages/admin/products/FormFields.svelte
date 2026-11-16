@@ -2,6 +2,7 @@
     import { untrack } from 'svelte';
     import FormSelect from '@/components/dashboard/FormSelect.svelte';
     import InputError from '@/components/InputError.svelte';
+    import RequiredMark from '@/components/dashboard/RequiredMark.svelte';
     import LimitedInput from '@/components/dashboard/LimitedInput.svelte';
     import LimitedTextarea from '@/components/dashboard/LimitedTextarea.svelte';
     import SeoFields, { previewSlug, type SeoCheck } from '@/components/dashboard/SeoFields.svelte';
@@ -118,8 +119,10 @@
     }
 </script>
 
+<p class="text-xs text-muted-foreground">Fields marked <span class="text-destructive">*</span> are required.</p>
+
 <div class="grid gap-2">
-    <Label for="name">Name</Label>
+    <Label for="name">Name<RequiredMark /></Label>
     <LimitedInput
         id="name"
         name="name"
@@ -167,7 +170,7 @@
 
 <div class="grid items-start gap-4 sm:grid-cols-2">
     <div class="grid gap-2">
-        <Label for="sku">SKU</Label>
+        <Label for="sku">SKU<RequiredMark /></Label>
         <LimitedInput id="sku" name="sku" required limit={fieldLimits.product.sku} value={product?.sku ?? ''} />
         <InputError message={errors.sku} />
     </div>
@@ -266,7 +269,7 @@
 
 <div class="grid items-start gap-4 sm:grid-cols-2">
     <div class="grid gap-2">
-        <Label for="stock_status">Stock status</Label>
+        <Label for="stock_status">Stock status<RequiredMark /></Label>
         <FormSelect
             id="stock_status"
             name="stock_status"
@@ -277,7 +280,7 @@
         <InputError message={errors.stock_status} />
     </div>
     <div class="grid gap-2">
-        <Label for="status">Status</Label>
+        <Label for="status">Status<RequiredMark /></Label>
         <FormSelect
             id="status"
             name="status"
@@ -319,7 +322,7 @@
 
 <div class="grid items-start gap-4 sm:grid-cols-2">
     <div class="grid gap-2">
-        <Label for="category_id">Category</Label>
+        <Label for="category_id">Category<RequiredMark /></Label>
         <FormSelect
             id="category_id"
             name="category_id"

@@ -197,3 +197,21 @@ test('an admin can deactivate categories in bulk', function () {
     $response->assertRedirect(route('admin.categories.index'));
     expect(Category::query()->whereKey($categories->modelKeys())->where('is_active', true)->count())->toBe(0);
 });
+
+test('a category cannot be deleted while it has subcategories or products', function () {
+    $admin = adminUser(['categories.manage']);
+    $withSubcategory = Category::factory()->create();
+    Subcategory::factory()->create(['category_id' => $withSubcategory->id]);
+    $withProduct = Category::factory()->create();
+    Product::factory()->create(['category_id' => $withProduct->id, 'subcategory_id' => null]);
+
+    $this->actingAs($admin)
+        ->delete(route('admin.categories.destroy', $withSubcategory))
+        ->assertSessionHasErrors(['category' => 'This category still has subcategories and cannot be deleted.']);
+
+    $this->actingAs($admin)
+        ->delete(route('admin.categories.destroy', $withProduct))
+        ->assertSessionHasErrors(['category' => 'This category still has products assigned and cannot be deleted.']);
+
+    expect(Category::query()->whereKey([$withSubcategory->id, $withProduct->id])->count())->toBe(2);
+});

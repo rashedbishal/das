@@ -68,4 +68,26 @@ class UpdateProductRequest extends FormRequest
             'sku.unique' => 'This SKU is already used by another product. If you deleted that product, restore it or delete it permanently from the trash.',
         ];
     }
+
+    /**
+     * Readable field names for messages, e.g. "The SKU field is required."
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'name' => 'name',
+            'sku' => 'SKU',
+            'category_id' => 'category',
+            'subcategory_id' => 'subcategory',
+            'brand_id' => 'brand',
+            'stock_status' => 'stock status',
+            'status' => 'status',
+            'regular_price' => 'regular price',
+            'sale_price' => 'sale price',
+            'seo_title' => 'SEO title',
+            'seo_description' => 'SEO description',
+        ];
+    }
 }

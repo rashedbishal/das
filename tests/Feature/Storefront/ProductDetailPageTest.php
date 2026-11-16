@@ -5,6 +5,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductSpecification;
 use App\Models\Role;
+use App\Models\Tag;
 use App\Models\User;
 
 test('a guest sees the full product page, server-rendered, without the price', function () {
@@ -98,4 +99,38 @@ test('related products reach the product page as a plain list of published produ
         ->assertInertia(fn ($page) => $page
             ->has('product.related_products', 1)
             ->where('product.related_products.0.slug', $related->slug));
+});
+
+test('related products are suggested automatically: picked ones, then shared tags, then the same category', function () {
+    $category = Category::factory()->create();
+    [$tagA, $tagB] = Tag::factory()->count(2)->create();
+    $product = Product::factory()->published()->for($category)->create();
+    $product->tags()->attach([$tagA->id, $tagB->id]);
+
+    $picked = Product::factory()->published()->create();
+    $product->relatedProducts()->attach($picked->id);
+    $bothTags = Product::factory()->published()->create();
+    $bothTags->tags()->attach([$tagA->id, $tagB->id]);
+    $oneTag = Product::factory()->published()->create();
+    $oneTag->tags()->attach($tagA->id);
+    $sameCategory = Product::factory()->published()->for($category)->create();
+    $draftWithTag = Product::factory()->create(['status' => 'draft']);
+    $draftWithTag->tags()->attach($tagA->id);
+    Product::factory()->published()->create();
+
+    $this->get(route('products.show', $product->slug))
+        ->assertInertia(fn ($page) => $page->where(
+            'product.related_products',
+            fn ($related) => collect($related)->pluck('slug')->all() === [$picked->slug, $bothTags->slug, $oneTag->slug, $sameCategory->slug],
+        ));
+});
+
+test('related product suggestions are capped at 8', function () {
+    $category = Category::factory()->create();
+    $product = Product::factory()->published()->for($category)->create();
+    Product::factory()->count(10)->published()->for($category)->create();
+
+    $this->getJson(route('api.v1.products.show', $product))
+        ->assertOk()
+        ->assertJsonCount(8, 'data.related_products');
 });

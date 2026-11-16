@@ -27,6 +27,7 @@
     } from '@/components/ui/sidebar';
     import { toUrl } from '@/lib/utils';
     import { dashboard } from '@/routes';
+    import { can } from '@/lib/permissions.svelte';
     import type { NavItem } from '@/types';
 
     let {
@@ -49,19 +50,26 @@
         },
         ...(isAdmin
             ? [
-                  { title: 'Products', href: '/admin/products', icon: Package },
-                  { title: 'Stock Management', href: '/admin/stock', icon: Warehouse },
-                  { title: 'Category Management', href: '/admin/categories', icon: Tags },
-                  { title: 'Subcategories', href: '/admin/subcategories', icon: Tags },
-                  { title: 'Brands', href: '/admin/brands', icon: Tags },
-                  { title: 'Tags', href: '/admin/tags', icon: Tags },
-                  { title: 'Homepage Banners', href: '/admin/homepage-sections', icon: Images },
-                  { title: 'SEO Health', href: '/admin/seo', icon: SearchCheck },
-                  { title: 'Enquiries', href: '/admin/enquiries', icon: Mail },
-                  { title: 'Users & Roles', href: '/admin/users', icon: Users },
-                  { title: 'Activity Log', href: '/admin/activity-log', icon: History },
-                  { title: 'Settings', href: '/admin/settings', icon: Settings },
+                  { title: 'Products', href: '/admin/products', icon: Package, visible: can('products.view') },
+                  { title: 'Stock Management', href: '/admin/stock', icon: Warehouse, visible: can('products.view') },
+                  { title: 'Category Management', href: '/admin/categories', icon: Tags, visible: can('categories.view') },
+                  { title: 'Subcategories', href: '/admin/subcategories', icon: Tags, visible: can('categories.view') },
+                  { title: 'Brands', href: '/admin/brands', icon: Tags, visible: can('brands.view') },
+                  { title: 'Tags', href: '/admin/tags', icon: Tags, visible: can('tags.view') },
+                  { title: 'Homepage Banners', href: '/admin/homepage-sections', icon: Images, visible: can('content.manage') },
+                  { title: 'SEO Health', href: '/admin/seo', icon: SearchCheck, visible: can('seo.manage', 'products.view') },
+                  { title: 'Enquiries', href: '/admin/enquiries', icon: Mail, visible: can('enquiries.view', 'enquiries.manage') },
+                  {
+                      title: 'Users & Roles',
+                      href: '/admin/users',
+                      icon: Users,
+                      visible: can('admins.view', 'customers.view', 'roles.view'),
+                  },
+                  { title: 'Activity Log', href: '/admin/activity-log', icon: History, visible: can('activity_logs.view') },
+                  { title: 'Settings', href: '/admin/settings', icon: Settings, visible: can('settings.view', 'settings.manage', 'seo.manage') },
               ]
+                  .filter((item) => item.visible)
+                  .map(({ visible: _visible, ...item }) => item)
             : []),
     ]);
 </script>

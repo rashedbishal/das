@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\User;
-use App\Services\SettingsService;
 use Laravel\Fortify\Features;
 
 beforeEach(function () {
@@ -26,22 +25,7 @@ test('new users can register', function () {
     $response->assertRedirect(route('home'));
 });
 
-test('new customers are left unverified when email verification is required', function () {
-    $this->post(route('register.store'), [
-        'name' => 'Test User',
-        'email' => 'unverified@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
-    ]);
-
-    $user = User::query()->where('email', 'unverified@example.com')->first();
-
-    expect($user->hasVerifiedEmail())->toBeFalse();
-});
-
-test('new customers are automatically verified when email verification is disabled', function () {
-    app(SettingsService::class)->set('auth', 'require_email_verification', false);
-
+test('new customers are automatically verified', function () {
     $this->post(route('register.store'), [
         'name' => 'Test User',
         'email' => 'auto-verified@example.com',

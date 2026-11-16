@@ -8,6 +8,8 @@
 
 <script lang="ts">
     import { Form, router } from '@inertiajs/svelte';
+    import { toast } from 'svelte-sonner';
+    import { can } from '@/lib/permissions.svelte';
     import Pencil from '@lucide/svelte/icons/pencil';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
@@ -65,7 +67,9 @@
 
     function confirmDeleteBrand() {
         if (deleteTarget) {
-            router.delete(destroy.url(deleteTarget.id));
+            router.delete(destroy.url(deleteTarget.id), {
+                onError: (errors) => toast.error(Object.values(errors).join(' ')),
+            });
         }
     }
 
@@ -85,32 +89,53 @@
             },
         );
     }
+
+    const canManage = $derived(can('brands.manage'));
 </script>
 
 <AppHead title="Brands" />
 
+{#snippet rowActions(brand: BrandRow)}
+    <Button variant="ghost" size="sm" aria-label="Edit {brand.name}" onclick={() => editBrand(brand)}>
+        <Pencil class="size-4" />
+    </Button>
+    <Button
+        variant="ghost"
+        size="sm"
+        class="text-destructive hover:text-destructive"
+        aria-label="Delete {brand.name}"
+        onclick={() => askDeleteBrand(brand)}
+    >
+        <Trash2 class="size-4" />
+    </Button>
+{/snippet}
+
 <div class="w-full p-4">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-xl font-semibold">Brands</h1>
-        <Button onclick={() => (createOpen = true)}>Create brand</Button>
+        {#if canManage}
+            <Button onclick={() => (createOpen = true)}>Create brand</Button>
+        {/if}
     </div>
 
     <Input bind:value={search} placeholder="Search brands..." class="mb-4 sm:max-w-sm" />
 
-    <BulkActions
-        count={selectedIds.length}
-        error={bulkError}
-        onClear={() => {
-            selectedIds = [];
-            bulkError = null;
-        }}
-    >
-        {#snippet children()}
-            <Button size="sm" onclick={() => runBulkAction('activate')}>Activate</Button>
-            <Button size="sm" variant="outline" onclick={() => runBulkAction('deactivate')}>Deactivate</Button>
-            <Button size="sm" variant="destructive" onclick={() => (bulkDeleteOpen = true)}>Delete</Button>
-        {/snippet}
-    </BulkActions>
+    {#if canManage}
+        <BulkActions
+            count={selectedIds.length}
+            error={bulkError}
+            onClear={() => {
+                selectedIds = [];
+                bulkError = null;
+            }}
+        >
+            {#snippet children()}
+                <Button size="sm" onclick={() => runBulkAction('activate')}>Activate</Button>
+                <Button size="sm" variant="outline" onclick={() => runBulkAction('deactivate')}>Deactivate</Button>
+                <Button size="sm" variant="destructive" onclick={() => (bulkDeleteOpen = true)}>Delete</Button>
+            {/snippet}
+        </BulkActions>
+    {/if}
 
     <ResponsiveTable
         items={filteredBrands}
@@ -121,8 +146,9 @@
             { key: 'products', label: 'Products' },
         ]}
         empty="No brands found."
-        selectedKeys={selectedIds}
-        onSelectionChange={(keys) => (selectedIds = keys.map(Number))}
+        selectedKeys={canManage ? selectedIds : undefined}
+        onSelectionChange={canManage ? (keys) => (selectedIds = keys.map(Number)) : undefined}
+        actions={canManage ? rowActions : undefined}
     >
         {#snippet cell(brand, column)}
             {#if column.key === 'name'}
@@ -134,20 +160,6 @@
             {:else}
                 {brand.products_count}
             {/if}
-        {/snippet}
-        {#snippet actions(brand)}
-            <Button variant="ghost" size="sm" aria-label="Edit {brand.name}" onclick={() => editBrand(brand)}>
-                <Pencil class="size-4" />
-            </Button>
-            <Button
-                variant="ghost"
-                size="sm"
-                class="text-destructive hover:text-destructive"
-                aria-label="Delete {brand.name}"
-                onclick={() => askDeleteBrand(brand)}
-            >
-                <Trash2 class="size-4" />
-            </Button>
         {/snippet}
     </ResponsiveTable>
 </div>

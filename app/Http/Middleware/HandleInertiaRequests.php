@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
+use App\Models\Permission;
+use App\Models\User;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -46,6 +48,7 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'permissions' => $this->permissionsFor($request->user()),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'contactWidgets' => [
@@ -92,5 +95,27 @@ class HandleInertiaRequests extends Middleware
                 'bingSiteVerification' => $settings->get('seo', 'bing_site_verification'),
             ],
         ];
+    }
+
+    /**
+     * Permission slugs the signed-in admin holds, so the admin UI can hide actions
+     * the policies would refuse. Mother Admin implicitly holds every permission.
+     *
+     * @return list<string>
+     */
+    private function permissionsFor(?User $user): array
+    {
+        if ($user === null || ! $user->isAdmin() || $user->role === null) {
+            return [];
+        }
+
+        $permissions = $user->isMotherAdmin()
+            ? Permission::query()->get()
+            : $user->role->permissions;
+
+        return array_values($permissions
+            ->map(fn (Permission $permission): string => $permission->slug)
+            ->sort()
+            ->all());
     }
 }

@@ -15,6 +15,8 @@ export type User = {
 
 export type Auth = {
     user: User | null;
+    /** Permission slugs held by the signed-in admin; empty for customers and guests. */
+    permissions: string[];
 };
 
 export type ContactWidgets = {

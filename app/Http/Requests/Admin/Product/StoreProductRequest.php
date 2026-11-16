@@ -76,7 +76,19 @@ class StoreProductRequest extends FormRequest
      */
     public function attributes(): array
     {
-        $attributes = [];
+        $attributes = [
+            'name' => 'name',
+            'sku' => 'SKU',
+            'category_id' => 'category',
+            'subcategory_id' => 'subcategory',
+            'brand_id' => 'brand',
+            'stock_status' => 'stock status',
+            'status' => 'status',
+            'regular_price' => 'regular price',
+            'sale_price' => 'sale price',
+            'seo_title' => 'SEO title',
+            'seo_description' => 'SEO description',
+        ];
 
         foreach (array_keys((array) $this->file('images', [])) as $index) {
             $attributes["images.{$index}"] = 'image '.($index + 1);

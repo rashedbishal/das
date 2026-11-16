@@ -23,6 +23,8 @@ class SettingsController extends Controller
     {
         $this->authorize('view', Setting::class);
 
+        $canManageTracking = request()->user()?->can('manageTracking', Setting::class) ?? false;
+
         return Inertia::render('admin/settings/Index', [
             'general' => $this->settings->group('general'),
             'authSettings' => $this->settings->group('auth'),
@@ -30,8 +32,9 @@ class SettingsController extends Controller
             'messenger' => $this->settings->group('messenger'),
             'catalog' => $this->settings->group('catalog'),
             'seo' => $this->settings->group('seo'),
-            'tracking' => $this->settings->group('tracking'),
-            'canManageTracking' => request()->user()?->can('manageTracking', Setting::class) ?? false,
+            // Raw scripts are only sent to admins who may edit them (Mother Admin).
+            'tracking' => $canManageTracking ? $this->settings->group('tracking') : [],
+            'canManageTracking' => $canManageTracking,
         ]);
     }
 

@@ -8,7 +8,7 @@ use App\Services\SettingsService;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Facades\Notification;
 
-test('visitors can submit an enquiry which is saved as unread', function () {
+test('visitors can submit an enquiry which is saved as unread, with the phone in 11-digit form', function () {
     $response = $this->from(route('contact'))->post(route('contact.enquiries.store'), [
         'name' => 'Dr. Example',
         'business_name' => 'Example Dental',
@@ -22,7 +22,7 @@ test('visitors can submit an enquiry which is saved as unread', function () {
     $this->assertDatabaseHas('contact_enquiries', [
         'name' => 'Dr. Example',
         'business_name' => 'Example Dental',
-        'phone' => '+8801712345678',
+        'phone' => '01712345678',
         'email' => 'doctor@example.test',
         'product_name' => 'Dental instrument',
         'message' => 'Please send more information.',
@@ -37,12 +37,12 @@ test('invalid enquiries are not stored', function () {
         'email' => 'not-an-email',
     ]);
 
-    $response->assertSessionHasErrors(['name', 'phone', 'email']);
+    $response->assertSessionHasErrors(['name', 'phone', 'email', 'message' => 'Please tell us how we can help.']);
     expect(ContactEnquiry::query()->count())->toBe(0);
 });
 
 test('public enquiry submissions are rate limited', function () {
-    $payload = ['name' => 'Customer', 'phone' => '01712345678'];
+    $payload = ['name' => 'Customer', 'phone' => '01712345678', 'message' => 'Please call me.'];
 
     foreach (range(1, 5) as $attempt) {
         $this->post(route('contact.enquiries.store'), $payload)->assertRedirect();
@@ -195,6 +195,7 @@ test('a new enquiry notifies the business contact email', function () {
     $this->from(route('contact'))->post(route('contact.enquiries.store'), [
         'name' => 'Dr. Example',
         'phone' => '01712345678',
+        'message' => 'Please send a quote.',
     ])->assertRedirect(route('contact'));
 
     Notification::assertSentOnDemand(
@@ -211,6 +212,7 @@ test('an enquiry with the honeypot field filled is silently discarded', function
     $response = $this->from(route('contact'))->post(route('contact.enquiries.store'), [
         'name' => 'Spam Bot',
         'phone' => '01712345678',
+        'message' => 'Buy now',
         'website' => 'https://spam.example',
     ]);
 
@@ -218,3 +220,23 @@ test('an enquiry with the honeypot field filled is silently discarded', function
     expect(ContactEnquiry::query()->count())->toBe(0);
     Notification::assertNothingSent();
 });
+
+test('an enquiry phone number must be an 11-digit Bangladeshi mobile number', function (string $phone) {
+    $this->post(route('contact.enquiries.store'), ['name' => 'Customer', 'phone' => $phone, 'message' => 'Hello'])
+        ->assertSessionHasErrors('phone');
+
+    expect(ContactEnquiry::query()->count())->toBe(0);
+})->with([
+    'twelve digits' => ['017123456789'],
+    'ten digits' => ['0171234567'],
+    'not a mobile prefix' => ['01212345678'],
+    'letters' => ['01712abc678'],
+    'too long with country code' => ['+88017123456789'],
+]);
+
+test('an enquiry needs a message saying how we can help', function (?string $message) {
+    $this->post(route('contact.enquiries.store'), ['name' => 'Customer', 'phone' => '01712345678', 'message' => $message])
+        ->assertSessionHasErrors(['message' => 'Please tell us how we can help.']);
+
+    expect(ContactEnquiry::query()->count())->toBe(0);
+})->with(['missing' => [null], 'only spaces' => ['   ']]);

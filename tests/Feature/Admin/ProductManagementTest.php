@@ -485,3 +485,36 @@ test('restoring or permanently deleting requires products.delete', function () {
 
     expect(Product::withTrashed()->find($product->id)->trashed())->toBeTrue();
 });
+
+test('a product saved with required fields missing gets a readable message for each field', function () {
+    $this->actingAs(adminUser(['products.create']))
+        ->post(route('admin.products.store'), [])
+        ->assertSessionHasErrors([
+            'name' => 'The name field is required.',
+            'sku' => 'The SKU field is required.',
+            'category_id' => 'The category field is required.',
+            'status' => 'The status field is required.',
+            'stock_status' => 'The stock status field is required.',
+        ]);
+});
+
+test('products with the same name each get a unique slug', function () {
+    $admin = adminUser(['products.create', 'products.delete']);
+    $category = Category::factory()->create();
+    $trashed = Product::factory()->create(['name' => 'Dental Mirror', 'slug' => 'dental-mirror-1']);
+    $trashed->delete();
+
+    foreach (['SKU-MIRROR-A', 'SKU-MIRROR-B', 'SKU-MIRROR-C'] as $sku) {
+        $this->actingAs($admin)->post(route('admin.products.store'), [
+            'name' => 'Dental Mirror',
+            'sku' => $sku,
+            'status' => 'draft',
+            'stock_quantity' => 1,
+            'stock_status' => 'in_stock',
+            'category_id' => $category->id,
+        ])->assertSessionHasNoErrors();
+    }
+
+    expect(Product::query()->whereIn('sku', ['SKU-MIRROR-A', 'SKU-MIRROR-B', 'SKU-MIRROR-C'])->orderBy('id')->pluck('slug')->all())
+        ->toBe(['dental-mirror', 'dental-mirror-2', 'dental-mirror-3']);
+});

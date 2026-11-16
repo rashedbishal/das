@@ -34,7 +34,7 @@ export default defineConfig({
     ]),
     server: {
         host: '192.168.0.111',
-        port: 5173,
+        port: 5174,
         // Vite's default CORS allowlist only recognizes literal
         // localhost/127.0.0.1 origins. The app is served over the LAN IP
         // above (so it's reachable from other devices on the network), so

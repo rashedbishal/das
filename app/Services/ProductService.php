@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\SlugGenerator;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,51 @@ class ProductService
         private readonly ActivityLogService $activity,
         private readonly SettingsService $settings,
     ) {}
+
+    /**
+     * Up to $limit published products to show as "related" on a product page:
+     * hand-picked related products first, then products sharing the most tags,
+     * then the same subcategory, then the same category.
+     *
+     * @return EloquentCollection<int, Product>
+     */
+    public function relatedFor(Product $product, int $limit = 8): EloquentCollection
+    {
+        $related = $product->relatedProducts()->published()->with(['brand', 'media'])->limit($limit)->get();
+
+        $fill = function (callable $scope) use ($product, &$related, $limit): void {
+            if ($related->count() >= $limit) {
+                return;
+            }
+
+            $query = Product::query()
+                ->published()
+                ->whereKeyNot([$product->id, ...$related->modelKeys()])
+                ->with(['brand', 'media']);
+
+            $scope($query);
+
+            $related = $related->concat($query->limit($limit - $related->count())->get());
+        };
+
+        $tagIds = $product->tags()->pluck('tags.id')->all();
+
+        if ($tagIds !== []) {
+            $fill(fn ($query) => $query
+                ->whereHas('tags', fn ($tags) => $tags->whereKey($tagIds))
+                ->withCount(['tags as shared_tags_count' => fn ($tags) => $tags->whereKey($tagIds)])
+                ->orderByDesc('shared_tags_count')
+                ->orderByDesc('created_at'));
+        }
+
+        if ($product->subcategory_id !== null) {
+            $fill(fn ($query) => $query->where('subcategory_id', $product->subcategory_id)->orderByDesc('created_at'));
+        }
+
+        $fill(fn ($query) => $query->where('category_id', $product->category_id)->orderByDesc('created_at'));
+
+        return new EloquentCollection($related->values()->all());
+    }
 
     /**
      * Prices are only shown to signed-in customers, so guests can't filter or sort

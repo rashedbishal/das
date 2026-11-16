@@ -39,7 +39,8 @@
 
 <svelte:window
     onkeydown={(event) => {
-        if (open && event.key === 'Escape') {
+        // A dropdown inside the modal (e.g. the product picker) handles its own Escape.
+        if (open && event.key === 'Escape' && !event.defaultPrevented) {
             open = false;
         }
     }}

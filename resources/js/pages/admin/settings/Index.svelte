@@ -19,6 +19,7 @@
     import { Label } from '@/components/ui/label';
     import type { OpeningHoursDay } from '@/lib/business';
     import BusinessFields from './BusinessFields.svelte';
+    import { can } from '@/lib/permissions.svelte';
 
     let {
         general,
@@ -46,7 +47,7 @@
             opening_hours?: OpeningHoursDay[] | null;
             social_links?: Record<string, string | null> | null;
         };
-        authSettings: { login_mode?: string; registration_enabled?: boolean; require_email_verification?: boolean };
+        authSettings: { login_mode?: string; registration_enabled?: boolean };
         whatsapp: { enabled?: boolean; phone?: string; message?: string };
         messenger: { enabled?: boolean; page_url?: string };
         catalog: { page_size?: number; featured_limit?: number; delivery_note?: string };
@@ -59,6 +60,9 @@
         tracking: { head_scripts?: string; body_scripts?: string };
         canManageTracking: boolean;
     } = $props();
+
+    const canManageSettings = $derived(can('settings.manage'));
+    const canManageCatalogSeo = $derived(can('settings.manage', 'seo.manage'));
 
     const tabs = [
         { value: 'general', label: 'General' },
@@ -98,81 +102,87 @@
             <CardContent>
                 <Form {...SettingsController.updateGeneral.form()} class="space-y-4">
                     {#snippet children({ errors, processing })}
-                        <div class="grid gap-2">
-                            <Label for="site_name">Site name</Label>
-                            <LimitedInput
-                                id="site_name"
-                                name="site_name"
-                                required
-                                limit={fieldLimits.settings.site_name}
-                                value={general.site_name ?? ''}
-                            />
-                            <InputError message={errors.site_name} />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="contact_email">Contact email</Label>
-                            <LimitedInput
-                                id="contact_email"
-                                name="contact_email"
-                                type="email"
-                                limit={fieldLimits.settings.contact_email}
-                                value={general.contact_email ?? ''}
-                            />
-                            <InputError message={errors.contact_email} />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="contact_phone">Contact phone</Label>
-                            <LimitedInput
-                                id="contact_phone"
-                                name="contact_phone"
-                                type="tel"
-                                limit={fieldLimits.settings.contact_phone}
-                                value={general.contact_phone ?? ''}
-                            />
-                            <InputError message={errors.contact_phone} />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="address">Street address</Label>
-                            <LimitedTextarea
-                                id="address"
-                                name="address"
-                                rows={2}
-                                class="min-h-16"
-                                limit={fieldLimits.settings.address}
-                                value={general.address ?? ''}
-                            />
-                            <InputError message={errors.address} />
-                        </div>
-                        <BusinessFields {general} {errors} />
-                        <div class="grid items-start gap-4 sm:grid-cols-2">
+                        <fieldset class="space-y-4" disabled={!canManageSettings} inert={!canManageSettings}>
                             <div class="grid gap-2">
-                                <Label for="currency">Currency</Label>
-                                <Input
-                                id="currency"
-                                name="currency"
-                                required
-                                maxlength={3}
-                                minlength={3}
-                                class="uppercase"
-                                value={general.currency ?? 'BDT'}
-                            />
-                            <p class="text-xs text-muted-foreground">3-letter code, e.g. BDT.</p>
-                                <InputError message={errors.currency} />
+                                <Label for="site_name">Site name</Label>
+                                <LimitedInput
+                                    id="site_name"
+                                    name="site_name"
+                                    required
+                                    limit={fieldLimits.settings.site_name}
+                                    value={general.site_name ?? ''}
+                                />
+                                <InputError message={errors.site_name} />
                             </div>
                             <div class="grid gap-2">
-                                <Label for="timezone">Timezone</Label>
-                                <Input
-                                id="timezone"
-                                name="timezone"
-                                required
-                                maxlength={fieldLimits.settings.timezone}
-                                value={general.timezone ?? 'Asia/Dhaka'}
-                            />
-                            <p class="text-xs text-muted-foreground">e.g. Asia/Dhaka.</p>
-                                <InputError message={errors.timezone} />
+                                <Label for="contact_email">Contact email</Label>
+                                <LimitedInput
+                                    id="contact_email"
+                                    name="contact_email"
+                                    type="email"
+                                    limit={fieldLimits.settings.contact_email}
+                                    value={general.contact_email ?? ''}
+                                />
+                                <InputError message={errors.contact_email} />
                             </div>
-                        </div>
-                        <Button type="submit" disabled={processing}>Save general settings</Button>
+                            <div class="grid gap-2">
+                                <Label for="contact_phone">Contact phone</Label>
+                                <LimitedInput
+                                    id="contact_phone"
+                                    name="contact_phone"
+                                    type="tel"
+                                    limit={fieldLimits.settings.contact_phone}
+                                    value={general.contact_phone ?? ''}
+                                />
+                                <InputError message={errors.contact_phone} />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="address">Street address</Label>
+                                <LimitedTextarea
+                                    id="address"
+                                    name="address"
+                                    rows={2}
+                                    class="min-h-16"
+                                    limit={fieldLimits.settings.address}
+                                    value={general.address ?? ''}
+                                />
+                                <InputError message={errors.address} />
+                            </div>
+                            <BusinessFields {general} {errors} />
+                            <div class="grid items-start gap-4 sm:grid-cols-2">
+                                <div class="grid gap-2">
+                                    <Label for="currency">Currency</Label>
+                                    <Input
+                                    id="currency"
+                                    name="currency"
+                                    required
+                                    maxlength={3}
+                                    minlength={3}
+                                    class="uppercase"
+                                    value={general.currency ?? 'BDT'}
+                                />
+                                <p class="text-xs text-muted-foreground">3-letter code, e.g. BDT.</p>
+                                    <InputError message={errors.currency} />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label for="timezone">Timezone</Label>
+                                    <Input
+                                    id="timezone"
+                                    name="timezone"
+                                    required
+                                    maxlength={fieldLimits.settings.timezone}
+                                    value={general.timezone ?? 'Asia/Dhaka'}
+                                />
+                                <p class="text-xs text-muted-foreground">e.g. Asia/Dhaka.</p>
+                                    <InputError message={errors.timezone} />
+                                </div>
+                            </div>
+                        </fieldset>
+                        {#if canManageSettings}
+                            <Button type="submit" disabled={processing}>Save general settings</Button>
+                        {:else}
+                            <p class="text-sm text-muted-foreground">You can view these settings but not change them.</p>
+                        {/if}
                     {/snippet}
                 </Form>
             </CardContent>
@@ -186,36 +196,32 @@
             <CardContent>
                 <Form {...SettingsController.updateAuth.form()} class="space-y-4">
                     {#snippet children({ errors, processing })}
-                        <div class="grid gap-2">
-                            <Label for="login_mode">Login mode</Label>
-                            <FormSelect
-                                id="login_mode"
-                                name="login_mode"
-                                value={authSettings.login_mode ?? 'both'}
-                                options={[
-                                    { value: 'email', label: 'Email only' },
-                                    { value: 'phone', label: 'Phone only' },
-                                    { value: 'both', label: 'Email or phone' },
-                                ]}
-                            />
-                            <InputError message={errors.login_mode} />
-                        </div>
-                        <label class="flex items-center gap-2 text-sm">
-                            <input type="hidden" name="registration_enabled" value="0" />
-                            <input type="checkbox" name="registration_enabled" value="1" checked={authSettings.registration_enabled ?? true} />
-                            Allow new customer registration
-                        </label>
-                        <label class="flex items-center gap-2 text-sm">
-                            <input type="hidden" name="require_email_verification" value="0" />
-                            <input
-                                type="checkbox"
-                                name="require_email_verification"
-                                value="1"
-                                checked={authSettings.require_email_verification ?? true}
-                            />
-                            Require customers to verify their email before signing in
-                        </label>
-                        <Button type="submit" disabled={processing}>Save authentication settings</Button>
+                        <fieldset class="space-y-4" disabled={!canManageSettings} inert={!canManageSettings}>
+                            <div class="grid gap-2">
+                                <Label for="login_mode">Login mode</Label>
+                                <FormSelect
+                                    id="login_mode"
+                                    name="login_mode"
+                                    value={authSettings.login_mode ?? 'both'}
+                                    options={[
+                                        { value: 'email', label: 'Email only' },
+                                        { value: 'phone', label: 'Phone only' },
+                                        { value: 'both', label: 'Email or phone' },
+                                    ]}
+                                />
+                                <InputError message={errors.login_mode} />
+                            </div>
+                            <label class="flex items-center gap-2 text-sm">
+                                <input type="hidden" name="registration_enabled" value="0" />
+                                <input type="checkbox" name="registration_enabled" value="1" checked={authSettings.registration_enabled ?? true} />
+                                Allow new customer registration
+                            </label>
+                        </fieldset>
+                        {#if canManageSettings}
+                            <Button type="submit" disabled={processing}>Save authentication settings</Button>
+                        {:else}
+                            <p class="text-sm text-muted-foreground">You can view these settings but not change them.</p>
+                        {/if}
                     {/snippet}
                 </Form>
             </CardContent>
@@ -229,36 +235,42 @@
             <CardContent>
                 <Form {...SettingsController.updateWhatsapp.form()} class="space-y-4">
                     {#snippet children({ errors, processing })}
-                        <label class="flex items-center gap-2 text-sm">
-                            <input type="hidden" name="enabled" value="0" />
-                            <input type="checkbox" name="enabled" value="1" checked={whatsapp.enabled ?? false} />
-                            Enabled
-                        </label>
-                        <div class="grid gap-2">
-                            <Label for="whatsapp_phone">Phone number</Label>
-                            <LimitedInput
-                                id="whatsapp_phone"
-                                name="phone"
-                                type="tel"
-                                placeholder="01XXXXXXXXX"
-                                limit={fieldLimits.settings.whatsapp_phone}
-                                value={whatsapp.phone ?? ''}
-                            />
-                            <InputError message={errors.phone} />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="whatsapp_message">Default message</Label>
-                            <LimitedTextarea
-                                id="whatsapp_message"
-                                name="message"
-                                rows={2}
-                                class="min-h-16"
-                                limit={fieldLimits.settings.whatsapp_message}
-                                value={whatsapp.message ?? ''}
-                            />
-                            <InputError message={errors.message} />
-                        </div>
-                        <Button type="submit" disabled={processing}>Save WhatsApp settings</Button>
+                        <fieldset class="space-y-4" disabled={!canManageSettings} inert={!canManageSettings}>
+                            <label class="flex items-center gap-2 text-sm">
+                                <input type="hidden" name="enabled" value="0" />
+                                <input type="checkbox" name="enabled" value="1" checked={whatsapp.enabled ?? false} />
+                                Enabled
+                            </label>
+                            <div class="grid gap-2">
+                                <Label for="whatsapp_phone">Phone number</Label>
+                                <LimitedInput
+                                    id="whatsapp_phone"
+                                    name="phone"
+                                    type="tel"
+                                    placeholder="01XXXXXXXXX"
+                                    limit={fieldLimits.settings.whatsapp_phone}
+                                    value={whatsapp.phone ?? ''}
+                                />
+                                <InputError message={errors.phone} />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="whatsapp_message">Default message</Label>
+                                <LimitedTextarea
+                                    id="whatsapp_message"
+                                    name="message"
+                                    rows={2}
+                                    class="min-h-16"
+                                    limit={fieldLimits.settings.whatsapp_message}
+                                    value={whatsapp.message ?? ''}
+                                />
+                                <InputError message={errors.message} />
+                            </div>
+                        </fieldset>
+                        {#if canManageSettings}
+                            <Button type="submit" disabled={processing}>Save WhatsApp settings</Button>
+                        {:else}
+                            <p class="text-sm text-muted-foreground">You can view these settings but not change them.</p>
+                        {/if}
                     {/snippet}
                 </Form>
             </CardContent>
@@ -272,23 +284,29 @@
             <CardContent>
                 <Form {...SettingsController.updateMessenger.form()} class="space-y-4">
                     {#snippet children({ errors, processing })}
-                        <label class="flex items-center gap-2 text-sm">
-                            <input type="hidden" name="enabled" value="0" />
-                            <input type="checkbox" name="enabled" value="1" checked={messenger.enabled ?? false} />
-                            Enabled
-                        </label>
-                        <div class="grid gap-2">
-                            <Label for="page_url">Messenger page URL</Label>
-                            <LimitedInput
-                                id="page_url"
-                                name="page_url"
-                                type="url"
-                                limit={fieldLimits.settings.messenger_url}
-                                value={messenger.page_url ?? ''}
-                            />
-                            <InputError message={errors.page_url} />
-                        </div>
-                        <Button type="submit" disabled={processing}>Save Messenger settings</Button>
+                        <fieldset class="space-y-4" disabled={!canManageSettings} inert={!canManageSettings}>
+                            <label class="flex items-center gap-2 text-sm">
+                                <input type="hidden" name="enabled" value="0" />
+                                <input type="checkbox" name="enabled" value="1" checked={messenger.enabled ?? false} />
+                                Enabled
+                            </label>
+                            <div class="grid gap-2">
+                                <Label for="page_url">Messenger page URL</Label>
+                                <LimitedInput
+                                    id="page_url"
+                                    name="page_url"
+                                    type="url"
+                                    limit={fieldLimits.settings.messenger_url}
+                                    value={messenger.page_url ?? ''}
+                                />
+                                <InputError message={errors.page_url} />
+                            </div>
+                        </fieldset>
+                        {#if canManageSettings}
+                            <Button type="submit" disabled={processing}>Save Messenger settings</Button>
+                        {:else}
+                            <p class="text-sm text-muted-foreground">You can view these settings but not change them.</p>
+                        {/if}
                     {/snippet}
                 </Form>
             </CardContent>
@@ -302,98 +320,104 @@
             <CardContent>
                 <Form {...SettingsController.updateCatalogSeo.form()} class="space-y-4">
                     {#snippet children({ errors, processing })}
-                        <div class="grid items-start gap-4 sm:grid-cols-2">
+                        <fieldset class="space-y-4" disabled={!canManageCatalogSeo} inert={!canManageCatalogSeo}>
+                            <div class="grid items-start gap-4 sm:grid-cols-2">
+                                <div class="grid gap-2">
+                                    <Label for="page_size">Products per page</Label>
+                                    <Input
+                                        id="page_size"
+                                        name="page_size"
+                                        type="number"
+                                        required
+                                        min="1"
+                                        max="100"
+                                        value={catalog.page_size ?? 24}
+                                    />
+                                    <InputError message={errors.page_size} />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label for="featured_limit">Featured products limit</Label>
+                                    <Input
+                                        id="featured_limit"
+                                        name="featured_limit"
+                                        type="number"
+                                        required
+                                        min="1"
+                                        max="50"
+                                        value={catalog.featured_limit ?? 8}
+                                    />
+                                    <InputError message={errors.featured_limit} />
+                                </div>
+                            </div>
                             <div class="grid gap-2">
-                                <Label for="page_size">Products per page</Label>
-                                <Input
-                                    id="page_size"
-                                    name="page_size"
-                                    type="number"
+                                <Label for="delivery_note">Product delivery note</Label>
+                                <LimitedInput
+                                    id="delivery_note"
+                                    name="delivery_note"
                                     required
-                                    min="1"
-                                    max="100"
-                                    value={catalog.page_size ?? 24}
+                                    limit={fieldLimits.settings.delivery_note}
+                                    value={catalog.delivery_note ?? 'Through courier all over Bangladesh'}
                                 />
-                                <InputError message={errors.page_size} />
+                                <InputError message={errors.delivery_note} />
                             </div>
                             <div class="grid gap-2">
-                                <Label for="featured_limit">Featured products limit</Label>
-                                <Input
-                                    id="featured_limit"
-                                    name="featured_limit"
-                                    type="number"
-                                    required
-                                    min="1"
-                                    max="50"
-                                    value={catalog.featured_limit ?? 8}
+                                <Label for="default_title">Default SEO title</Label>
+                                <LimitedInput
+                                    id="default_title"
+                                    name="default_title"
+                                    limit={fieldLimits.settings.default_title}
+                                    value={seo.default_title ?? ''}
                                 />
-                                <InputError message={errors.featured_limit} />
-                            </div>
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="delivery_note">Product delivery note</Label>
-                            <LimitedInput
-                                id="delivery_note"
-                                name="delivery_note"
-                                required
-                                limit={fieldLimits.settings.delivery_note}
-                                value={catalog.delivery_note ?? 'Through courier all over Bangladesh'}
-                            />
-                            <InputError message={errors.delivery_note} />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="default_title">Default SEO title</Label>
-                            <LimitedInput
-                                id="default_title"
-                                name="default_title"
-                                limit={fieldLimits.settings.default_title}
-                                value={seo.default_title ?? ''}
-                            />
-                            <InputError message={errors.default_title} />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="default_description">Default SEO description</Label>
-                            <LimitedTextarea
-                                id="default_description"
-                                name="default_description"
-                                rows={2}
-                                class="min-h-16"
-                                limit={fieldLimits.settings.default_description}
-                                value={seo.default_description ?? ''}
-                            />
-                            <InputError message={errors.default_description} />
-                        </div>
-                        <fieldset class="grid gap-4 rounded-md border p-4">
-                            <legend class="px-1 text-sm font-medium">Search engine verification</legend>
-                            <p class="text-xs text-muted-foreground">
-                                In Google Search Console (or Bing Webmaster Tools), add your site and choose the “HTML tag”
-                                method. Paste the tag or just its code here, save, then click Verify there.
-                            </p>
-                            <div class="grid gap-2">
-                                <Label for="google_site_verification">Google Search Console code</Label>
-                                <Input
-                                    id="google_site_verification"
-                                    name="google_site_verification"
-                                    placeholder='<meta name="google-site-verification" content="..." />'
-                                    value={seo.google_site_verification ?? ''}
-                                />
-                                <InputError message={errors.google_site_verification} />
+                                <InputError message={errors.default_title} />
                             </div>
                             <div class="grid gap-2">
-                                <Label for="bing_site_verification">Bing Webmaster code</Label>
-                                <Input
-                                    id="bing_site_verification"
-                                    name="bing_site_verification"
-                                    placeholder='<meta name="msvalidate.01" content="..." />'
-                                    value={seo.bing_site_verification ?? ''}
+                                <Label for="default_description">Default SEO description</Label>
+                                <LimitedTextarea
+                                    id="default_description"
+                                    name="default_description"
+                                    rows={2}
+                                    class="min-h-16"
+                                    limit={fieldLimits.settings.default_description}
+                                    value={seo.default_description ?? ''}
                                 />
-                                <InputError message={errors.bing_site_verification} />
+                                <InputError message={errors.default_description} />
                             </div>
-                            <p class="text-xs text-muted-foreground">
-                                Then submit your sitemap in Search Console: <span class="font-mono">{sitemapUrl}</span>
-                            </p>
+                            <fieldset class="grid gap-4 rounded-md border p-4">
+                                <legend class="px-1 text-sm font-medium">Search engine verification</legend>
+                                <p class="text-xs text-muted-foreground">
+                                    In Google Search Console (or Bing Webmaster Tools), add your site and choose the “HTML tag”
+                                    method. Paste the tag or just its code here, save, then click Verify there.
+                                </p>
+                                <div class="grid gap-2">
+                                    <Label for="google_site_verification">Google Search Console code</Label>
+                                    <Input
+                                        id="google_site_verification"
+                                        name="google_site_verification"
+                                        placeholder='<meta name="google-site-verification" content="..." />'
+                                        value={seo.google_site_verification ?? ''}
+                                    />
+                                    <InputError message={errors.google_site_verification} />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label for="bing_site_verification">Bing Webmaster code</Label>
+                                    <Input
+                                        id="bing_site_verification"
+                                        name="bing_site_verification"
+                                        placeholder='<meta name="msvalidate.01" content="..." />'
+                                        value={seo.bing_site_verification ?? ''}
+                                    />
+                                    <InputError message={errors.bing_site_verification} />
+                                </div>
+                                <p class="text-xs text-muted-foreground">
+                                    Then submit your sitemap in Search Console: <span class="font-mono">{sitemapUrl}</span>
+                                </p>
+                            </fieldset>
                         </fieldset>
-                        <Button type="submit" disabled={processing}>Save catalog &amp; SEO settings</Button>
+                        {#if canManageCatalogSeo}
+                            <Button type="submit" disabled={processing}>Save catalog &amp; SEO settings</Button>
+                        {:else}
+                            <p class="text-sm text-muted-foreground">You can view these settings but not change them.</p>
+                        {/if}
                     {/snippet}
                 </Form>
             </CardContent>

@@ -30,6 +30,7 @@
     import * as adminsApi from '@/routes/api/v1/admin/admins';
     import * as customersApi from '@/routes/api/v1/admin/customers';
     import * as rolesApi from '@/routes/api/v1/admin/roles';
+    import { can } from '@/lib/permissions.svelte';
 
     type Role = { id: number; name: string; slug: string; is_system: boolean; permissions: { id: number; slug: string; name: string }[] };
     type Permission = { id: number; slug: string; name: string; group: string };
@@ -47,7 +48,22 @@
 
     const currentUserId = $derived(page.props.auth.user?.id as number | undefined);
 
-    let tab = $state<'admins' | 'roles' | 'customers'>('admins');
+    const canManageAdmins = $derived(can('admins.manage'));
+    const canManageRoles = $derived(can('roles.manage'));
+    const canManageCustomers = $derived(can('customers.manage'));
+    const visibleTabs = $derived(
+        (
+            [
+                ['admins', 'Admins', can('admins.view')],
+                ['roles', 'Roles', can('roles.view')],
+                ['customers', 'Customers', can('customers.view')],
+            ] as const
+        ).filter(([, , visible]) => visible),
+    );
+
+    let tab = $state<'admins' | 'roles' | 'customers'>(
+        can('admins.view') ? 'admins' : can('roles.view') ? 'roles' : 'customers',
+    );
 
     let admins = $state<AdminUser[]>([]);
     let roles = $state<Role[]>([]);
@@ -423,7 +439,7 @@
 
 <div class="w-full p-4">
     <div class="mb-6 flex gap-2 overflow-x-auto border-b">
-        {#each [['admins', 'Admins'], ['roles', 'Roles'], ['customers', 'Customers']] as [value, label] (value)}
+        {#each visibleTabs as [value, label] (value)}
             <button
                 class="shrink-0 border-b-2 px-3 py-2 text-sm {tab === value ? 'border-primary font-medium' : 'border-transparent text-muted-foreground'}"
                 onclick={() => {
@@ -448,18 +464,22 @@
     {#if tab === 'admins'}
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-xl font-semibold">Admins</h1>
-            <Button onclick={() => (createAdminOpen = true)}>Create admin</Button>
+            {#if canManageAdmins}
+                <Button onclick={() => (createAdminOpen = true)}>Create admin</Button>
+            {/if}
         </div>
 
         {@render searchBox('admins', onAdminSearchInput, adminsLoading, adminMeta.total, 'admin')}
 
-        <BulkActions count={selectedAdminIds.length} onClear={() => (selectedAdminIds = [])}>
-            {#snippet children()}
-                <Button size="sm" onclick={() => runBulkAction('admins', 'deactivate')}>Deactivate</Button>
-                <Button size="sm" variant="outline" onclick={() => runBulkAction('admins', 'reactivate')}>Reactivate</Button>
-                <Button size="sm" variant="destructive" onclick={() => runBulkAction('admins', 'delete')}>Delete</Button>
-            {/snippet}
-        </BulkActions>
+        {#if canManageAdmins}
+            <BulkActions count={selectedAdminIds.length} onClear={() => (selectedAdminIds = [])}>
+                {#snippet children()}
+                    <Button size="sm" onclick={() => runBulkAction('admins', 'deactivate')}>Deactivate</Button>
+                    <Button size="sm" variant="outline" onclick={() => runBulkAction('admins', 'reactivate')}>Reactivate</Button>
+                    <Button size="sm" variant="destructive" onclick={() => runBulkAction('admins', 'delete')}>Delete</Button>
+                {/snippet}
+            </BulkActions>
+        {/if}
 
         <ResponsiveTable
             items={admins}
@@ -472,9 +492,9 @@
                 { key: 'joined', label: 'Joined', class: 'whitespace-nowrap' },
             ]}
             empty={adminSearch.trim() ? 'No admins match your search.' : 'No admins found.'}
-            selectedKeys={selectedAdminIds}
+            selectedKeys={canManageAdmins ? selectedAdminIds : undefined}
             disabledKeys={admins.filter((admin) => admin.id === currentUserId || admin.role?.is_system).map((admin) => admin.id)}
-            onSelectionChange={(keys) => (selectedAdminIds = keys.map(Number))}
+            onSelectionChange={canManageAdmins ? (keys) => (selectedAdminIds = keys.map(Number)) : undefined}
         >
             {#snippet cell(admin, column)}
                 {#if column.key === 'name'}
@@ -490,12 +510,12 @@
                 {/if}
             {/snippet}
             {#snippet actions(admin)}
-                {#if !admin.role?.is_system || admin.id === currentUserId}
+                {#if admin.id === currentUserId || (canManageAdmins && !admin.role?.is_system)}
                     <Button variant="ghost" size="sm" aria-label="Edit {admin.name}" onclick={() => openEditAdmin(admin)}>
                         <Pencil class="size-4" />
                     </Button>
                 {/if}
-                {#if !admin.role?.is_system && admin.id !== currentUserId}
+                {#if canManageAdmins && !admin.role?.is_system && admin.id !== currentUserId}
                     <Button
                         variant="ghost"
                         size="sm"
@@ -524,18 +544,22 @@
     {:else if tab === 'roles'}
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-xl font-semibold">Roles</h1>
-            <Button onclick={() => (createRoleOpen = true)}>Create role</Button>
+            {#if canManageRoles}
+                <Button onclick={() => (createRoleOpen = true)}>Create role</Button>
+            {/if}
         </div>
 
         <Input bind:value={roleSearch} placeholder="Search roles..." class="mb-4 sm:max-w-sm" />
 
-        <BulkActions count={selectedRoleIds.length} onClear={() => (selectedRoleIds = [])}>
-            {#snippet children()}
-                <Button size="sm" variant="destructive" onclick={() => runBulkAction('roles', 'delete')}>Delete</Button>
-            {/snippet}
-        </BulkActions>
+        {#if canManageRoles}
+            <BulkActions count={selectedRoleIds.length} onClear={() => (selectedRoleIds = [])}>
+                {#snippet children()}
+                    <Button size="sm" variant="destructive" onclick={() => runBulkAction('roles', 'delete')}>Delete</Button>
+                {/snippet}
+            </BulkActions>
+        {/if}
 
-        <label class="mb-3 flex items-center gap-2 text-sm">
+        <label class="mb-3 flex items-center gap-2 text-sm" class:hidden={!canManageRoles}>
             <input
                 type="checkbox"
                 checked={allRolesSelected}
@@ -555,7 +579,7 @@
                 <div class="rounded-lg border p-3">
                     <div class="flex items-center justify-between gap-3">
                         <div class="flex min-w-0 items-start gap-3">
-                            {#if !role.is_system}
+                            {#if canManageRoles && !role.is_system}
                                 <input
                                     type="checkbox"
                                     aria-label="Select {role.name}"
@@ -576,7 +600,7 @@
                             </p>
                             </div>
                         </div>
-                        {#if !role.is_system}
+                        {#if canManageRoles && !role.is_system}
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -597,12 +621,14 @@
 
         {@render searchBox('customers', onCustomerSearchInput, customersLoading, customerMeta.total, 'customer')}
 
-        <BulkActions count={selectedCustomerIds.length} onClear={() => (selectedCustomerIds = [])}>
-            {#snippet children()}
-                <Button size="sm" onclick={() => runBulkAction('customers', 'deactivate')}>Deactivate</Button>
-                <Button size="sm" variant="outline" onclick={() => runBulkAction('customers', 'reactivate')}>Reactivate</Button>
-            {/snippet}
-        </BulkActions>
+        {#if canManageCustomers}
+            <BulkActions count={selectedCustomerIds.length} onClear={() => (selectedCustomerIds = [])}>
+                {#snippet children()}
+                    <Button size="sm" onclick={() => runBulkAction('customers', 'deactivate')}>Deactivate</Button>
+                    <Button size="sm" variant="outline" onclick={() => runBulkAction('customers', 'reactivate')}>Reactivate</Button>
+                {/snippet}
+            </BulkActions>
+        {/if}
 
         <ResponsiveTable
             items={customers}
@@ -615,8 +641,9 @@
                 { key: 'joined', label: 'Joined', class: 'whitespace-nowrap' },
             ]}
             empty={customerSearch.trim() ? 'No customers match your search.' : 'No customers found.'}
-            selectedKeys={selectedCustomerIds}
-            onSelectionChange={(keys) => (selectedCustomerIds = keys.map(Number))}
+            selectedKeys={canManageCustomers ? selectedCustomerIds : undefined}
+            onSelectionChange={canManageCustomers ? (keys) => (selectedCustomerIds = keys.map(Number)) : undefined}
+            actions={canManageCustomers ? customerActions : undefined}
         >
             {#snippet cell(customer, column)}
                 {#if column.key === 'name'}
@@ -631,15 +658,16 @@
                     {@render statusBadge(customer.is_active)}
                 {/if}
             {/snippet}
-            {#snippet actions(customer)}
-                <Button variant="ghost" size="sm" onclick={() => toggleCustomerActive(customer)}>
-                    {customer.is_active ? 'Deactivate' : 'Reactivate'}
-                </Button>
-            {/snippet}
         </ResponsiveTable>
         {@render pager(customerMeta, goToCustomerPage)}
     {/if}
 </div>
+
+{#snippet customerActions(customer: Customer)}
+    <Button variant="ghost" size="sm" onclick={() => toggleCustomerActive(customer)}>
+        {customer.is_active ? 'Deactivate' : 'Reactivate'}
+    </Button>
+{/snippet}
 
 {#snippet searchBox(kind: 'admins' | 'customers', onInput: () => void, loading: boolean, total: number, noun: string)}
     <div class="mb-4 flex flex-wrap items-center gap-3">
