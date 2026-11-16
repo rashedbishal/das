@@ -5,9 +5,13 @@
     import Footer from '@/components/storefront/Footer.svelte';
     import Header from '@/components/storefront/Header.svelte';
     import { openingHoursSpecification } from '@/lib/business';
+    import { enableMotion } from '@/lib/motion.svelte';
     import { absoluteUrl, jsonLdScript } from '@/lib/seo';
 
     let { children }: { children?: Snippet } = $props();
+
+    // Storefront motion applies only while the storefront is on screen.
+    $effect(() => enableMotion());
 
     /**
      * The business as schema.org data on every storefront page: a local Store (with

@@ -4,6 +4,9 @@
     import Search from '@lucide/svelte/icons/search';
     import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal';
     import X from '@lucide/svelte/icons/x';
+    import { flip } from 'svelte/animate';
+    import { quintOut } from 'svelte/easing';
+    import { fade } from 'svelte/transition';
     import {
         brands,
         categories,
@@ -17,9 +20,11 @@
         type ProductCard as ProductCardType,
         type ProductPage,
     } from '@/data/catalogue';
+    import { motionMs } from '@/lib/motion.svelte';
     import Button from './Button.svelte';
     import Drawer from './Drawer.svelte';
     import ProductCard from './ProductCard.svelte';
+    import ProductCardSkeleton from './ProductCardSkeleton.svelte';
 
     type FilterKey = keyof CatalogueFilters;
 
@@ -402,7 +407,18 @@
             {#if items.length}
                 <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-5">
                     {#each items as p (p.id)}
-                        <ProductCard product={p} />
+                        <!-- Cards glide to their new place when filters change;
+                             new ones fade in. -->
+                        <div
+                            class="grid min-w-0"
+                            animate:flip={{
+                                duration: motionMs(420),
+                                easing: quintOut,
+                            }}
+                            in:fade={{ duration: motionMs(260) }}
+                        >
+                            <ProductCard product={p} />
+                        </div>
                     {/each}
                 </div>
                 {#if currentPage < lastPage}
@@ -433,6 +449,16 @@
                     >
                         Reset search and filters
                     </Button>
+                </div>
+            {:else if loading && !failed}
+                <div
+                    class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-5"
+                    role="status"
+                    aria-label="Loading products"
+                >
+                    {#each [0, 1, 2, 3, 4, 5] as n (n)}
+                        <ProductCardSkeleton />
+                    {/each}
                 </div>
             {/if}
             <p

@@ -23,6 +23,7 @@
     } from '@/data/catalogue';
     import LoginModal from '@/components/LoginModal.svelte';
     import { resolvePhone } from '@/lib/contact';
+    import { motion } from '@/lib/motion.svelte';
     import { absoluteUrl, jsonLdScript } from '@/lib/seo';
     import { catalogue } from '@/routes';
     import { show as brandShow } from '@/routes/brands';
@@ -153,6 +154,7 @@
             <div>
                 <div
                     class="relative aspect-square overflow-hidden rounded-md bg-photo"
+                    data-morph={motion.morphSlug === p.slug ? '' : undefined}
                 >
                     {#if activeMedia?.type === 'video'}
                         <video

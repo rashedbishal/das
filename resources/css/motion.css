@@ -1,0 +1,136 @@
+/* ==========================================================================
+   Storefront motion ("Continuity").
+
+   StorefrontLayout puts `data-motion` on <html> while a storefront page is
+   on screen (lib/motion.svelte.ts); it is left off for Data Saver users and
+   every non-storefront page, and then the motion here does not apply.
+
+   - Cards and section headings rise softly into place as they scroll in.
+   - Page changes cross-fade, and a clicked product card's photo grows into
+     the product page photo (view transitions).
+   - Catalogue cards glide to their new place when filters change (Svelte
+     `flip` in CatalogueView.svelte).
+   - Lists that load in the browser show pulsing skeleton cards.
+
+   Performance rules followed throughout:
+   - Only opacity and transforms are animated, so everything runs on the GPU
+     compositor. Reveals use the individual `translate` property, which
+     composes with the existing hover `transform`s instead of overriding them.
+   - Scroll reveals are CSS scroll-driven animations (no scroll listeners,
+     no JS). Browsers without support skip them via @supports and simply show
+     the content.
+   - Reduced motion turns every animation here off.
+   ========================================================================== */
+
+:root[data-motion] {
+    --sf-ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* mega menu curve */
+    --sf-ease-soft: cubic-bezier(0.2, 0.7, 0.2, 1); /* hero copy curve */
+}
+
+/* ---------------------------------------------------------------- *
+ * Scroll reveals
+ * ---------------------------------------------------------------- */
+@supports (animation-timeline: view()) {
+    @media screen and (prefers-reduced-motion: no-preference) {
+        :root[data-motion] .product-card:not(.is-skeleton),
+        :root[data-motion] .category-card:not(.is-skeleton) {
+            animation: sf-rise linear both;
+            animation-timeline: view();
+            animation-range: entry 5% entry 65%;
+        }
+        :root[data-motion] .section-head {
+            animation: sf-rise linear both;
+            animation-timeline: view();
+            animation-range: entry 10% entry 90%;
+        }
+    }
+}
+
+@keyframes sf-rise {
+    from {
+        opacity: 0;
+        translate: 0 16px;
+    }
+    to {
+        opacity: 1;
+        translate: 0 0;
+    }
+}
+
+/* ---------------------------------------------------------------- *
+ * Skeleton placeholders (product grids and category tiles that load in
+ * the browser).
+ * ---------------------------------------------------------------- */
+.storefront .is-skeleton {
+    pointer-events: none;
+}
+.storefront .sf-skel {
+    background: var(--secondary);
+}
+@media (prefers-reduced-motion: no-preference) {
+    :root[data-motion] .sf-skel {
+        animation: sf-skel-pulse 1.3s ease-in-out infinite alternate;
+    }
+}
+@keyframes sf-skel-pulse {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0.55;
+    }
+}
+
+/* ---------------------------------------------------------------- *
+ * Page transitions (view transitions; see motionVisitOptions). The names
+ * exist only while html.sf-vt is set during a transition. The header gets
+ * its own name so the page content never paints over the sticky header.
+ * ---------------------------------------------------------------- */
+:root.sf-vt .storefront > header {
+    view-transition-name: sf-header;
+}
+:root.sf-vt #main-content {
+    view-transition-name: sf-main;
+}
+:root.sf-vt [data-morph] {
+    view-transition-name: sf-photo;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    /* A plain, quick cross-fade of the page content. */
+    :root[data-motion]::view-transition-old(sf-main) {
+        animation: 160ms ease-out both sf-fade-out;
+    }
+    :root[data-motion]::view-transition-new(sf-main) {
+        animation: 300ms var(--sf-ease-soft) 60ms both sf-fade-in;
+    }
+
+    /* The clicked card's photo grows into the product photo. */
+    :root[data-motion]::view-transition-group(sf-photo) {
+        animation-duration: 480ms;
+        animation-timing-function: var(--sf-ease-out);
+    }
+    :root[data-motion]::view-transition-old(sf-photo),
+    :root[data-motion]::view-transition-new(sf-photo) {
+        height: 100%;
+        object-fit: cover;
+        animation-duration: 480ms;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    :root[data-motion]::view-transition-group(*),
+    :root[data-motion]::view-transition-old(*),
+    :root[data-motion]::view-transition-new(*) {
+        animation: none !important;
+    }
+}
+@keyframes sf-fade-out {
+    to {
+        opacity: 0;
+    }
+}
+@keyframes sf-fade-in {
+    from {
+        opacity: 0;
+    }
+}

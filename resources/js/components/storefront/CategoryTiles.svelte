@@ -5,8 +5,12 @@
     import { categories, loadCategories } from '@/data/catalogue';
     import { show as categoryShow } from '@/routes/categories';
 
+    let pending = $state(true);
+
     // Product counts come with the category list (one request, not one per category).
-    loadCategories().catch(() => {});
+    loadCategories()
+        .catch(() => {})
+        .finally(() => (pending = false));
 
     const counts = $derived(
         Object.fromEntries($categories.map((c) => [c.slug, c.productsCount])),
@@ -50,5 +54,20 @@
                 </span>
             </div>
         </Link>
+    {:else}
+        <!-- Placeholders while the list loads. -->
+        {#if pending}
+            {#each [0, 1, 2, 3, 4] as n (n)}
+                <div class="category-card is-skeleton" aria-hidden="true">
+                    <div class="category-card-media sf-skel"></div>
+                    <div class="category-card-body">
+                        <div class="min-w-0 flex-1">
+                            <div class="sf-skel h-3 w-3/4 rounded-sm"></div>
+                            <div class="sf-skel mt-2 h-2 w-1/3 rounded-sm"></div>
+                        </div>
+                    </div>
+                </div>
+            {/each}
+        {/if}
     {/each}
 </div>

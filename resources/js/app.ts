@@ -3,6 +3,7 @@ import AppLayout from '@/layouts/AppLayout.svelte';
 import AuthLayout from '@/layouts/AuthLayout.svelte';
 import StorefrontLayout from '@/layouts/StorefrontLayout.svelte';
 import { initializeFlashToast } from '@/lib/flash-toast';
+import { motionVisitOptions } from '@/lib/motion.svelte';
 import { initializeTheme } from '@/lib/theme.svelte';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -21,6 +22,10 @@ void createInertiaApp({
     },
     progress: {
         color: '#4B5563',
+    },
+    // Storefront page transitions (lib/motion.svelte.ts).
+    defaults: {
+        visitOptions: motionVisitOptions,
     },
 });
 

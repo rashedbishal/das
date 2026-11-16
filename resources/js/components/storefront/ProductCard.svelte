@@ -5,11 +5,14 @@
     import { formatPrice } from '@/data/catalogue';
     import type { ProductCard as ProductCardType } from '@/data/catalogue';
     import { resolvePhone } from '@/lib/contact';
+    import { markMorph, motion } from '@/lib/motion.svelte';
     import { show } from '@/routes/products';
 
     let { product: p }: { product: ProductCardType } = $props();
 
     const href = $derived(show.url(p.slug));
+    // Clicking through to the product morphs this photo into the product page.
+    const morph = () => markMorph(p.slug);
     const priceLabel = $derived(formatPrice(p));
     const phone = $derived(
         resolvePhone(
@@ -20,7 +23,13 @@
 </script>
 
 <article class="product-card">
-    <Link {href} class="product-photo" aria-label="View {p.name}">
+    <Link
+        {href}
+        onclick={morph}
+        class="product-photo"
+        aria-label="View {p.name}"
+        data-morph={motion.morphSlug === p.slug ? '' : undefined}
+    >
         <img src={p.image} alt={p.name} loading="lazy" width={384} height={512} />
         {#if p.featured}
             <span
@@ -36,7 +45,7 @@
                 >{p.brand?.name}</span
             >
         </div>
-        <Link {href}>
+        <Link {href} onclick={morph}>
             <h3 class="product-title" title={p.name}>{p.name}</h3>
         </Link>
         <p class="product-spec">{p.shortDescription}</p>
@@ -53,12 +62,13 @@
                     <div class="product-price">{priceLabel}</div>
                 </div>
             {:else if p.priceLoginRequired}
-                <Link {href} class="text-[10px] font-medium text-muted-foreground hover:text-primary">
+                <Link {href} onclick={morph} class="text-[10px] font-medium text-muted-foreground hover:text-primary">
                     Sign in to see price
                 </Link>
             {/if}
             <Link
                 {href}
+                onclick={morph}
                 class="detail-link flex items-center gap-1.5 text-[10px] font-semibold text-primary"
             >
                 View Details

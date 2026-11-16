@@ -17,7 +17,7 @@
     } = $props();
 </script>
 
-<div class="mb-8 flex items-end justify-between gap-6 lg:mb-10">
+<div class="section-head mb-8 flex items-end justify-between gap-6 lg:mb-10">
     <div>
         <p class="eyebrow mb-3">{eyebrow}</p>
         <h2 class="section-heading">{title}</h2>
