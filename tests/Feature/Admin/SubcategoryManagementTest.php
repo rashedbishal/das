@@ -16,7 +16,7 @@ test('an admin with categories.manage can create a subcategory under a category'
         'sort_order' => 0,
     ]);
 
-    $response->assertRedirect(route('admin.categories.index'));
+    $response->assertRedirect(route('admin.subcategories.index'));
     expect(Subcategory::query()->where('slug', 'electric-handpieces')->first()?->category_id)->toBe($category->id);
 });
 
@@ -64,7 +64,7 @@ test('an admin with categories.manage can update a subcategory, including moving
         'name' => $subcategory->name,
     ]);
 
-    $response->assertRedirect(route('admin.categories.index'));
+    $response->assertRedirect(route('admin.subcategories.index'));
     expect($subcategory->fresh()->category_id)->toBe($newCategory->id);
 });
 
@@ -85,7 +85,7 @@ test('an admin with categories.manage can delete an unused subcategory', functio
 
     $response = $this->actingAs($admin)->delete(route('admin.subcategories.destroy', $subcategory));
 
-    $response->assertRedirect(route('admin.categories.index'));
+    $response->assertRedirect(route('admin.subcategories.index'));
     expect(Subcategory::query()->whereKey($subcategory->id)->exists())->toBeFalse();
 });
 
@@ -98,7 +98,7 @@ test('an admin can activate subcategories in bulk', function () {
         'action' => 'activate',
     ]);
 
-    $response->assertRedirect(route('admin.categories.index'));
+    $response->assertRedirect(route('admin.subcategories.index'));
     expect(Subcategory::query()->whereKey($subcategories->modelKeys())->where('is_active', false)->count())->toBe(0);
 });
 
@@ -118,13 +118,24 @@ test('customers cannot manage subcategories', function () {
     ])->assertForbidden();
 });
 
-test('the admin subcategory page opens the subcategory management tab', function () {
+test('categories and subcategories are managed on separate pages', function () {
     $admin = adminUser(['categories.view']);
+    $category = Category::factory()->create();
+    Subcategory::factory()->for($category)->create();
 
     $this->actingAs($admin)
         ->get(route('admin.subcategories.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
+            ->component('admin/subcategories/Index')
+            ->has('subcategories', 1)
+            ->where('categories', [['id' => $category->id, 'name' => $category->name, 'slug' => $category->slug]]));
+
+    $this->actingAs($admin)
+        ->get(route('admin.categories.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
             ->component('admin/categories/Index')
-            ->where('initialTab', 'subcategories'));
+            ->has('categories', 1)
+            ->missing('subcategories'));
 });

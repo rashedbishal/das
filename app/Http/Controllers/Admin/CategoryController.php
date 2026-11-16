@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Category\StoreCategoryRequest;
 use App\Http\Requests\Admin\Category\UpdateCategoryRequest;
 use App\Models\Category;
-use App\Models\Subcategory;
 use App\Services\CategoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,12 +25,6 @@ class CategoryController extends Controller
         return Inertia::render('admin/categories/Index', [
             'categories' => Category::query()
                 ->withCount(['subcategories', 'products'])
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->get(),
-            'subcategories' => Subcategory::query()
-                ->with('category:id,name,slug')
-                ->withCount('products')
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->get(),

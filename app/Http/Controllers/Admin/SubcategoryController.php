@@ -23,19 +23,18 @@ class SubcategoryController extends Controller
     {
         $this->authorize('viewAny', Subcategory::class);
 
-        return Inertia::render('admin/categories/Index', [
+        return Inertia::render('admin/subcategories/Index', [
+            // Parent options for the create/edit forms and the public URL preview.
             'categories' => Category::query()
-                ->withCount(['subcategories', 'products'])
                 ->orderBy('sort_order')
                 ->orderBy('name')
-                ->get(),
+                ->get(['id', 'name', 'slug']),
             'subcategories' => Subcategory::query()
                 ->with('category:id,name,slug')
                 ->withCount('products')
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->get(),
-            'initialTab' => 'subcategories',
         ]);
     }
 
@@ -45,7 +44,7 @@ class SubcategoryController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Subcategory created.']);
 
-        return to_route('admin.categories.index');
+        return to_route('admin.subcategories.index');
     }
 
     public function update(UpdateSubcategoryRequest $request, Subcategory $subcategory): RedirectResponse
@@ -54,7 +53,7 @@ class SubcategoryController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Subcategory updated.']);
 
-        return to_route('admin.categories.index');
+        return to_route('admin.subcategories.index');
     }
 
     public function destroy(Subcategory $subcategory): RedirectResponse
@@ -65,7 +64,7 @@ class SubcategoryController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Subcategory deleted.']);
 
-        return to_route('admin.categories.index');
+        return to_route('admin.subcategories.index');
     }
 
     public function bulk(Request $request): RedirectResponse
@@ -104,6 +103,6 @@ class SubcategoryController extends Controller
             'message' => count($subcategories).' subcategories '.($data['action'] === 'delete' ? 'deleted.' : 'updated.'),
         ]);
 
-        return to_route('admin.categories.index');
+        return to_route('admin.subcategories.index');
     }
 }
