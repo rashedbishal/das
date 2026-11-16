@@ -204,7 +204,7 @@
         class="container-wide flex h-[86px] items-center justify-between gap-3 sm:gap-6"
     >
         <Link href={home.url()} aria-label="DAS home">
-            <Wordmark />
+            <Wordmark shine />
         </Link>
         <nav
             aria-label="Main navigation"
@@ -431,7 +431,7 @@
 
 <Drawer bind:open={mobile} label="Navigation" class="overflow-y-auto">
     <h2 class="mt-6 text-lg font-semibold text-foreground">
-        <Wordmark />
+        <Wordmark shine />
     </h2>
     <p class="mt-3 text-sm text-muted-foreground">
         Professional dental equipment

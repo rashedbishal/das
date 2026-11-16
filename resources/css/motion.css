@@ -134,3 +134,64 @@
         opacity: 0;
     }
 }
+
+/* ---------------------------------------------------------------- *
+ * Logo shine (header and mobile menu logo: <Wordmark shine />).
+ *
+ * A polished-steel glint: a faint cool-blue band sweeps across the logo
+ * (D, A, S) every 4s. Hovering the logo replays it at once and the 4s loop
+ * restarts from there (Wordmark.svelte remounts the layer with .is-replay).
+ * It is clipped to the logo's own shape by a mask of the logo image (set
+ * inline in Wordmark.svelte), so it never lights up the transparent area
+ * around it. Only `translate` animates; without motion the band rests off
+ * to the left, invisible.
+ * ---------------------------------------------------------------- */
+.sf-logo {
+    position: relative;
+    display: inline-block;
+}
+.sf-logo-glint {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+.sf-logo-glint::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 45%;
+    background: linear-gradient(
+        100deg,
+        rgb(214 228 255 / 0) 20%,
+        rgb(214 228 255 / 0.85) 50%,
+        rgb(214 228 255 / 0) 80%
+    );
+    translate: -100% 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    :root[data-motion] .sf-logo-glint::before {
+        animation: sf-logo-sweep 4s var(--sf-ease-soft) 400ms infinite;
+    }
+    :root[data-motion] .sf-logo-glint.is-replay::before {
+        animation-delay: 0ms;
+    }
+}
+@keyframes sf-logo-sweep {
+    0% {
+        translate: -100% 0;
+    }
+    30%,
+    100% {
+        translate: 230% 0;
+    }
+}
