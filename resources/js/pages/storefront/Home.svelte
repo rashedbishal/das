@@ -20,6 +20,7 @@
     import ProductGrid from '@/components/storefront/ProductGrid.svelte';
     import SectionHeading from '@/components/storefront/SectionHeading.svelte';
     import TrustStrip from '@/components/storefront/TrustStrip.svelte';
+    import { revealOnView } from '@/lib/motion.svelte';
     import { brands, loadBrands, mapProductCard, type RawProductCard } from '@/data/catalogue';
     import { brands as brandsRoute, catalogue, contact, home } from '@/routes';
     import { index as categoriesIndex } from '@/routes/categories';
@@ -128,7 +129,7 @@
 
 <TrustStrip />
 
-<section class="container-wide section-space">
+<section class="practice-needs container-wide section-space" {@attach revealOnView}>
     <SectionHeading
         eyebrow="Explore the collection"
         title="Everything Your Practice Needs"
@@ -139,7 +140,7 @@
     <CategoryTiles />
     <Link
         href={categoriesIndex.url()}
-        class="mt-7 flex items-center justify-center gap-2 text-xs text-primary sm:hidden"
+        class="practice-needs-more mt-7 flex items-center justify-center gap-2 text-xs text-primary sm:hidden"
     >
         Explore all categories
         <ArrowUpRight class="size-4" />
@@ -170,7 +171,7 @@
     </div>
 </section>
 
-<section class="editorial-banner">
+<section class="editorial-banner" {@attach revealOnView}>
     <img
         src={hero}
         width={1920}
@@ -180,23 +181,22 @@
     />
     <div class="container-wide py-16 lg:py-[70px]">
         <div
-            class="mb-5 flex items-center gap-2 text-[9px] tracking-[1.7px] uppercase opacity-70"
+            class="eb-eyebrow mb-5 flex items-center gap-2 text-[9px] tracking-[1.7px] uppercase opacity-70"
         >
             <Plus class="size-3" />A practice with possibility
         </div>
         <h2>
-            Equipping the Future
-            <br />
-            of Dentistry.
+            <span class="eb-line"><span>Equipping the Future</span></span>
+            <span class="eb-line"><span>of Dentistry.</span></span>
         </h2>
-        <p class="mt-5 text-xs">
+        <p class="eb-copy mt-5 text-xs">
             From essential instruments to advanced clinical technology, discover
             equipment suited to your practice.
         </p>
         <Link
             href={catalogue.url()}
             class={buttonClass({
-                class: 'mt-7 h-11 bg-background px-6 text-xs text-foreground shadow-none hover:bg-accent',
+                class: 'eb-cta mt-7 h-11 bg-background px-6 text-xs text-foreground shadow-none hover:bg-accent',
             })}
         >
             Explore Our Catalogue
@@ -235,7 +235,7 @@
     </div>
 </section>
 
-<section class="container-wide section-space">
+<section class="better-way container-wide section-space" {@attach revealOnView}>
     <SectionHeading
         eyebrow="More than equipment"
         title="A Better Way to Source Dental Equipment"
@@ -243,10 +243,12 @@
     />
     <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-9">
         {#each reasons as { icon: Icon, title, text }, i (title)}
-            <div class="border-t pt-6">
+            <div class="better-way-card relative border-t pt-6">
                 <div class="mb-5 flex items-center justify-between">
                     <Icon class="size-7 text-primary" strokeWidth={1.3} />
-                    <span class="text-[10px] text-muted-foreground">0{i + 1}</span>
+                    <span class="better-way-num text-[10px] text-muted-foreground"
+                        >0{i + 1}</span
+                    >
                 </div>
                 <h3 class="text-sm leading-6">{title}</h3>
                 <p class="mt-3 text-[11px] leading-7 text-muted-foreground">

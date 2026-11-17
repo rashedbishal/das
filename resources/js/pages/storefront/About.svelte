@@ -11,6 +11,13 @@
     import PageMeta from '@/components/storefront/PageMeta.svelte';
     import { contact } from '@/routes';
 
+    /** Headline words, numbered across both lines so they animate in reading order. */
+    let headlineWordCount = 0;
+    const headlineLines = [
+        ['Better', 'equipment.'],
+        ['A', 'more', 'personal', 'approach.'],
+    ].map((words) => words.map((word) => ({ word, index: headlineWordCount++ })));
+
     const principles = [
         {
             icon: Layers3,
@@ -40,26 +47,42 @@
 </div>
 
 <section
-    class="relative isolate flex min-h-[510px] items-center overflow-hidden bg-secondary"
+    class="about-hero relative isolate flex min-h-[440px] items-center overflow-hidden bg-secondary sm:min-h-[510px]"
 >
-    <img
-        src={hero}
-        class="absolute inset-0 -z-20 h-full w-full object-cover object-[65%] opacity-35"
-        alt="A modern dental treatment suite"
-        width={1920}
-        height={1024}
-    />
-    <div class="container-wide py-16">
-        <p class="eyebrow mb-5">Meet DAS</p>
-        <h1 class="max-w-[650px] text-[44px] leading-[1.1] md:text-[60px]">
-            Better equipment.
-            <br />A more personal approach.
+    <div class="about-hero-parallax absolute inset-0 -z-20">
+        <img
+            src={hero}
+            class="about-hero-image h-full w-full object-cover object-[65%] opacity-35"
+            alt="A modern dental treatment suite"
+            width={1920}
+            height={1024}
+        />
+    </div>
+    <div class="container-wide py-14 sm:py-16">
+        <p class="about-hero-eyebrow eyebrow mb-5">Meet DAS</p>
+        <h1
+            class="max-w-[650px] text-[36px] leading-[1.1] sm:text-[44px] md:text-[60px]"
+        >
+            {#each headlineLines as words, line (line)}
+                <span class="about-hero-line">
+                    {#each words as { word, index } (index)}
+                        <span class="about-hero-word" style:--i={index}
+                            >{word}</span
+                        >{' '}
+                    {/each}
+                </span>
+            {/each}
         </h1>
-        <p class="mt-7 max-w-md text-sm leading-8">
+        <p class="about-hero-copy mt-6 max-w-md text-sm leading-7 sm:mt-7 sm:leading-8">
             We believe choosing dental equipment should feel considered, clear
             and human. Your practice deserves nothing less.
         </p>
-        <Link href={contact.url()} class={buttonClass({ class: 'mt-8 h-11' })}>
+        <Link
+            href={contact.url()}
+            class={buttonClass({
+                class: 'about-hero-cta mt-8 h-11 w-full justify-center sm:w-auto',
+            })}
+        >
             Let’s start a conversation
             <ArrowUpRight />
         </Link>
@@ -99,3 +122,178 @@
 </section>
 
 <ContactBanner />
+
+<style>
+    /*
+     * About hero entrance. Pure CSS, so it plays straight from the
+     * server-rendered page with no flash. Only opacity, transform and (briefly)
+     * filter animate. Reduced-motion users see the hero at rest.
+     */
+    .about-hero {
+        --about-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /*
+     * Headline: every word unfolds upward in 3D out of a soft blur, in reading
+     * order (--i is the word's position). Once all have landed, a band of the
+     * primary colour runs across the words one after another, like light along
+     * polished steel. The text is painted with a gradient clipped to the
+     * letters; at rest only the plain foreground part of it shows.
+     */
+    .about-hero-line {
+        display: block;
+        perspective: 700px;
+    }
+    .about-hero-word {
+        display: inline-block;
+        transform-origin: 50% 100%;
+        color: transparent;
+        background-image: linear-gradient(
+            110deg,
+            var(--foreground) 38%,
+            color-mix(in oklab, var(--primary) 55%, white) 50%,
+            var(--foreground) 62%
+        );
+        background-size: 260% 100%;
+        background-position: 100% 0;
+        -webkit-background-clip: text;
+        background-clip: text;
+    }
+
+    .about-hero-eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .about-hero-eyebrow::before {
+        content: '';
+        width: 28px;
+        height: 1px;
+        background: currentColor;
+        transform-origin: left;
+    }
+
+    .about-hero :global(.about-hero-cta) {
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+    }
+    .about-hero :global(.about-hero-cta)::after {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 40%;
+        z-index: -1;
+        pointer-events: none;
+        background: linear-gradient(
+            100deg,
+            rgb(255 255 255 / 0) 0%,
+            rgb(255 255 255 / 0.35) 50%,
+            rgb(255 255 255 / 0) 100%
+        );
+        transform: translateX(-120%) skewX(-18deg);
+    }
+    .about-hero :global(.about-hero-cta svg) {
+        transition: transform 0.35s var(--about-ease);
+    }
+    .about-hero :global(.about-hero-cta:hover svg) {
+        transform: translate(2px, -2px);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .about-hero-image {
+            animation: about-image 2.4s var(--about-ease) both;
+        }
+        .about-hero-eyebrow {
+            animation: about-fade 0.9s var(--about-ease) 0.25s both;
+        }
+        .about-hero-eyebrow::before {
+            animation: about-draw 1s var(--about-ease) 0.3s both;
+        }
+        .about-hero-word {
+            animation:
+                about-word 1.3s var(--about-ease) calc(0.35s + var(--i) * 90ms)
+                    both,
+                about-word-sheen 1.5s cubic-bezier(0.65, 0, 0.35, 1)
+                    calc(1.6s + var(--i) * 110ms) both;
+        }
+        .about-hero-copy {
+            animation: about-focus 1.1s var(--about-ease) 0.8s both;
+        }
+        .about-hero :global(.about-hero-cta) {
+            animation: about-rise 1s var(--about-ease) 1s both;
+        }
+        .about-hero :global(.about-hero-cta)::after {
+            animation: about-sheen 1.2s var(--about-ease) 1.9s both;
+        }
+
+        /* The photo drifts slower than the page as the hero scrolls away. */
+        @supports (animation-timeline: view()) {
+            .about-hero-parallax {
+                animation: about-parallax linear both;
+                animation-timeline: view();
+                animation-range: exit 0% exit 100%;
+            }
+        }
+    }
+
+    @keyframes about-image {
+        from {
+            opacity: 0;
+            transform: scale(1.12);
+        }
+        to {
+            opacity: 0.35;
+            transform: scale(1);
+        }
+    }
+    @keyframes about-fade {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+    }
+    @keyframes about-draw {
+        from {
+            transform: scaleX(0);
+        }
+    }
+    @keyframes about-word {
+        from {
+            opacity: 0;
+            filter: blur(12px);
+            transform: translateY(0.5em) rotateX(-75deg) scale(0.96);
+        }
+    }
+    @keyframes about-word-sheen {
+        from {
+            background-position: 100% 0;
+        }
+        to {
+            background-position: 0% 0;
+        }
+    }
+    @keyframes about-focus {
+        from {
+            opacity: 0;
+            filter: blur(8px);
+            transform: translateY(10px);
+        }
+    }
+    @keyframes about-rise {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+    }
+    @keyframes about-sheen {
+        to {
+            transform: translateX(320%) skewX(-18deg);
+        }
+    }
+    @keyframes about-parallax {
+        to {
+            transform: translateY(18%);
+        }
+    }
+</style>

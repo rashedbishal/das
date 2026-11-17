@@ -52,6 +52,40 @@ export function enableMotion(): () => void {
     };
 }
 
+/**
+ * Attachment (`{@attach revealOnView}`): plays an element's entrance once, the
+ * first time it scrolls into view. It sets `data-reveal="armed"` (start
+ * state) and then `data-reveal="in"` (play); the styles live in motion.css.
+ * It only arms an element that is still below the fold, so the
+ * server-rendered content is never hidden without JavaScript and nothing
+ * already on screen blinks out. motion.css applies the start state only
+ * under `data-motion`, so Data Saver users simply see the content.
+ */
+export function revealOnView(node: HTMLElement) {
+    if (
+        prefersReducedMotion() ||
+        typeof IntersectionObserver === 'undefined' ||
+        node.getBoundingClientRect().top < window.innerHeight * 0.85
+    ) {
+        return;
+    }
+
+    node.dataset.reveal = 'armed';
+
+    const observer = new IntersectionObserver(
+        (entries) => {
+            if (entries.some((entry) => entry.isIntersecting)) {
+                node.dataset.reveal = 'in';
+                observer.disconnect();
+            }
+        },
+        { threshold: 0.3 },
+    );
+    observer.observe(node);
+
+    return () => observer.disconnect();
+}
+
 /** Remember which card was clicked so its photo can morph into the product page. */
 export function markMorph(slug: string) {
     motion.morphSlug = slug;
