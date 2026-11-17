@@ -54,4 +54,8 @@ Route::middleware(['guest', 'throttle:10,1'])->prefix('auth/google')->name('auth
 
 require __DIR__.'/admin.php';
 
-Route::fallback(fn () => Inertia::render('storefront/NotFound')->toResponse(request())->setStatusCode(404));
+// Unknown pages get the storefront 404. Unknown API endpoints are left to the
+// exception handler instead, so API clients get a JSON 404, not an HTML page.
+Route::fallback(fn () => request()->is('api/*')
+    ? abort(404)
+    : Inertia::render('storefront/NotFound')->toResponse(request())->setStatusCode(404));
