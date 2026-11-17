@@ -109,10 +109,7 @@ const OWN_MOTION = '.sf-own-motion';
  * left alone, so nothing visible ever blinks out.
  */
 function enableScrollReveal(): () => void {
-    if (
-        prefersReducedMotion() ||
-        !('IntersectionObserver' in window)
-    ) {
+    if (prefersReducedMotion() || !('IntersectionObserver' in window)) {
         return () => {};
     }
 

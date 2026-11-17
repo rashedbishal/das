@@ -87,7 +87,7 @@ All settings live in one `settings` table (`group`, `key`, `value` as JSON) behi
 | Group       | Keys                                                                                                                                                        |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `general`   | site_name, logo, favicon, contact_email, contact_phone, address, currency, timezone, social_links                                                           |
-| `auth`      | registration_enabled (sign-in and registration are by email only; new customers confirm their email with a 6-digit code)                                   |
+| `auth`      | registration_enabled (sign-in and registration are by email only; new customers confirm their email with a 6-digit code)                                    |
 | `whatsapp`  | enabled, phone, message                                                                                                                                     |
 | `messenger` | enabled, page_url                                                                                                                                           |
 | `catalog`   | page_size, featured_limit, delivery_note (shown on all product detail pages)                                                                                |
