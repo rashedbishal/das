@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\LogsModelActivity;
+use App\Notifications\ResetPasswordNotification;
 use App\Support\PhoneNumber;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -48,6 +49,16 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /** @var array<int, string> */
     protected array $activityLogExcept = ['password'];
+
+    /**
+     * Send the DAS-branded "forgot password" email.
+     *
+     * @param  string  $token
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
+    }
 
     protected function activityType(): string
     {
