@@ -129,7 +129,10 @@
 
 <TrustStrip />
 
-<section class="practice-needs container-wide section-space" {@attach revealOnView}>
+<section
+    class="practice-needs sf-own-motion container-wide section-space"
+    {@attach revealOnView}
+>
     <SectionHeading
         eyebrow="Explore the collection"
         title="Everything Your Practice Needs"
@@ -171,7 +174,7 @@
     </div>
 </section>
 
-<section class="editorial-banner" {@attach revealOnView}>
+<section class="editorial-banner sf-own-motion" {@attach revealOnView}>
     <img
         src={hero}
         width={1920}
@@ -179,7 +182,7 @@
         loading="lazy"
         alt="Modern dental equipment in a bright, carefully designed clinical space"
     />
-    <div class="sf-reveal container-wide py-16 lg:py-[70px]">
+    <div class="container-wide py-16 lg:py-[70px]">
         <div
             class="eb-eyebrow mb-5 flex items-center gap-2 text-[9px] tracking-[1.7px] uppercase opacity-70"
         >
@@ -235,7 +238,10 @@
     </div>
 </section>
 
-<section class="better-way container-wide section-space" {@attach revealOnView}>
+<section
+    class="better-way sf-own-motion container-wide section-space"
+    {@attach revealOnView}
+>
     <SectionHeading
         eyebrow="More than equipment"
         title="A Better Way to Source Dental Equipment"
@@ -243,11 +249,7 @@
     />
     <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-9">
         {#each reasons as { icon: Icon, title, text }, i (title)}
-<<<<<<< HEAD
             <div class="better-way-card relative border-t pt-6">
-=======
-            <div class="sf-reveal border-t pt-6" style:--sf-i={i}>
->>>>>>> 39c0ea4 (animation: added in pages)
                 <div class="mb-5 flex items-center justify-between">
                     <Icon class="size-7 text-primary" strokeWidth={1.3} />
                     <span class="better-way-num text-[10px] text-muted-foreground"

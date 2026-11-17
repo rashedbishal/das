@@ -69,7 +69,6 @@
 
 <section class="contact-page container-wide pt-10 pb-20">
     <Breadcrumb items={[{ label: 'Contact Us' }]} />
-<<<<<<< HEAD
     <p class="contact-eyebrow eyebrow mb-3">
         A conversation is a good place to start
     </p>
@@ -80,11 +79,6 @@
         {/each}
     </h1>
     <p class="contact-intro section-intro max-w-lg">
-=======
-    <p class="sf-enter eyebrow mb-3">A conversation is a good place to start</p>
-    <h1 class="sf-enter page-heading" style:--sf-i={1}>Let’s talk about your practice.</h1>
-    <p class="sf-enter section-intro max-w-lg" style:--sf-i={2}>
->>>>>>> 39c0ea4 (animation: added in pages)
         A product question, a new clinical setup, or a little guidance on what
         comes next. We’re here to help.
     </p>

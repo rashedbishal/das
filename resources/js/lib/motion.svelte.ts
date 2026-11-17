@@ -56,7 +56,6 @@ export function enableMotion(): () => void {
     };
 }
 
-<<<<<<< HEAD
 /**
  * Attachment (`{@attach revealOnView}`): plays an element's entrance once, the
  * first time it scrolls into view. It sets `data-reveal="armed"` (start
@@ -89,10 +88,18 @@ export function revealOnView(node: HTMLElement) {
     observer.observe(node);
 
     return () => observer.disconnect();
-=======
+}
+
 /** Elements that rise in on scroll; keep in sync with motion.css. */
 const REVEAL_SELECTOR =
     '.product-card:not(.is-skeleton),.category-card:not(.is-skeleton),.section-head,.sf-reveal';
+
+/**
+ * Sections with their own choreographed entrance (revealOnView + motion.css,
+ * e.g. the home page's editorial banner): the site-wide reveal leaves
+ * everything inside them alone, so nothing animates twice.
+ */
+const OWN_MOTION = '.sf-own-motion';
 
 /**
  * Scroll reveals (styles in motion.css). Elements below the fold are hidden
@@ -147,7 +154,10 @@ function enableScrollReveal(): () => void {
 
             seen.add(el);
 
-            if (el.getBoundingClientRect().top >= fold) {
+            if (
+                !el.closest(OWN_MOTION) &&
+                el.getBoundingClientRect().top >= fold
+            ) {
                 el.classList.add('sf-pending');
                 pending.add(el);
                 io.observe(el);
@@ -169,7 +179,6 @@ function enableScrollReveal(): () => void {
             .querySelectorAll('.sf-pending,.sf-in')
             .forEach((el) => el.classList.remove('sf-pending', 'sf-in'));
     };
->>>>>>> 39c0ea4 (animation: added in pages)
 }
 
 /** Remember which card was clicked so its photo can morph into the product page. */

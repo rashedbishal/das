@@ -49,7 +49,6 @@
 <section
     class="about-hero relative isolate flex min-h-[440px] items-center overflow-hidden bg-secondary sm:min-h-[510px]"
 >
-<<<<<<< HEAD
     <div class="about-hero-parallax absolute inset-0 -z-20">
         <img
             src={hero}
@@ -75,35 +74,14 @@
             {/each}
         </h1>
         <p class="about-hero-copy mt-6 max-w-md text-sm leading-7 sm:mt-7 sm:leading-8">
-=======
-    <img
-        src={hero}
-        class="absolute inset-0 -z-20 h-full w-full object-cover object-[65%] opacity-35"
-        alt="A modern dental treatment suite"
-        width={1920}
-        height={1024}
-    />
-    <div class="container-wide py-16">
-        <p class="sf-enter eyebrow mb-5">Meet DAS</p>
-        <h1 style:--sf-i={1} class="sf-enter max-w-[650px] text-[44px] leading-[1.1] md:text-[60px]">
-            Better equipment.
-            <br />A more personal approach.
-        </h1>
-        <p class="sf-enter mt-7 max-w-md text-sm leading-8" style:--sf-i={2}>
->>>>>>> 39c0ea4 (animation: added in pages)
             We believe choosing dental equipment should feel considered, clear
             and human. Your practice deserves nothing less.
         </p>
         <Link
             href={contact.url()}
-<<<<<<< HEAD
             class={buttonClass({
                 class: 'about-hero-cta mt-8 h-11 w-full justify-center sm:w-auto',
             })}
-=======
-            class={buttonClass({ class: 'sf-enter mt-8 h-11' })}
-            style="--sf-i: 3"
->>>>>>> 39c0ea4 (animation: added in pages)
         >
             Let’s start a conversation
             <ArrowUpRight />
