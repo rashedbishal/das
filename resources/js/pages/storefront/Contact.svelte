@@ -8,7 +8,7 @@
     import Breadcrumb from '@/components/storefront/Breadcrumb.svelte';
     import EnquiryForm from '@/components/storefront/EnquiryForm.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
-    import { dayLabel, formatTime, orderedHours } from '@/lib/business';
+    import { groupedHours } from '@/lib/business';
     import { resolvePhone } from '@/lib/contact';
     import { contact } from '@/routes';
 
@@ -31,7 +31,8 @@
     );
     const headlineWords = 'Let’s talk about your practice.'.split(' ');
 
-    const hours = $derived(orderedHours(page.props.siteSettings.openingHours));
+    // Consecutive days with the same hours share a row ("Saturday to Thursday").
+    const hours = $derived(groupedHours(page.props.siteSettings.openingHours));
 
     // The footer's "Request a Quote" link opens this page at the form, framed as a quote request.
     const isQuoteRequest = $derived(new URL(page.url, 'http://localhost').searchParams.get('quote') === '1');
@@ -121,10 +122,10 @@
                         Business hours
                     </h3>
                     <dl class="space-y-1.5 text-xs">
-                        {#each hours as entry, i (entry.day)}
+                        {#each hours as { days, time }, i (days)}
                             <div class="flex justify-between gap-4" style:--i={i}>
-                                <dt class="text-muted-foreground">{dayLabel(entry.day)}</dt>
-                                <dd>{entry.closed ? 'Closed' : `${formatTime(entry.opens)} – ${formatTime(entry.closes)}`}</dd>
+                                <dt class="text-muted-foreground">{days}</dt>
+                                <dd class="text-right">{time}</dd>
                             </div>
                         {/each}
                     </dl>

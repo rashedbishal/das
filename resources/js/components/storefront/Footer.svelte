@@ -97,8 +97,8 @@
                     {/if}
                     {#if hoursLines.length}
                         <span class="leading-6 opacity-65">
-                            {#each hoursLines as line (line)}
-                                <span class="block">{line}</span>
+                            {#each hoursLines as { days, time } (days)}
+                                <span class="block">{days}: {time}</span>
                             {/each}
                         </span>
                     {/if}

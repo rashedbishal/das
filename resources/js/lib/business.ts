@@ -50,15 +50,19 @@ export function orderedHours(
     );
 }
 
+/** One run of days with the same hours: "Saturday to Thursday" / "10:00 AM – 7:00 PM". */
+export type HoursGroup = { days: string; time: string };
+
 /**
- * The week as short lines, with consecutive days that share the same hours
- * merged: "Saturday to Thursday: 10:00 AM – 7:00 PM", "Friday: Closed".
- * Built from the CMS settings, so it stays right when the hours change.
- * Days left unset in the CMS are skipped and break a run.
+ * The week with consecutive days that share the same hours merged:
+ * { days: "Saturday to Thursday", time: "10:00 AM – 7:00 PM" },
+ * { days: "Friday", time: "Closed" }. Built from the CMS settings, so it
+ * stays right when the hours change. Days left unset in the CMS are skipped
+ * and break a run. Used by the footer and the contact page.
  */
 export function groupedHours(
     hours: OpeningHoursDay[] | null | undefined,
-): string[] {
+): HoursGroup[] {
     const groups: { first: OpeningHoursDay['day']; last: OpeningHoursDay['day']; count: number; time: string }[] = [];
     let previousIndex = -2;
 
@@ -87,7 +91,7 @@ export function groupedHours(
                   ? `${dayLabel(first)} & ${dayLabel(last)}`
                   : `${dayLabel(first)} to ${dayLabel(last)}`;
 
-        return `${days}: ${time}`;
+        return { days, time };
     });
 }
 
