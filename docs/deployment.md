@@ -176,44 +176,44 @@ Needs a plan with SSH access (Premium or higher).
 1. **hPanel → Advanced → PHP Configuration:** PHP 8.3. **Databases → MySQL:** create a database and user.
 2. **hPanel → Advanced → SSH Access:** enable SSH; note the host IP, port (usually `65002`) and username (`u123456789`).
 3. **Create a deploy key** on your own computer and authorise it on the server:
-   ```bash
-   ssh-keygen -t ed25519 -f das_deploy -N "" -C "github-deploy"
-   ```
-   Add `das_deploy.pub` in **hPanel → SSH Access → SSH keys**. Record the server's host key for the pipeline:
-   ```bash
-   ssh-keyscan -p 65002 <host-ip>      # copy all of the output
-   ```
+    ```bash
+    ssh-keygen -t ed25519 -f das_deploy -N "" -C "github-deploy"
+    ```
+    Add `das_deploy.pub` in **hPanel → SSH Access → SSH keys**. Record the server's host key for the pipeline:
+    ```bash
+    ssh-keyscan -p 65002 <host-ip>      # copy all of the output
+    ```
 4. **Pick the app folder** (outside `public_html`), e.g. `/home/u123456789/domains/<your-domain>/das`, and point the website at its `public/` folder. Over SSH:
-   ```bash
-   cd ~/domains/<your-domain>
-   mv public_html public_html.bak         # keep Hostinger's placeholder until the site works
-   mkdir das && ln -s das/public public_html
-   php -v                                 # must say 8.3; if not, use e.g. /opt/alt/php83/usr/bin/php as PHP_BIN
-   ```
-   Until you buy a domain, use the temporary domain Hostinger assigns (shown in hPanel) — `<your-domain>` is its folder name.
+    ```bash
+    cd ~/domains/<your-domain>
+    mv public_html public_html.bak         # keep Hostinger's placeholder until the site works
+    mkdir das && ln -s das/public public_html
+    php -v                                 # must say 8.3; if not, use e.g. /opt/alt/php83/usr/bin/php as PHP_BIN
+    ```
+    Until you buy a domain, use the temporary domain Hostinger assigns (shown in hPanel) — `<your-domain>` is its folder name.
 5. **GitHub → Settings → Environments → New environment `production`.** Add these **environment secrets**:
 
-   | Secret | Value |
-   |---|---|
-   | `SSH_HOST` | server IP from step 2 |
-   | `SSH_PORT` | `65002` |
-   | `SSH_USER` | `u123456789` |
-   | `SSH_PRIVATE_KEY` | full contents of `das_deploy` (the private key) |
-   | `SSH_KNOWN_HOSTS` | output of `ssh-keyscan` from step 3 |
-   | `DEPLOY_PATH` | absolute app folder from step 4, e.g. `/home/u123456789/domains/<your-domain>/das` |
+    | Secret            | Value                                                                              |
+    | ----------------- | ---------------------------------------------------------------------------------- |
+    | `SSH_HOST`        | server IP from step 2                                                              |
+    | `SSH_PORT`        | `65002`                                                                            |
+    | `SSH_USER`        | `u123456789`                                                                       |
+    | `SSH_PRIVATE_KEY` | full contents of `das_deploy` (the private key)                                    |
+    | `SSH_KNOWN_HOSTS` | output of `ssh-keyscan` from step 3                                                |
+    | `DEPLOY_PATH`     | absolute app folder from step 4, e.g. `/home/u123456789/domains/<your-domain>/das` |
 
-   Optional **environment variable** `PHP_BIN` if plain `php` over SSH is not 8.3. Optionally add yourself as a *required reviewer* on the environment to approve each deploy.
+    Optional **environment variable** `PHP_BIN` if plain `php` over SSH is not 8.3. Optionally add yourself as a _required reviewer_ on the environment to approve each deploy.
+
 6. **Run the workflow once** (Actions → deploy → Run workflow). It uploads the code and then stops with "`.env` is missing" — expected on the first run.
 7. **Create `.env`** on the server in `DEPLOY_PATH` from `.env.production.example` (keep `INERTIA_SSR_ENABLED=false`, `QUEUE_WORK_FROM_SCHEDULER=true`; `APP_URL` = the temporary or final domain with `https://`), then:
-   ```bash
-   cd <DEPLOY_PATH>
-   php artisan key:generate
-   php artisan migrate --force
-   php artisan db:seed --class=RolePermissionSeeder --force
-   php artisan db:seed --class=SettingsSeeder --force
-   php artisan das:bootstrap-mother-admin   # then remove MOTHER_ADMIN_* from .env
-   ```
+    ```bash
+    cd <DEPLOY_PATH>
+    php artisan key:generate
+    php artisan migrate --force
+    php artisan db:seed --class=RolePermissionSeeder --force
+    php artisan db:seed --class=SettingsSeeder --force
+    php artisan das:bootstrap-mother-admin   # then remove MOTHER_ADMIN_* from .env
+    ```
 8. **Run the workflow again**; it should finish green and the site is live.
 9. **hPanel → Advanced → Cron Jobs:** every minute, `cd <DEPLOY_PATH> && php artisan schedule:run >> /dev/null 2>&1` (use `PHP_BIN`'s path if different).
 10. When you buy the domain: add it in hPanel, repeat step 4's `public_html` link in its folder (or move the app), update `APP_URL` and `SANCTUM_STATEFUL_DOMAINS` in `.env`, enable SSL in hPanel, then `php artisan optimize`.
-
