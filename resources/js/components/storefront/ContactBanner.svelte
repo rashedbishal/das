@@ -30,13 +30,15 @@
             </p>
         </div>
         <div class="flex flex-wrap gap-3">
-            <a
-                href="tel:{phone.tel}"
-                class={buttonClass({ class: 'h-11 px-5 text-[11px] shadow-none' })}
-            >
-                <Phone class="size-3.5" />
-                Call Our Sales Team
-            </a>
+            {#if phone}
+                <a
+                    href="tel:{phone.tel}"
+                    class={buttonClass({ class: 'h-11 px-5 text-[11px] shadow-none' })}
+                >
+                    <Phone class="size-3.5" />
+                    Call Our Sales Team
+                </a>
+            {/if}
             <Link
                 href={contact.url()}
                 class={buttonClass({

@@ -4,7 +4,7 @@
     import Plus from '@lucide/svelte/icons/plus';
     import { mapCategory, type RawCategory } from '@/data/catalogue';
     import { dayLabel, formatTime, orderedHours } from '@/lib/business';
-    import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
+    import { resolvePhone } from '@/lib/contact';
     import { about, brands, catalogue, contact, home } from '@/routes';
     import { show as categoryShow } from '@/routes/categories';
     import Wordmark from './Wordmark.svelte';
@@ -21,7 +21,7 @@
         ),
     );
     const email = $derived(
-        page.props.siteSettings.contactEmail || FALLBACK_CONTACT.email,
+        page.props.siteSettings.contactEmail || null,
     );
     const hoursSummary = $derived(
         orderedHours(page.props.siteSettings.openingHours)
@@ -78,14 +78,18 @@
             <div class="col-span-2 sm:col-span-1">
                 <h3 class="footer-heading">Let’s talk equipment</h3>
                 <div class="footer-links">
-                    <a
-                        href="tel:{phone.tel}"
-                        class="flex items-center gap-2"
-                    >
-                        <Phone class="size-3.5" />
-                        {phone.display}
-                    </a>
-                    <a href="mailto:{email}">{email}</a>
+                    {#if phone}
+                        <a
+                            href="tel:{phone.tel}"
+                            class="flex items-center gap-2"
+                        >
+                            <Phone class="size-3.5" />
+                            {phone.display}
+                        </a>
+                    {/if}
+                    {#if email}
+                        <a href="mailto:{email}">{email}</a>
+                    {/if}
                     {#if page.props.siteSettings.address}
                         <span class="leading-6 opacity-65">
                             {[page.props.siteSettings.address, page.props.siteSettings.addressCity]
@@ -95,8 +99,6 @@
                     {/if}
                     {#if hoursSummary}
                         <span class="leading-6 opacity-65">{hoursSummary}</span>
-                    {:else}
-                        <span class="leading-6 opacity-65">{FALLBACK_CONTACT.hours}</span>
                     {/if}
                 </div>
             </div>

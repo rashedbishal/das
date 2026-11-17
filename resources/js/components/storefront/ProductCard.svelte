@@ -1,11 +1,12 @@
 <script lang="ts">
-    import { page } from '@inertiajs/svelte';
+    import { Link, page } from '@inertiajs/svelte';
     import ArrowRight from '@lucide/svelte/icons/arrow-right';
     import Phone from '@lucide/svelte/icons/phone';
     import { formatPrice } from '@/data/catalogue';
     import type { ProductCard as ProductCardType } from '@/data/catalogue';
     import { resolvePhone } from '@/lib/contact';
     import { markMorph, motion } from '@/lib/motion.svelte';
+    import { contact } from '@/routes';
     import { show } from '@/routes/products';
     import ProductLink from './ProductLink.svelte';
 
@@ -88,13 +89,22 @@
             </ProductLink>
         </div>
         {#if !showsPrice}
-            <a
-                href="tel:{phone.tel}"
-                class="mt-3 inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary"
-            >
-                <Phone class="size-3" />
-                Call for Price
-            </a>
+            {#if phone}
+                <a
+                    href="tel:{phone.tel}"
+                    class="mt-3 inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary"
+                >
+                    <Phone class="size-3" />
+                    Call for Price
+                </a>
+            {:else}
+                <Link
+                    href={`${contact.url({ query: { quote: 1 } })}#enquiry`}
+                    class="mt-3 inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary"
+                >
+                    Ask for Price
+                </Link>
+            {/if}
         {/if}
     </div>
 </article>

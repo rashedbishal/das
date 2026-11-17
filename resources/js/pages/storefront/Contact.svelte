@@ -9,7 +9,7 @@
     import EnquiryForm from '@/components/storefront/EnquiryForm.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
     import { dayLabel, formatTime, orderedHours } from '@/lib/business';
-    import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
+    import { resolvePhone } from '@/lib/contact';
     import { contact } from '@/routes';
 
     const phone = $derived(
@@ -18,9 +18,7 @@
             page.props.siteSettings.contactPhone,
         ),
     );
-    const email = $derived(
-        page.props.siteSettings.contactEmail || FALLBACK_CONTACT.email,
-    );
+    const email = $derived(page.props.siteSettings.contactEmail || null);
     const address = $derived(
         [
             page.props.siteSettings.address,
@@ -29,7 +27,7 @@
             page.props.siteSettings.postalCode,
         ]
             .filter(Boolean)
-            .join(', ') || FALLBACK_CONTACT.address,
+            .join(', '),
     );
     const headlineWords = 'Let’s talk about your practice.'.split(' ');
 
@@ -38,29 +36,29 @@
     // The footer's "Request a Quote" link opens this page at the form, framed as a quote request.
     const isQuoteRequest = $derived(new URL(page.url, 'http://localhost').searchParams.get('quote') === '1');
 
-    const details = $derived([
-        {
-            icon: Phone,
-            label: 'Call our sales team',
-            value: phone.display,
-            href: `tel:${phone.tel}`,
-        },
-        {
-            icon: Mail,
-            label: 'Email us',
-            value: email,
-            href: `mailto:${email}`,
-        },
-        {
-            icon: MapPin,
-            label: 'Visit us',
-            value: address,
-            href: page.props.siteSettings.mapUrl ?? undefined,
-        },
-        ...(hours.length
-            ? []
-            : [{ icon: Clock, label: 'Business hours', value: FALLBACK_CONTACT.hours, href: undefined }]),
-    ]);
+    // Only the details set in the CMS (Settings → General) are listed.
+    const details = $derived(
+        [
+            phone && {
+                icon: Phone,
+                label: 'Call our sales team',
+                value: phone.display,
+                href: `tel:${phone.tel}`,
+            },
+            email && {
+                icon: Mail,
+                label: 'Email us',
+                value: email,
+                href: `mailto:${email}`,
+            },
+            address && {
+                icon: MapPin,
+                label: 'Visit us',
+                value: address,
+                href: page.props.siteSettings.mapUrl ?? undefined,
+            },
+        ].filter((detail) => !!detail),
+    );
 </script>
 
 <PageMeta

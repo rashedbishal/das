@@ -20,7 +20,7 @@
         type Category,
         type ProductCard,
     } from '@/data/catalogue';
-    import { FALLBACK_CONTACT, resolvePhone } from '@/lib/contact';
+    import { resolvePhone } from '@/lib/contact';
     import { currentUrlState } from '@/lib/currentUrl.svelte';
     import {
         about,
@@ -54,7 +54,7 @@
         ),
     );
     const email = $derived(
-        page.props.siteSettings.contactEmail || FALLBACK_CONTACT.email,
+        page.props.siteSettings.contactEmail || null,
     );
     const user = $derived(page.props.auth.user);
     const isAdmin = $derived(user?.user_type === 'admin');
@@ -193,11 +193,19 @@
             Professional Dental Equipment <span class="mx-2 opacity-40">|</span>
             Expert Product Assistance
         </span>
-        <a href="mailto:{email}" class="hidden opacity-80 sm:block">
-            Let’s find the right equipment <ArrowUpRight
-                class="ml-1 inline size-3"
-            />
-        </a>
+        {#if email}
+            <a href="mailto:{email}" class="hidden opacity-80 sm:block">
+                Let’s find the right equipment <ArrowUpRight
+                    class="ml-1 inline size-3"
+                />
+            </a>
+        {:else}
+            <Link href={contact.url()} class="hidden opacity-80 sm:block">
+                Let’s find the right equipment <ArrowUpRight
+                    class="ml-1 inline size-3"
+                />
+            </Link>
+        {/if}
     </div>
 </div>
 <header class="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-md">
@@ -296,15 +304,26 @@
                 </Link>
             {/if}
             <div class="hidden h-6 border-l md:block"></div>
-            <a
-                href="tel:{phone.tel}"
-                class={buttonClass({
-                    class: 'hidden h-10 px-5 text-[11px] shadow-none md:inline-flex',
-                })}
-            >
-                <Phone class="size-3.5" />
-                Call Sales
-            </a>
+            {#if phone}
+                <a
+                    href="tel:{phone.tel}"
+                    class={buttonClass({
+                        class: 'hidden h-10 px-5 text-[11px] shadow-none md:inline-flex',
+                    })}
+                >
+                    <Phone class="size-3.5" />
+                    Call Sales
+                </a>
+            {:else}
+                <Link
+                    href={contact.url()}
+                    class={buttonClass({
+                        class: 'hidden h-10 px-5 text-[11px] shadow-none md:inline-flex',
+                    })}
+                >
+                    Contact Sales
+                </Link>
+            {/if}
             <Button
                 variant="ghost"
                 size="icon"
@@ -482,13 +501,19 @@
             </Link>
         {/if}
     </nav>
-    <a
-        href="tel:{phone.tel}"
-        class={buttonClass({ class: 'mt-8 w-full' })}
-    >
-        <Phone />
-        Call Sales
-    </a>
+    {#if phone}
+        <a
+            href="tel:{phone.tel}"
+            class={buttonClass({ class: 'mt-8 w-full' })}
+        >
+            <Phone />
+            Call Sales
+        </a>
+    {:else}
+        <Link href={contact.url()} class={buttonClass({ class: 'mt-8 w-full' })}>
+            Contact Sales
+        </Link>
+    {/if}
 </Drawer>
 
 <Modal

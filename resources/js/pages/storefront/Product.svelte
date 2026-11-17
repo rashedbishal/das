@@ -318,13 +318,15 @@
                 </ul>
                 {#if authed}
                     <div class="flex flex-wrap gap-3">
-                        <a
-                            href="tel:{phone.tel}"
-                            class={buttonClass({ class: 'h-12 px-7 shadow-none' })}
-                        >
-                            <Phone />
-                            {showsPrice ? 'Call Sales' : 'Call for Price'}
-                        </a>
+                        {#if phone}
+                            <a
+                                href="tel:{phone.tel}"
+                                class={buttonClass({ class: 'h-12 px-7 shadow-none' })}
+                            >
+                                <Phone />
+                                {showsPrice ? 'Call Sales' : 'Call for Price'}
+                            </a>
+                        {/if}
                         {#key p.slug}
                             <QuoteDialog product={p.name} />
                         {/key}

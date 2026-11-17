@@ -1,18 +1,15 @@
-export const FALLBACK_CONTACT = {
-    phone: '01761158577',
-    telephone: '01761158577',
-    email: 'afazad@gmail.com',
-    address: 'Business address to be confirmed',
-    hours: 'Business hours available on request',
-};
-
+/**
+ * The sales phone number: the CMS contact phone, else the WhatsApp number.
+ * Null when neither is set, so callers hide their call links instead of
+ * showing a number that belongs to nobody (no hard-coded fallbacks).
+ */
 export function resolvePhone(
     whatsapp: {
         enabled: boolean;
         phone: string | null;
     },
     contactPhone: string | null = null,
-): { display: string; tel: string } {
+): { display: string; tel: string } | null {
     if (contactPhone?.trim()) {
         return {
             display: contactPhone,
@@ -24,5 +21,5 @@ export function resolvePhone(
         return { display: `+${whatsapp.phone}`, tel: `+${whatsapp.phone}` };
     }
 
-    return { display: FALLBACK_CONTACT.phone, tel: FALLBACK_CONTACT.telephone };
+    return null;
 }
