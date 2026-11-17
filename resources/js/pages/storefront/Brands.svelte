@@ -51,9 +51,9 @@
 
 <section class="container-wide pt-10 pb-20">
     <Breadcrumb items={[{ label: 'Brands' }]} />
-    <p class="eyebrow mb-3">Distinct expertise. Shared purpose.</p>
-    <h1 class="page-heading">The brands behind the detail.</h1>
-    <p class="section-intro max-w-xl">
+    <p class="sf-enter eyebrow mb-3">Distinct expertise. Shared purpose.</p>
+    <h1 class="sf-enter page-heading" style:--sf-i={1}>The brands behind the detail.</h1>
+    <p class="sf-enter section-intro max-w-xl" style:--sf-i={2}>
         Explore a range of specialist perspectives on clinical design, daily
         essentials and dental technology.
     </p>

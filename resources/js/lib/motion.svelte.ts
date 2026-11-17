@@ -43,15 +43,20 @@ export function motionMs(ms: number): number {
 export function enableMotion(): () => void {
     const root = document.documentElement;
 
-    if (!saveData()) {
-        root.dataset.motion = '';
+    if (saveData()) {
+        return () => {};
     }
 
+    root.dataset.motion = '';
+    const stopReveal = enableScrollReveal();
+
     return () => {
+        stopReveal();
         delete root.dataset.motion;
     };
 }
 
+<<<<<<< HEAD
 /**
  * Attachment (`{@attach revealOnView}`): plays an element's entrance once, the
  * first time it scrolls into view. It sets `data-reveal="armed"` (start
@@ -84,6 +89,87 @@ export function revealOnView(node: HTMLElement) {
     observer.observe(node);
 
     return () => observer.disconnect();
+=======
+/** Elements that rise in on scroll; keep in sync with motion.css. */
+const REVEAL_SELECTOR =
+    '.product-card:not(.is-skeleton),.category-card:not(.is-skeleton),.section-head,.sf-reveal';
+
+/**
+ * Scroll reveals (styles in motion.css). Elements below the fold are hidden
+ * (.sf-pending) and play a timed rise once (.sf-in) as they enter, staggered
+ * by --sf-i. Timed rather than scroll-linked, so items in a row visibly
+ * follow one another at any scroll speed. Elements already on screen are
+ * left alone, so nothing visible ever blinks out.
+ */
+function enableScrollReveal(): () => void {
+    if (
+        prefersReducedMotion() ||
+        !('IntersectionObserver' in window)
+    ) {
+        return () => {};
+    }
+
+    const seen = new WeakSet<Element>();
+    /** Hidden and waiting to scroll in. */
+    const pending = new Set<Element>();
+    const io = new IntersectionObserver(
+        (entries) => {
+            for (const { isIntersecting, target } of entries) {
+                if (isIntersecting) {
+                    io.unobserve(target);
+                    pending.delete(target);
+                    target.classList.replace('sf-pending', 'sf-in');
+                }
+            }
+        },
+        { rootMargin: '0px 0px -8% 0px' },
+    );
+
+    // New elements (page changes, "load more", filters) are picked up in one
+    // batch per frame.
+    let frame = 0;
+    const scan = () => {
+        frame = 0;
+        const fold = window.innerHeight;
+
+        // Let go of elements removed before they were ever seen.
+        for (const el of pending) {
+            if (!el.isConnected) {
+                io.unobserve(el);
+                pending.delete(el);
+            }
+        }
+
+        for (const el of document.querySelectorAll(REVEAL_SELECTOR)) {
+            if (seen.has(el)) {
+                continue;
+            }
+
+            seen.add(el);
+
+            if (el.getBoundingClientRect().top >= fold) {
+                el.classList.add('sf-pending');
+                pending.add(el);
+                io.observe(el);
+            }
+        }
+    };
+    const mo = new MutationObserver(() => {
+        frame ||= requestAnimationFrame(scan);
+    });
+
+    scan();
+    mo.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+        cancelAnimationFrame(frame);
+        mo.disconnect();
+        io.disconnect();
+        document
+            .querySelectorAll('.sf-pending,.sf-in')
+            .forEach((el) => el.classList.remove('sf-pending', 'sf-in'));
+    };
+>>>>>>> 39c0ea4 (animation: added in pages)
 }
 
 /** Remember which card was clicked so its photo can morph into the product page. */

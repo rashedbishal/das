@@ -495,7 +495,9 @@
                 </div>
             {/if}
             {#if items.length}
-                <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-5">
+                <div
+                    class="sf-stagger grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-5"
+                >
                     {#each items as p (p.id)}
                         <!-- Cards glide to their new place when filters change;
                              new ones fade in. -->

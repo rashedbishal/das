@@ -11,7 +11,6 @@
         type RawProductPage,
         type RawSubcategory,
     } from '@/data/catalogue';
-    import { Link } from '@inertiajs/svelte';
     import { index as categoriesIndex, show, subcategory as subcategoryShow } from '@/routes/categories';
 
     // Resolved server-side; unknown or inactive subcategories get a real 404.
@@ -28,7 +27,6 @@
     const c = $derived(mapCategory(category));
     const s = $derived(mapSubcategory(subcategory));
     const initial = $derived(initialProducts ? toProductPage(initialProducts) : null);
-    const siblings = $derived(c.subcategories.filter((sub) => sub.slug !== s.slug));
     const description = $derived(
         s.seo.description?.trim() ||
             s.description?.trim() ||
@@ -51,36 +49,13 @@
             { label: s.name },
         ]}
     />
-    <div class="mb-10 grid overflow-hidden rounded-md border bg-secondary md:grid-cols-[1fr_220px]">
-        <div class="p-7 lg:p-10">
-            <p class="eyebrow mb-3">{c.name}</p>
-            <h1 class="page-heading">{s.name}</h1>
-            <p class="section-intro">
-                {s.description?.trim() || `Explore ${s.name.toLowerCase()} selected around your clinical workflow.`}
-            </p>
-            {#if siblings.length > 0}
-                <nav aria-label="More in {c.name}" class="mt-6 flex flex-wrap gap-2">
-                    {#each siblings as sub (sub.id)}
-                        <Link
-                            href={subcategoryShow.url([c.slug, sub.slug])}
-                            class="rounded-full border bg-background px-3 py-1 text-[11px] hover:border-primary hover:text-primary"
-                        >
-                            {sub.name}
-                        </Link>
-                    {/each}
-                </nav>
-            {/if}
-        </div>
-        {#if s.image}
-            <img
-                src={s.image}
-                width={384}
-                height={512}
-                class="hidden h-64 w-full object-contain mix-blend-multiply md:block"
-                alt={s.name}
-            />
-        {/if}
-    </div>
+    <header class="mb-8 max-w-3xl">
+        <p class="sf-enter eyebrow mb-2">{c.name}</p>
+        <h1 class="sf-enter page-heading" style:--sf-i={1}>{s.name}</h1>
+        <p class="sf-enter section-intro" style:--sf-i={2}>
+            {s.description?.trim() || `Explore ${s.name.toLowerCase()} selected around your clinical workflow.`}
+        </p>
+    </header>
     {#key `${c.slug}/${s.slug}`}
         <CatalogueView
             fixedCategory={c.slug}

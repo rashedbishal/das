@@ -46,9 +46,9 @@
         ]}
     />
     <header class="mb-8 max-w-3xl">
-        <p class="eyebrow mb-2">A considered collection</p>
-        <h1 class="page-heading">{c.name}</h1>
-        <p class="section-intro">{intro}</p>
+        <p class="sf-enter eyebrow mb-2">A considered collection</p>
+        <h1 class="sf-enter page-heading" style:--sf-i={1}>{c.name}</h1>
+        <p class="sf-enter section-intro" style:--sf-i={2}>{intro}</p>
     </header>
     {#key c.slug}
         <CatalogueView

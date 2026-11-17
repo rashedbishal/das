@@ -34,9 +34,10 @@
     >
         {#each benefits as { icon: Icon, title, description }, i (title)}
             <div
-                class="flex items-start gap-3 pr-3 lg:gap-4 {i > 0
+                class="sf-reveal flex items-start gap-3 pr-3 lg:gap-4 {i > 0
                     ? 'lg:border-l lg:pl-7'
                     : ''}"
+                style:--sf-i={i}
             >
                 <Icon strokeWidth={1.4} class="size-6 shrink-0 text-primary" />
                 <div>

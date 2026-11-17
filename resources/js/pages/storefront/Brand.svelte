@@ -32,32 +32,24 @@
 
 <section class="container-wide pt-10 pb-16">
     <Breadcrumb items={[{ label: 'Brands', href: brandsIndex.url() }, { label: b.name }]} />
-    <div class="mb-10 grid overflow-hidden rounded-md border bg-secondary md:grid-cols-[1fr_220px]">
-        <div class="p-7 lg:p-10">
-            <p class="eyebrow mb-3">Brand</p>
-            <h1 class="page-heading">{b.name}</h1>
-            <p class="section-intro">
-                {b.description?.trim() || `Explore ${b.name} products available through DAS.`}
-            </p>
-            <p class="mt-5 text-[11px] text-muted-foreground">{b.productsCount} products</p>
+    <header class="mb-8 max-w-3xl">
+        <p class="sf-enter eyebrow mb-2">Brand</p>
+        <h1 class="sf-enter page-heading" style:--sf-i={1}>{b.name}</h1>
+        <p class="sf-enter section-intro" style:--sf-i={2}>
+            {b.description?.trim() || `Explore ${b.name} products available through DAS.`}
             {#if brand.website_url}
                 <a
                     href={brand.website_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="mt-4 inline-flex items-center gap-1.5 text-[11px] text-primary"
+                    class="ml-1 inline-flex items-center gap-1 whitespace-nowrap text-primary"
                 >
                     Official website
                     <ArrowUpRight class="size-3" />
                 </a>
             {/if}
-        </div>
-        {#if b.logo}
-            <div class="hidden items-center justify-center p-6 md:flex">
-                <img src={b.logo} alt="{b.name} logo" class="max-h-40 w-full object-contain" />
-            </div>
-        {/if}
-    </div>
+        </p>
+    </header>
     {#key b.slug}
         <CatalogueView fixedBrand={b.slug} urlFor={(query) => show.url(b.slug, { query })} {initial} />
     {/key}

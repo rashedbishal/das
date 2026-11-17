@@ -179,7 +179,7 @@
         loading="lazy"
         alt="Modern dental equipment in a bright, carefully designed clinical space"
     />
-    <div class="container-wide py-16 lg:py-[70px]">
+    <div class="sf-reveal container-wide py-16 lg:py-[70px]">
         <div
             class="eb-eyebrow mb-5 flex items-center gap-2 text-[9px] tracking-[1.7px] uppercase opacity-70"
         >
@@ -207,7 +207,7 @@
 
 <section class="container-wide border-b py-14 lg:py-16">
     <div
-        class="mb-9 flex flex-col justify-between gap-3 md:flex-row md:items-center"
+        class="sf-reveal mb-9 flex flex-col justify-between gap-3 md:flex-row md:items-center"
     >
         <div>
             <p class="eyebrow mb-2">Distinct expertise. Shared purpose.</p>
@@ -222,7 +222,7 @@
         </Link>
     </div>
     <div
-        class="grid grid-cols-2 items-center gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-6"
+        class="sf-reveal grid grid-cols-2 items-center gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-6"
     >
         {#each $brands as b (b.id)}
             <Link
@@ -243,7 +243,11 @@
     />
     <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-9">
         {#each reasons as { icon: Icon, title, text }, i (title)}
+<<<<<<< HEAD
             <div class="better-way-card relative border-t pt-6">
+=======
+            <div class="sf-reveal border-t pt-6" style:--sf-i={i}>
+>>>>>>> 39c0ea4 (animation: added in pages)
                 <div class="mb-5 flex items-center justify-between">
                     <Icon class="size-7 text-primary" strokeWidth={1.3} />
                     <span class="better-way-num text-[10px] text-muted-foreground"

@@ -21,9 +21,9 @@
 
 <section class="container-wide pt-9 pb-16 lg:pt-12">
     <Breadcrumb items={[{ label: 'Equipment Catalogue' }]} />
-    <p class="eyebrow mb-3">The DAS collection</p>
-    <h1 class="page-heading">Equipment for every ambition.</h1>
-    <p class="section-intro mb-10 max-w-xl text-sm">
+    <p class="sf-enter eyebrow mb-3">The DAS collection</p>
+    <h1 class="sf-enter page-heading" style:--sf-i={1}>Equipment for every ambition.</h1>
+    <p class="sf-enter section-intro mb-10 max-w-xl text-sm" style:--sf-i={2}>
         From the everyday essential to your next big investment. Find what’s
         right for your practice.
     </p>

@@ -16,9 +16,10 @@
    - Only opacity and transforms are animated, so everything runs on the GPU
      compositor. Reveals use the individual `translate` property, which
      composes with the existing hover `transform`s instead of overriding them.
-   - Scroll reveals are CSS scroll-driven animations (no scroll listeners,
-     no JS). Browsers without support skip them via @supports and simply show
-     the content.
+   - Scroll reveals use one IntersectionObserver (enableScrollReveal in
+     motion.svelte.ts; no scroll listeners) and play a short timed rise once
+     per element, so items in a row visibly follow one another at any scroll
+     speed. Content already on screen is never hidden.
    - Reduced motion turns every animation here off.
    ========================================================================== */
 
@@ -30,19 +31,66 @@
 /* ---------------------------------------------------------------- *
  * Scroll reveals
  * ---------------------------------------------------------------- */
-@supports (animation-timeline: view()) {
-    @media screen and (prefers-reduced-motion: no-preference) {
-        :root[data-motion] .product-card:not(.is-skeleton),
-        :root[data-motion] .category-card:not(.is-skeleton) {
-            animation: sf-rise linear both;
-            animation-timeline: view();
-            animation-range: entry 5% entry 65%;
-        }
-        :root[data-motion] .section-head {
-            animation: sf-rise linear both;
-            animation-timeline: view();
-            animation-range: entry 10% entry 90%;
-        }
+/*
+ * Revealed: product and category cards, section headings, and anything marked
+ * `.sf-reveal` (the list is REVEAL_SELECTOR in motion.svelte.ts).
+ * enableScrollReveal() hides those that start below the fold (.sf-pending)
+ * and plays the rise once as each scrolls in (.sf-in). Elements already on
+ * screen are never touched.
+ *
+ * `--sf-i` staggers items in a row: 0 for the first, 1 for the next, and so on.
+ * Set it inline (style="--sf-i: 2"), or put `.sf-stagger` on a grid of product
+ * cards to number each card by its column.
+ */
+@media screen and (prefers-reduced-motion: no-preference) {
+    :root[data-motion] .sf-pending {
+        opacity: 0;
+    }
+    :root[data-motion] .sf-in {
+        animation: sf-rise 0.65s var(--sf-ease-soft) both;
+        animation-delay: calc(var(--sf-i, 0) * 110ms);
+    }
+}
+
+/*
+ * Page-top entrance: the same rise, played once when the page opens, for
+ * content that is already on screen (so the scroll reveal leaves it alone),
+ * e.g. the brand page hero. Stagger with `--sf-i` as above.
+ */
+@media screen and (prefers-reduced-motion: no-preference) {
+    :root[data-motion] .sf-enter {
+        animation: sf-rise 0.65s var(--sf-ease-soft) both;
+        animation-delay: calc(var(--sf-i, 0) * 110ms);
+    }
+}
+
+/* Column number for each product card, matching the grids' column counts. */
+.sf-stagger > :nth-child(2n) {
+    --sf-i: 1;
+}
+@media (min-width: 768px) {
+    .sf-stagger > :nth-child(3n + 1) {
+        --sf-i: 0;
+    }
+    .sf-stagger > :nth-child(3n + 2) {
+        --sf-i: 1;
+    }
+    .sf-stagger > :nth-child(3n) {
+        --sf-i: 2;
+    }
+}
+@media (min-width: 1280px) {
+    .sf-stagger.xl\:grid-cols-4 > :nth-child(4n + 1) {
+        --sf-i: 0;
+    }
+    .sf-stagger.xl\:grid-cols-4 > :nth-child(4n + 2) {
+        --sf-i: 1;
+    }
+    .sf-stagger.xl\:grid-cols-4 > :nth-child(4n + 3) {
+        --sf-i: 2;
+    }
+    .sf-stagger.xl\:grid-cols-4 > :nth-child(4n) {
+        --sf-i: 3;
     }
 }
 
