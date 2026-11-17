@@ -2,27 +2,43 @@
     import { Link } from '@inertiajs/svelte';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
     import LayoutGrid from '@lucide/svelte/icons/layout-grid';
-    import { categories, loadCategories } from '@/data/catalogue';
+    import { categories, loadCategories, type Category } from '@/data/catalogue';
     import { show as categoryShow } from '@/routes/categories';
 
-    let pending = $state(true);
+    /**
+     * `items`: categories already on the page (e.g. server-rendered on the
+     * categories page). Without it, the list is loaded in the browser.
+     * `limit` caps how many show (in CMS sort order); `phoneLimit` shows fewer
+     * on phones (below 640px, hidden with CSS so nothing depends on JS).
+     */
+    let {
+        items,
+        limit,
+        phoneLimit,
+    }: { items?: Category[]; limit?: number; phoneLimit?: number } = $props();
+
+    // svelte-ignore state_referenced_locally
+    let pending = $state(!items);
 
     // Product counts come with the category list (one request, not one per category).
-    loadCategories()
-        .catch(() => {})
-        .finally(() => (pending = false));
+    // svelte-ignore state_referenced_locally
+    if (!items) {
+        loadCategories()
+            .catch(() => {})
+            .finally(() => (pending = false));
+    }
 
-    const counts = $derived(
-        Object.fromEntries($categories.map((c) => [c.slug, c.productsCount])),
-    );
+    const list = $derived((items ?? $categories).slice(0, limit));
 </script>
 
 <!-- Wrapping, centred row (not a grid) so a short last row sits in the middle. -->
 <div class="category-cards">
-    {#each $categories as c (c.id)}
+    {#each list as c, i (c.id)}
         <Link
             href={categoryShow.url(c.slug)}
-            class="category-card"
+            class={phoneLimit !== undefined && i >= phoneLimit
+                ? 'category-card is-beyond-phone-limit'
+                : 'category-card'}
         >
             <div class="category-card-media" class:has-image={!!c.image}>
                 {#if c.image}
@@ -41,12 +57,8 @@
                 <div class="min-w-0">
                     <h3>{c.name}</h3>
                     <small>
-                        {#if c.slug in counts}
-                            {counts[c.slug]}
-                            {counts[c.slug] === 1 ? 'product' : 'products'}
-                        {:else}
-                            &nbsp;
-                        {/if}
+                        {c.productsCount}
+                        {c.productsCount === 1 ? 'product' : 'products'}
                     </small>
                 </div>
                 <span class="category-card-arrow" aria-hidden="true">

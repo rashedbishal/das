@@ -140,7 +140,7 @@
         href={categoriesIndex.url()}
         label="Explore all categories"
     />
-    <CategoryTiles />
+    <CategoryTiles limit={10} phoneLimit={6} />
     <Link
         href={categoriesIndex.url()}
         class="practice-needs-more mt-7 flex items-center justify-center gap-2 text-xs text-primary sm:hidden"

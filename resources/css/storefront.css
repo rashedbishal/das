@@ -733,6 +733,10 @@
     .category-card-arrow {
         display: none;
     }
+    /* CategoryTiles' phoneLimit: fewer tiles on phones. */
+    .category-card.is-beyond-phone-limit {
+        display: none;
+    }
 }
 @media (prefers-reduced-motion: reduce) {
     .category-card,
