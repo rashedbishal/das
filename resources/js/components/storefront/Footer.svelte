@@ -5,7 +5,7 @@
     import { mapCategory, type RawCategory } from '@/data/catalogue';
     import { dayLabel, formatTime, orderedHours } from '@/lib/business';
     import { resolvePhone } from '@/lib/contact';
-    import { about, brands, catalogue, contact, home } from '@/routes';
+    import { about, brands, catalogue, contact, home, privacy, terms } from '@/routes';
     import { show as categoryShow } from '@/routes/categories';
     import Wordmark from './Wordmark.svelte';
 
@@ -73,6 +73,8 @@
                     <Link href={catalogue.url()}>Product Catalogue</Link>
                     <Link href={contact.url()}>Contact Us</Link>
                     <Link href={`${contact.url({ query: { quote: 1 } })}#enquiry`}>Request a Quote</Link>
+                    <Link href={privacy.url()}>Privacy Policy</Link>
+                    <Link href={terms.url()}>Terms &amp; Conditions</Link>
                 </div>
             </div>
             <div class="col-span-2 sm:col-span-1">

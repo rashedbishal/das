@@ -28,6 +28,8 @@ Route::get('brands', [StorefrontCatalogueController::class, 'brands'])->name('br
 Route::get('brands/{brand}', [StorefrontCatalogueController::class, 'brand'])->name('brands.show');
 Route::inertia('about', 'storefront/About')->name('about');
 Route::inertia('contact', 'storefront/Contact')->name('contact');
+Route::inertia('privacy-policy', 'storefront/PrivacyPolicy')->name('privacy');
+Route::inertia('terms-and-conditions', 'storefront/Terms')->name('terms');
 
 // 6-digit e-mail verification code (sent on registration; "resend" uses Fortify's
 // verification.send route, which calls User::sendEmailVerificationNotification()).

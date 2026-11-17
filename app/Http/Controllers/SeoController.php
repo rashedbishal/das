@@ -17,7 +17,7 @@ class SeoController extends Controller
         /** @var array<int, array{loc: string, lastmod: string|null, images?: array<int, array{loc: string, title: string}>}> $urls */
         $urls = [];
 
-        foreach (['home', 'catalogue', 'categories.index', 'brands', 'about', 'contact'] as $route) {
+        foreach (['home', 'catalogue', 'categories.index', 'brands', 'about', 'contact', 'privacy', 'terms'] as $route) {
             $urls[] = ['loc' => route($route), 'lastmod' => null];
         }
 

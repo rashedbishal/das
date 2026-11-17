@@ -16,7 +16,7 @@
     import { Label } from '@/components/ui/label';
     import { Spinner } from '@/components/ui/spinner';
     import GoogleSignInButton from '@/components/GoogleSignInButton.svelte';
-    import { login } from '@/routes';
+    import { login, privacy, terms } from '@/routes';
     import { store } from '@/routes/register';
 
     let {
@@ -117,6 +117,12 @@
                 {#if processing}<Spinner />{/if}
                 Create account
             </Button>
+
+            <p class="-mt-1 text-center text-xs leading-5 text-muted-foreground">
+                By creating an account, including with Google, you agree to our
+                <TextLink href={terms.url()}>Terms &amp; Conditions</TextLink> and
+                <TextLink href={privacy.url()}>Privacy Policy</TextLink>.
+            </p>
 
             <p
                 class="mt-1 border-t pt-5 text-center text-sm text-muted-foreground"
