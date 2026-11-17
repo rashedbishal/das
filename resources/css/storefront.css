@@ -854,6 +854,40 @@
     font-weight: 700;
     margin-bottom: 14px;
 }
+/*
+ * Desktop catalogue filters: stick below the sticky header (86px row + 1px
+ * border, Header.svelte) while the product grid scrolls, and scroll on their
+ * own when taller than the screen. The aside stretches to the grid row, so
+ * this inner block has room to stick. The small side padding keeps focus
+ * rings from being clipped by the scroll box.
+ */
+.filter-sidebar {
+    --filter-top: calc(87px + 24px);
+    position: sticky;
+    top: var(--filter-top);
+    max-height: calc(100dvh - var(--filter-top) - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin-inline: -6px;
+    padding: 0 6px 8px;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+.filter-sidebar:hover {
+    scrollbar-color: color-mix(in oklab, var(--primary) 35%, var(--border))
+        transparent;
+}
+.filter-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+.filter-sidebar::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--border);
+}
+.filter-sidebar:hover::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--primary) 35%, var(--border));
+}
 .field.field-sm {
     min-height: 36px;
     padding: 8px 10px;

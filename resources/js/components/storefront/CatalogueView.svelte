@@ -467,7 +467,9 @@
     <div
         class="grid gap-9 lg:grid-cols-[215px_1fr] xl:grid-cols-[235px_1fr] xl:gap-12"
     >
-        <aside class="hidden lg:block">{@render filterPanel('max-price')}</aside>
+        <aside class="hidden lg:block">
+            <div class="filter-sidebar">{@render filterPanel('max-price')}</div>
+        </aside>
         <div class="min-w-0">
             <div class="mb-5 flex min-h-7 flex-wrap items-center gap-3">
                 <p class="mr-auto text-[11px] text-muted-foreground">
