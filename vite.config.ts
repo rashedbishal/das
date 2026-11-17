@@ -26,6 +26,26 @@ export default defineConfig({
             ],
         }),
         inertia(),
+        // Dev-only workaround: on a CSS hot update the Vite client re-requests a
+        // Svelte component's styles as `?svelte=&type=style&lang.css=` (query
+        // normalised with "="). vite-plugin-svelte doesn't recognise that form,
+        // so the raw .svelte file reached Tailwind as CSS and failed with
+        // "Invalid declaration: `Snippet`". Restore the form it expects.
+        {
+            name: 'das:svelte-style-hmr-query',
+            apply: 'serve',
+            configureServer(server) {
+                server.middlewares.use((request, _response, next) => {
+                    if (request.url?.includes('?svelte=&')) {
+                        request.url = request.url
+                            .replace('?svelte=&', '?svelte&')
+                            .replace(/&lang\.(\w+)=(?=&|$)/, '&lang.$1');
+                    }
+
+                    next();
+                });
+            },
+        },
         tailwindcss(),
         svelte(),
         wayfinder({
