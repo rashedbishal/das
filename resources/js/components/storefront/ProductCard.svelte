@@ -105,32 +105,6 @@
                     Ask for Price
                 </Link>
             {/if}
-
-            {#if phone}
-                <a
-                    href="tel:{phone.tel}"
-                    class="mt-3 inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary"
-                >
-                    <Phone class="size-3" />
-                    Call for Price
-                </a>
-            {:else}
-                <Link
-                    href={`${contact.url({ query: { quote: 1 } })}#enquiry`}
-                    class="mt-3 inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary"
-                >
-                    Ask for Price
-                </Link>
-            {/if}
-=======
-            <a
-                href="tel:{phone.tel}"
-                class="mt-1.5 inline-flex items-center gap-1.5 text-[10px] md:mt-3 text-muted-foreground hover:text-primary"
-            >
-                <Phone class="size-3" />
-                Call for Price
-            </a>
->>>>>>> 3e95afe (ui improve: made the card design more compact)
         {/if}
     </div>
 </article>

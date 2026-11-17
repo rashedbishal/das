@@ -854,6 +854,85 @@
     font-weight: 700;
     margin-bottom: 14px;
 }
+.field.field-sm {
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 11px;
+}
+/* Two-thumb price slider: two range inputs stacked on one track; only the
+   thumbs take pointer events, so either can be dragged. */
+.price-slider {
+    position: relative;
+    height: 20px;
+}
+.price-slider-track {
+    position: absolute;
+    inset: 8px 0;
+    border-radius: 999px;
+    background: var(--border);
+}
+.price-slider-fill {
+    position: absolute;
+    inset-block: 0;
+    left: var(--lo);
+    right: calc(100% - var(--hi));
+    border-radius: inherit;
+    background: var(--primary);
+}
+.price-slider input[type='range'] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 20px;
+    margin: 0;
+    background: none;
+    pointer-events: none;
+    appearance: none;
+}
+.price-slider input[type='range'].on-top {
+    z-index: 1;
+}
+.price-slider input[type='range']::-webkit-slider-runnable-track {
+    background: none;
+}
+.price-slider input[type='range']::-moz-range-track {
+    background: none;
+}
+.price-slider input[type='range']::-webkit-slider-thumb {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--primary);
+    border-radius: 50%;
+    background: var(--background);
+    box-shadow: var(--card-shadow);
+    cursor: grab;
+    pointer-events: auto;
+    appearance: none;
+}
+.price-slider input[type='range']::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--primary);
+    border-radius: 50%;
+    background: var(--background);
+    box-shadow: var(--card-shadow);
+    cursor: grab;
+    pointer-events: auto;
+}
+.price-slider input[type='range']:active::-webkit-slider-thumb {
+    cursor: grabbing;
+}
+.price-slider input[type='range']:focus-visible {
+    outline: none;
+}
+.price-slider input[type='range']:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+.price-slider input[type='range']:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
 .breadcrumb {
     display: flex;
     gap: 8px;

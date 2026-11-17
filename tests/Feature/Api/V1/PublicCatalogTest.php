@@ -130,3 +130,68 @@ test('the subcategories endpoint requires a brand', function () {
         ->assertUnprocessable()
         ->assertJsonValidationErrors('brand');
 });
+
+test('the products api matches any of several comma-separated filter values', function () {
+    $brandA = Brand::factory()->create();
+    $brandB = Brand::factory()->create();
+    $brandC = Brand::factory()->create();
+    $a = Product::factory()->published()->for($brandA)->create(['stock_status' => 'in_stock', 'show_stock' => true]);
+    $b = Product::factory()->published()->for($brandB)->create(['stock_status' => 'backorder', 'show_stock' => true]);
+    Product::factory()->published()->for($brandC)->create(['stock_status' => 'in_stock', 'show_stock' => true]);
+
+    $brands = $this->getJson(route('api.v1.products.index', ['brand' => "{$brandA->slug},{$brandB->slug}"]))
+        ->assertOk()
+        ->collect('data');
+
+    expect($brands->pluck('id')->sort()->values()->all())->toBe(collect([$a->id, $b->id])->sort()->values()->all());
+
+    $narrowed = $this->getJson(route('api.v1.products.index', [
+        'brand' => "{$brandA->slug},{$brandB->slug}",
+        'stock_status' => 'backorder,out_of_stock',
+    ]))->assertOk()->collect('data');
+
+    expect($narrowed->pluck('id')->all())->toBe([$b->id]);
+});
+
+test('signed-in users get the price range for the current filters, ignoring the price filter', function () {
+    $brand = Brand::factory()->create();
+    Product::factory()->published()->for($brand)->create(['regular_price' => 1200, 'show_price' => true]);
+    Product::factory()->published()->for($brand)->create(['regular_price' => 4800.5, 'show_price' => true]);
+    Product::factory()->published()->for($brand)->create(['regular_price' => 99999, 'show_price' => false]);
+    Product::factory()->published()->create(['regular_price' => 10, 'show_price' => true]);
+
+    $response = $this->actingAs(User::factory()->create())
+        ->getJson(route('api.v1.products.index', ['brand' => $brand->slug, 'min_price' => 2000, 'max_price' => 3000]))
+        ->assertOk();
+
+    expect($response->json('data'))->toHaveCount(0)
+        ->and($response->json('price_range'))->toEqual(['min' => 1200, 'max' => 4800.5]);
+});
+
+test('guests get no price range from the products api', function () {
+    Product::factory()->published()->create(['show_price' => true]);
+
+    $this->getJson(route('api.v1.products.index'))
+        ->assertOk()
+        ->assertJsonPath('price_range', null);
+});
+
+test('the subcategories endpoint accepts several brands', function () {
+    $brandA = Brand::factory()->create();
+    $brandB = Brand::factory()->create();
+    $category = Category::factory()->create(['is_active' => true]);
+    $subA = Subcategory::factory()->for($category)->create();
+    $subB = Subcategory::factory()->for($category)->create();
+    Product::factory()->published()->for($brandA)->for($category)->for($subA)->create();
+    Product::factory()->published()->for($brandB)->for($category)->for($subB)->create();
+
+    $slugs = $this->getJson(route('api.v1.subcategories.index', ['brand' => "{$brandA->slug},{$brandB->slug}"]))
+        ->assertOk()
+        ->collect('data')
+        ->pluck('slug')
+        ->sort()
+        ->values()
+        ->all();
+
+    expect($slugs)->toBe(collect([$subA->slug, $subB->slug])->sort()->values()->all());
+});

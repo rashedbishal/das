@@ -104,12 +104,17 @@ export type Brand = {
     seo: PageSeo;
 };
 
+/**
+ * category, subcategory, brand and stockStatus are multi-select: they hold
+ * comma-separated slugs ("a,b"), exactly as in the URL and the API.
+ */
 export type CatalogueFilters = {
     q?: string | undefined;
     category?: string | undefined;
     subcategory?: string | undefined;
     brand?: string | undefined;
     stockStatus?: string | undefined;
+    minPrice?: number | undefined;
     maxPrice?: number | undefined;
     sort?: string | undefined;
 };
@@ -306,11 +311,15 @@ export function mapBrand(raw: RawBrand): Brand {
     };
 }
 
+export type PriceRange = { min: number; max: number };
+
 export type ProductPage = {
     items: ProductCard[];
     page: number;
     lastPage: number;
     total: number;
+    /** Shown-price bounds for the current filters (signed-in users only). */
+    priceRange: PriceRange | null;
 };
 
 const sortMap: Record<string, string> = {
@@ -323,6 +332,7 @@ const sortMap: Record<string, string> = {
 export type RawProductPage = {
     data: RawProductCard[];
     meta: { current_page: number; last_page: number; total: number };
+    price_range?: { min: number | null; max: number | null } | null;
 };
 
 /** Converts a paginated /api/v1/products payload (or the same shape passed as page props). */
@@ -332,6 +342,10 @@ export function toProductPage(result: RawProductPage | null): ProductPage {
         page: result?.meta.current_page ?? 1,
         lastPage: result?.meta.last_page ?? 1,
         total: result?.meta.total ?? 0,
+        priceRange:
+            result?.price_range?.min != null && result.price_range.max != null
+                ? { min: result.price_range.min, max: result.price_range.max }
+                : null,
     };
 }
 
@@ -348,6 +362,7 @@ export async function fetchProducts(
                 subcategory: filters.subcategory,
                 brand: filters.brand,
                 stock_status: filters.stockStatus,
+                min_price: filters.minPrice,
                 max_price: filters.maxPrice,
                 sort: sortMap[filters.sort ?? 'featured'] ?? 'newest',
                 per_page: perPage,
@@ -485,6 +500,7 @@ export function stockLabel(status: string): string {
 export function parseFilters(url: string): CatalogueFilters {
     const search = new URL(url, 'http://localhost').searchParams;
     const text = (key: string) => search.get(key) || undefined;
+    const minPrice = Number(search.get('minPrice'));
     const maxPrice = Number(search.get('maxPrice'));
 
     return {
@@ -493,9 +509,29 @@ export function parseFilters(url: string): CatalogueFilters {
         subcategory: text('subcategory'),
         brand: text('brand'),
         stockStatus: text('stockStatus'),
+        minPrice: minPrice > 0 ? minPrice : undefined,
         maxPrice: maxPrice > 0 ? maxPrice : undefined,
         sort: text('sort'),
     };
+}
+
+/** The slugs held by a multi-select filter value ("a,b" → ['a', 'b']). */
+export function filterValues(value: string | number | undefined): string[] {
+    return String(value ?? '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
+/** Adds or removes one slug from a multi-select filter value. */
+export function toggleFilterValue(
+    value: string | undefined,
+    item: string,
+    on: boolean,
+): string | undefined {
+    const rest = filterValues(value).filter((v) => v !== item);
+
+    return (on ? [...rest, item] : rest).join(',') || undefined;
 }
 
 export function filterQuery(filters: CatalogueFilters) {

@@ -13,22 +13,29 @@
         fetchBrandSubcategories,
         fetchProducts,
         filterQuery,
+        filterValues,
         loadBrands,
         loadCategories,
         parseFilters,
         stockLabel,
+        toggleFilterValue,
         type BrandSubcategory,
         type CatalogueFilters,
+        type PriceRange,
         type ProductCard as ProductCardType,
         type ProductPage,
     } from '@/data/catalogue';
     import { motionMs } from '@/lib/motion.svelte';
     import Button from './Button.svelte';
     import Drawer from './Drawer.svelte';
+    import PriceRangeFilter from './PriceRangeFilter.svelte';
     import ProductCard from './ProductCard.svelte';
     import ProductCardSkeleton from './ProductCardSkeleton.svelte';
 
     type FilterKey = keyof CatalogueFilters;
+
+    /** Checkbox groups: each holds several comma-separated slugs (any of them matches). */
+    const multiKeys: FilterKey[] = ['category', 'subcategory', 'brand', 'stockStatus'];
 
     const stockStatuses = ['in_stock', 'out_of_stock', 'backorder'];
 
@@ -63,6 +70,7 @@
     let total = $state(firstPage?.total ?? 0);
     let currentPage = $state(firstPage?.page ?? 1);
     let lastPage = $state(firstPage?.lastPage ?? 1);
+    let priceRange = $state<PriceRange | null>(firstPage?.priceRange ?? null);
     let loading = $state(false);
     let failed = $state(false);
     let skipInitialFetch = firstPage !== null;
@@ -81,6 +89,7 @@
             ...(canUsePrice
                 ? {}
                 : {
+                      minPrice: undefined,
                       maxPrice: undefined,
                       sort: value.sort?.startsWith('price') ? undefined : value.sort,
                   }),
@@ -157,6 +166,7 @@
                     total = result.total;
                     currentPage = result.page;
                     lastPage = result.lastPage;
+                    priceRange = result.priceRange;
                 })
                 .catch(() => {
                     if (request === latestRequest) {
@@ -227,14 +237,39 @@
         onChange(next);
     }
 
+    /** Ticks or unticks one option in a multi-select group. */
+    function toggle(key: FilterKey, value: string, on: boolean) {
+        update(key, toggleFilterValue(filters[key] as string | undefined, value, on));
+    }
+
+    function setPrice(min: number | undefined, max: number | undefined) {
+        onChange({ ...filters, minPrice: min, maxPrice: max });
+    }
+
+    /** Removes one chip: a single option of a multi-select group, or the whole filter. */
+    function removeChip(key: FilterKey, value: string | number) {
+        if (multiKeys.includes(key)) {
+            toggle(key, String(value), false);
+        } else {
+            update(key, undefined);
+        }
+    }
+
     function clear() {
         onChange({ q: filters.q, sort: filters.sort });
     }
 
+    // One chip per chosen option, so each can be removed on its own.
     const active = $derived(
-        Object.entries(filters).filter(
-            ([key, value]) => !['q', 'sort'].includes(key) && Boolean(value),
-        ) as [FilterKey, string | number][],
+        (
+            Object.entries(filters).filter(
+                ([key, value]) => !['q', 'sort'].includes(key) && Boolean(value),
+            ) as [FilterKey, string | number][]
+        ).flatMap(([key, value]) =>
+            multiKeys.includes(key)
+                ? filterValues(value).map((item) => [key, item] as [FilterKey, string])
+                : [[key, value] as [FilterKey, string | number]],
+        ),
     );
 
     const filterGroups = $derived([
@@ -298,8 +333,12 @@
             return stockLabel(String(value));
         }
 
+        if (key === 'minPrice') {
+            return `From ${Number(value).toLocaleString('en-US')}`;
+        }
+
         if (key === 'maxPrice') {
-            return `Up to ${value}`;
+            return `Up to ${Number(value).toLocaleString('en-US')}`;
         }
 
         return value;
@@ -325,13 +364,14 @@
                             <input
                                 type="checkbox"
                                 class="mt-0.5 size-3.5 accent-primary"
-                                checked={filters[group.key] === o.value}
+                                checked={filterValues(filters[group.key]).includes(
+                                    o.value,
+                                )}
                                 onchange={(event) =>
-                                    update(
+                                    toggle(
                                         group.key,
-                                        event.currentTarget.checked
-                                            ? o.value
-                                            : undefined,
+                                        o.value,
+                                        event.currentTarget.checked,
                                     )}
                             />
                             <span>{o.label}</span>
@@ -353,28 +393,14 @@
         <fieldset class="border-b py-6">
             <legend class="filter-title float-left w-full">Price</legend>
             <div class="clear-both">
-                <label for={priceId} class="text-[11px] text-muted-foreground">
-                    Maximum price
-                </label>
-                <select
+                <PriceRangeFilter
                     id={priceId}
-                    class="field mt-3"
-                    value={filters.maxPrice ? String(filters.maxPrice) : ''}
-                    onchange={(event) =>
-                        update(
-                            'maxPrice',
-                            event.currentTarget.value
-                                ? Number(event.currentTarget.value)
-                                : undefined,
-                        )}
-                >
-                    <option value="">Any price</option>
-                    <option value="100">Up to 100</option>
-                    <option value="300">Up to 300</option>
-                    <option value="500">Up to 500</option>
-                    <option value="1000">Up to 1,000</option>
-                    <option value="3000">Up to 3,000</option>
-                </select>
+                    range={priceRange}
+                    min={filters.minPrice}
+                    max={filters.maxPrice}
+                    currency={items[0]?.currency || 'BDT'}
+                    onchange={setPrice}
+                />
                 <p class="mt-3 text-[10px] leading-5 text-muted-foreground">
                     Price filters exclude products with pricing available on
                     request.
@@ -447,12 +473,12 @@
                 <p class="mr-auto text-[11px] text-muted-foreground">
                     Showing {items.length} of {total} products
                 </p>
-                {#each active as [key, value] (key)}
+                {#each active as [key, value] (`${key}:${value}`)}
                     <Button
                         variant="secondary"
                         size="sm"
                         class="h-7 text-[10px]"
-                        onclick={() => update(key, undefined)}
+                        onclick={() => removeChip(key, value)}
                     >
                         {chipLabel(key, value)}
                         <X class="size-3" />

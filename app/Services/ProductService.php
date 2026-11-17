@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\SlugGenerator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
@@ -109,49 +110,7 @@ class ProductService
             $query->published();
         }
 
-        if (! empty($filters['search'])) {
-            $pattern = '%'.$this->escapeLike(trim((string) $filters['search'])).'%';
-            $query->where(function ($inner) use ($pattern) {
-                $inner->whereRaw("name like ? escape '!'", [$pattern])
-                    ->orWhereRaw("sku like ? escape '!'", [$pattern])
-                    ->orWhereRaw("model_number like ? escape '!'", [$pattern]);
-            });
-        }
-
-        if (! empty($filters['category'])) {
-            $category = $filters['category'];
-            $query->whereHas('category', fn ($inner) => $inner->where('slug', $category));
-        }
-
-        if (! empty($filters['subcategory'])) {
-            $subcategory = $filters['subcategory'];
-            $query->whereHas('subcategory', fn ($inner) => $inner->where('slug', $subcategory));
-        }
-
-        if (! empty($filters['brand'])) {
-            $brand = $filters['brand'];
-            $query->whereHas('brand', fn ($inner) => $inner->where('brands.slug', $brand));
-        }
-
-        if (array_key_exists('min_price', $filters) && $filters['min_price'] !== null) {
-            $query->where('show_price', true)->where('regular_price', '>=', $filters['min_price']);
-        }
-
-        if (array_key_exists('max_price', $filters) && $filters['max_price'] !== null) {
-            $query->where('show_price', true)->where('regular_price', '<=', $filters['max_price']);
-        }
-
-        if (! empty($filters['stock_status'])) {
-            $query->where('show_stock', true)->where('stock_status', $filters['stock_status']);
-        }
-
-        if (! empty($filters['model_number'])) {
-            $query->whereRaw("model_number like ? escape '!'", ['%'.$this->escapeLike((string) $filters['model_number']).'%']);
-        }
-
-        if (! empty($filters['featured'])) {
-            $query->featured();
-        }
+        $this->applyFilters($query, $filters);
 
         match ($filters['sort'] ?? 'newest') {
             'price_asc' => $query->orderByRaw('CASE WHEN show_price THEN regular_price END ASC')->orderBy('id'),
@@ -163,6 +122,95 @@ class ProductService
         $perPage = (int) ($filters['per_page'] ?? $this->settings->get('catalog', 'page_size', 24));
 
         return $query->paginate(max(1, min($perPage, 100)))->withQueryString();
+    }
+
+    /**
+     * Lowest and highest shown price among published products matching the
+     * filters, ignoring the price filters themselves - the bounds for the
+     * storefront's price slider. Both null when nothing has a shown price.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array{min: float|null, max: float|null}
+     */
+    public function priceRange(array $filters): array
+    {
+        $query = Product::query()->published();
+        $this->applyFilters($query, Arr::except($filters, ['min_price', 'max_price']));
+
+        $range = $query->where('show_price', true)
+            ->whereNotNull('regular_price')
+            ->toBase()
+            ->selectRaw('MIN(regular_price) as min_price, MAX(regular_price) as max_price')
+            ->first();
+
+        return [
+            'min' => $range?->min_price !== null ? (float) $range->min_price : null,
+            'max' => $range?->max_price !== null ? (float) $range->max_price : null,
+        ];
+    }
+
+    /**
+     * A filter value as a list of slugs: "a,b" or ['a', 'b'] (the storefront's
+     * multi-select filters match any of them).
+     *
+     * @return list<string>
+     */
+    public static function slugList(mixed $value): array
+    {
+        $items = is_array($value) ? $value : explode(',', is_scalar($value) ? (string) $value : '');
+
+        return array_values(array_unique(array_filter(
+            array_map(fn ($item) => is_scalar($item) ? trim((string) $item) : '', $items),
+            fn (string $item) => $item !== '',
+        )));
+    }
+
+    /**
+     * @param  Builder<Product>  $query
+     * @param  array<string, mixed>  $filters
+     */
+    private function applyFilters($query, array $filters): void
+    {
+        if (! empty($filters['search'])) {
+            $pattern = '%'.$this->escapeLike(trim((string) $filters['search'])).'%';
+            $query->where(function ($inner) use ($pattern) {
+                $inner->whereRaw("name like ? escape '!'", [$pattern])
+                    ->orWhereRaw("sku like ? escape '!'", [$pattern])
+                    ->orWhereRaw("model_number like ? escape '!'", [$pattern]);
+            });
+        }
+
+        if ($categories = self::slugList($filters['category'] ?? null)) {
+            $query->whereHas('category', fn ($inner) => $inner->whereIn('slug', $categories));
+        }
+
+        if ($subcategories = self::slugList($filters['subcategory'] ?? null)) {
+            $query->whereHas('subcategory', fn ($inner) => $inner->whereIn('slug', $subcategories));
+        }
+
+        if ($brands = self::slugList($filters['brand'] ?? null)) {
+            $query->whereHas('brand', fn ($inner) => $inner->whereIn('brands.slug', $brands));
+        }
+
+        if (array_key_exists('min_price', $filters) && $filters['min_price'] !== null) {
+            $query->where('show_price', true)->where('regular_price', '>=', $filters['min_price']);
+        }
+
+        if (array_key_exists('max_price', $filters) && $filters['max_price'] !== null) {
+            $query->where('show_price', true)->where('regular_price', '<=', $filters['max_price']);
+        }
+
+        if ($stockStatuses = self::slugList($filters['stock_status'] ?? null)) {
+            $query->where('show_stock', true)->whereIn('stock_status', $stockStatuses);
+        }
+
+        if (! empty($filters['model_number'])) {
+            $query->whereRaw("model_number like ? escape '!'", ['%'.$this->escapeLike((string) $filters['model_number']).'%']);
+        }
+
+        if (! empty($filters['featured'])) {
+            $query->featured();
+        }
     }
 
     /**

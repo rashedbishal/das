@@ -17,11 +17,17 @@ class ProductController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $products = $this->products->paginate(ProductService::withoutPriceFiltersForGuests($request->only([
+        $canSeePrices = $request->user()?->canSeePrices() === true;
+        $filters = ProductService::withoutPriceFiltersForGuests($request->only([
             'search', 'category', 'subcategory', 'brand', 'min_price', 'max_price', 'stock_status', 'sort', 'per_page',
-        ]), $request->user()?->canSeePrices() === true));
+        ]), $canSeePrices);
+        $products = $this->products->paginate($filters);
 
-        return response()->json(ProductCardResource::collection($products)->response()->getData(true));
+        return response()->json([
+            ...ProductCardResource::collection($products)->response()->getData(true),
+            // Bounds for the storefront's price slider, only for users who may see prices.
+            'price_range' => $canSeePrices ? $this->products->priceRange($filters) : null,
+        ]);
     }
 
     public function show(Product $product): JsonResponse

@@ -148,20 +148,28 @@ class StorefrontCatalogueController extends Controller
         $text = fn (string $key): ?string => is_string($request->query($key)) && $request->query($key) !== ''
             ? (string) $request->query($key)
             : null;
+        $minPrice = (float) $text('minPrice');
         $maxPrice = (float) $text('maxPrice');
+        $canSeePrices = $request->user()?->canSeePrices() === true;
 
+        // category/subcategory/brand/stockStatus may hold several comma-separated
+        // values (multi-select filters); ProductService splits them.
         $filters = ProductService::withoutPriceFiltersForGuests([
             'search' => $text('q'),
             'category' => $text('category'),
             'subcategory' => $text('subcategory'),
             'brand' => $text('brand'),
             'stock_status' => $text('stockStatus'),
+            'min_price' => $minPrice > 0 ? $minPrice : null,
             'max_price' => $maxPrice > 0 ? $maxPrice : null,
             'sort' => self::SORTS[$text('sort') ?? 'featured'] ?? 'newest',
             'per_page' => self::PER_PAGE,
             ...$fixed,
-        ], $request->user()?->canSeePrices() === true);
+        ], $canSeePrices);
 
-        return ProductCardResource::collection($this->products->paginate($filters))->response()->getData(true);
+        return [
+            ...ProductCardResource::collection($this->products->paginate($filters))->response()->getData(true),
+            'price_range' => $canSeePrices ? $this->products->priceRange($filters) : null,
+        ];
     }
 }
