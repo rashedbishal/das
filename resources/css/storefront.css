@@ -232,6 +232,12 @@
 .hero-banner.is-leaving img {
     animation: hero-recede var(--hero-sweep) ease-in both;
 }
+/* The outgoing slide stays under the sweep for its whole length, but its text
+   leaves at once, well before the new text rises (0.9s), so two headlines are
+   never on screen together. */
+.hero-banner.is-leaving .hero-banner-copy {
+    animation: hero-copy-out 0.35s ease-in both;
+}
 .hero-banner.is-entering .hero-banner-copy > * {
     animation: rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
@@ -309,6 +315,12 @@
     }
     to {
         transform: scale(1);
+    }
+}
+@keyframes hero-copy-out {
+    to {
+        opacity: 0;
+        transform: translateY(-8px);
     }
 }
 @keyframes hero-recede {
