@@ -23,11 +23,12 @@ npm ci
 npm run build:ssr                      # client bundle + SSR bundle (bootstrap/ssr)
 php artisan migrate --force
 php artisan db:seed --class=RolePermissionSeeder --force
-php artisan db:seed --class=SettingsSeeder --force
 php artisan storage:link               # product/category/banner images are served from here
 php artisan das:bootstrap-mother-admin # once; then remove MOTHER_ADMIN_* from .env
 php artisan optimize                   # config, route, view and event caches
 ```
+
+Then sign in at `/admin/login` as the Mother Admin and fill in **Admin → Settings** (site name, contact phone/email, address, opening hours, SEO title/description, delivery note, WhatsApp/Messenger). Nothing is seeded: until a value is saved there, the storefront simply leaves it out.
 
 Ownership: `chown -R www-data:www-data storage bootstrap/cache`.
 
@@ -152,6 +153,7 @@ The application itself sends `X-Content-Type-Options`, `X-Frame-Options`, `Refer
 ## 9. Pre-launch checklist
 
 - [ ] `.env` filled; `APP_DEBUG=false`; `APP_URL` is the final https domain.
+- [ ] Admin → Settings filled in (site name, contact details, SEO title/description).
 - [ ] Mail sends (trigger a password reset to yourself).
 - [ ] `supervisorctl status` shows `das-queue` and `das-ssr` RUNNING; `php artisan inertia:check-ssr` passes.
 - [ ] `view-source:` on `/catalogue` shows product names and a `<title>`.
@@ -211,9 +213,9 @@ Needs a plan with SSH access (Premium or higher).
     php artisan key:generate
     php artisan migrate --force
     php artisan db:seed --class=RolePermissionSeeder --force
-    php artisan db:seed --class=SettingsSeeder --force
     php artisan das:bootstrap-mother-admin   # then remove MOTHER_ADMIN_* from .env
     ```
 8. **Run the workflow again**; it should finish green and the site is live.
+   Sign in at `/admin/login` and fill in **Admin → Settings** — business details are not seeded, so the storefront shows none until they are saved there.
 9. **hPanel → Advanced → Cron Jobs:** every minute, `cd <DEPLOY_PATH> && php artisan schedule:run >> /dev/null 2>&1` (use `PHP_BIN`'s path if different).
 10. When you buy the domain: add it in hPanel, repeat step 4's `public_html` link in its folder (or move the app), update `APP_URL` and `SANCTUM_STATEFUL_DOMAINS` in `.env`, enable SSL in hPanel, then `php artisan optimize`.

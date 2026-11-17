@@ -2,17 +2,17 @@
 
 use App\Models\User;
 use App\Services\SettingsService;
-use Database\Seeders\SettingsSeeder;
 
-test('the catalog delivery note is seeded as a site-wide setting', function () {
-    $this->seed(SettingsSeeder::class);
+test('business details are not pre-filled: they stay empty until set in the CMS', function () {
+    $this->seed();
 
-    expect(app(SettingsService::class)->get('catalog', 'delivery_note'))
-        ->toBe('Through courier all over Bangladesh')
-        ->and(app(SettingsService::class)->get('general', 'contact_phone'))
-        ->toBe('01761158577')
-        ->and(app(SettingsService::class)->get('general', 'contact_email'))
-        ->toBe('afazad@gmail.com');
+    $this->get(route('contact'))
+        ->assertInertia(fn ($page) => $page
+            ->where('siteSettings.contactPhone', null)
+            ->where('siteSettings.contactEmail', null)
+            ->where('siteSettings.address', null)
+            ->where('siteSettings.deliveryNote', null)
+            ->where('seo.defaultTitle', null));
 });
 
 test('an admin with settings.manage can update general settings', function () {

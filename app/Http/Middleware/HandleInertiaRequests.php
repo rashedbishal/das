@@ -62,8 +62,8 @@ class HandleInertiaRequests extends Middleware
             'siteSettings' => [
                 'name' => $settings->get('general', 'site_name', config('app.name')),
                 'logo' => $settings->get('general', 'logo'),
-                // Contact details come from the CMS (seeded by SettingsSeeder); the storefront
-                // has its own fallback in resources/js/lib/contact.ts when they are unset.
+                // Business details come only from Admin → Settings (nothing is seeded or
+                // hard-coded); the storefront hides each one that has not been set.
                 'contactPhone' => $settings->get('general', 'contact_phone'),
                 'contactEmail' => $settings->get('general', 'contact_email'),
                 'address' => $settings->get('general', 'address'),
