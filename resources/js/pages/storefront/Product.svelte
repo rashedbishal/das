@@ -171,7 +171,7 @@
                     {:else if activeMedia}
                         <img
                             src={activeMedia.url}
-                            alt={activeMedia.altText ?? p.name}
+                            alt={activeMedia.altText}
                             width={600}
                             height={600}
                             class="h-full w-full object-contain mix-blend-multiply"
@@ -224,7 +224,7 @@
                                 {:else}
                                     <img
                                         src={item.url}
-                                        alt=""
+                                        alt={item.altText}
                                         class="h-full w-full object-contain"
                                     />
                                 {/if}

@@ -168,6 +168,36 @@ class Product extends Model
             ?? $this->media->firstWhere('type', 'image');
     }
 
+    /**
+     * Alt text for one of this product's media items: the admin-entered text when
+     * there is one, otherwise the product name, numbered in gallery order ("Name 01",
+     * "Name 02", ...) when the product has more than one image.
+     */
+    public function mediaAltText(ProductMedia $media): string
+    {
+        $custom = trim((string) $media->alt_text);
+
+        if ($custom !== '') {
+            return $custom;
+        }
+
+        if ($media->type !== 'image') {
+            return $this->name.' video';
+        }
+
+        $images = $this->media->where('type', 'image')->values();
+
+        if ($images->count() < 2) {
+            return $this->name;
+        }
+
+        $position = $images->search(fn (ProductMedia $image): bool => $image->is($media));
+
+        return $position === false
+            ? $this->name
+            : sprintf('%s %02d', $this->name, $position + 1);
+    }
+
     public function effectivePrice(): ?string
     {
         if ($this->regular_price === null) {

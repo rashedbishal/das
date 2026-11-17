@@ -339,7 +339,7 @@
                                     >
                                         <img
                                             src={c.image}
-                                            alt=""
+                                            alt={c.name}
                                             class="h-14 w-14 rounded-md bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
                                         />
                                         <span class="text-xs">{c.name}</span>
@@ -355,7 +355,7 @@
                                         >
                                             <img
                                                 src={c.image}
-                                                alt=""
+                                                alt={c.name}
                                                 class="h-14 w-14 rounded-md bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
                                             />
                                             <span class="text-xs">{c.name}</span>
@@ -397,7 +397,7 @@
                                         >
                                             <img
                                                 src={s.image}
-                                                alt=""
+                                                alt={s.name}
                                                 class="h-14 w-14 rounded-md bg-secondary object-contain transition-transform duration-200 ease-out group-hover:scale-105"
                                             />
                                             <span class="text-xs">{s.name}</span>
@@ -545,7 +545,7 @@
                             <img
                                 src={p.image}
                                 class="size-12 bg-secondary object-contain"
-                                alt=""
+                                alt={p.name}
                             />
                             {p.name}
                             <ArrowRight class="ml-auto size-4" />

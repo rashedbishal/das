@@ -288,7 +288,7 @@
                         {/if}
                         <img
                             src={banner.images.desktop}
-                            alt={banner.show_text ? '' : banner.title}
+                            alt={banner.title}
                             width="1920"
                             height="640"
                             fetchpriority={i === 0 ? 'high' : 'auto'}

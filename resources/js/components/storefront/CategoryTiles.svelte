@@ -28,7 +28,7 @@
                 {#if c.image}
                     <img
                         src={c.image}
-                        alt=""
+                        alt={c.name}
                         width={384}
                         height={512}
                         loading="lazy"

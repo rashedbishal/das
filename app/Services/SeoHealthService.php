@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductMedia;
 use App\Models\Subcategory;
 use Illuminate\Support\Str;
 
@@ -84,10 +83,9 @@ class SeoHealthService
                     $issues[] = 'Full description is missing or under '.self::MIN_PRODUCT_DESCRIPTION.' characters';
                 }
 
+                // Alt text needs no check: images without their own get the product name.
                 if ($product->media->isEmpty()) {
                     $issues[] = 'No product image';
-                } elseif ($product->media->contains(fn (ProductMedia $media) => trim((string) $media->alt_text) === '')) {
-                    $issues[] = 'Some images have no alt text';
                 }
 
                 return $this->item('product', $product->id, $product->name, route('products.show', $product->slug), $issues);

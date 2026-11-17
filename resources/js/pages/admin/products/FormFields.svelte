@@ -37,7 +37,7 @@
         category_id: number;
         subcategory_id: number | null;
         tags: { id: number }[];
-        media?: { type: string; alt_text: string | null }[];
+        media?: { type: string }[];
     };
 
     let {
@@ -64,8 +64,8 @@
                   { label: 'Has at least one image', ok: images.length > 0, hint: 'Add images in the media section.' },
                   {
                       label: 'Every image has alt text',
-                      ok: images.length > 0 && images.every((item) => (item.alt_text ?? '').trim() !== ''),
-                      hint: 'Describe each image in the media section; Google Images uses it.',
+                      ok: images.length > 0,
+                      hint: 'Filled in automatically from the product name (Name 01, Name 02, …).',
                   },
               ]
             : [],

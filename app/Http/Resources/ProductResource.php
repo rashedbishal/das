@@ -58,6 +58,8 @@ class ProductResource extends JsonResource
                 'url' => $media->resolvedUrl(),
                 'is_main' => $media->is_main,
                 'alt_text' => $media->alt_text,
+                // Always filled: alt_text, or the product name numbered in gallery order.
+                'alt' => $this->mediaAltText($media),
             ])),
             'variants' => $this->whenLoaded('variants', fn () => $this->variants
                 ->where('is_active', true)

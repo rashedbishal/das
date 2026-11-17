@@ -137,7 +137,7 @@
                     {#snippet children({ selected: isSelected })}
                         <span class="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded bg-secondary">
                             {#if product.image}
-                                <img src={product.image} alt="" class="size-full object-contain" loading="lazy" />
+                                <img src={product.image} alt={product.name} class="size-full object-contain" loading="lazy" />
                             {:else}
                                 <ImageIcon class="size-3.5 text-muted-foreground" />
                             {/if}

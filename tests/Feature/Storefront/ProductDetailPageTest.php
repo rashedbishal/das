@@ -4,6 +4,7 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductMedia;
 use App\Models\ProductSpecification;
 use App\Models\Role;
 use App\Models\Tag;
@@ -180,4 +181,29 @@ test('the product page receives the CMS SEO title, description and keywords', fu
             ->where('product.seo.title', 'Cordless Curing Light')
             ->where('product.seo.description', 'Buy a cordless LED curing light in Bangladesh.')
             ->where('product.seo.keywords', 'curing light, dental LED'));
+});
+
+test('product images get alt text from the product name, numbered in gallery order', function () {
+    $product = Product::factory()->published()->create(['name' => 'Curing Light X']);
+    ProductMedia::factory()->for($product)->create(['sort_order' => 2, 'alt_text' => null]);
+    ProductMedia::factory()->for($product)->create(['sort_order' => 1, 'alt_text' => null]);
+    ProductMedia::factory()->for($product)->video()->create(['sort_order' => 3, 'alt_text' => null]);
+    ProductMedia::factory()->for($product)->create(['sort_order' => 4, 'alt_text' => 'Curing light in its charging base']);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('products.show', $product->slug))
+        ->assertInertia(fn ($page) => $page
+            ->where('product.media.0.alt', 'Curing Light X 01')
+            ->where('product.media.1.alt', 'Curing Light X 02')
+            ->where('product.media.2.alt', 'Curing Light X video')
+            ->where('product.media.3.alt', 'Curing light in its charging base'));
+});
+
+test('a single product image uses the product name as its alt text', function () {
+    $product = Product::factory()->published()->create(['name' => 'Curing Light X']);
+    ProductMedia::factory()->for($product)->create(['alt_text' => null]);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('products.show', $product->slug))
+        ->assertInertia(fn ($page) => $page->where('product.media.0.alt', 'Curing Light X'));
 });

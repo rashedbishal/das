@@ -35,7 +35,7 @@ export type ProductMedia = {
     type: string;
     url: string;
     isMain: boolean;
-    altText: string | null;
+    altText: string;
 };
 
 export type ProductSpecification = { name: string; value: string };
@@ -152,6 +152,8 @@ export type RawProductDetail = RawProductCard & {
         url: string;
         is_main: boolean;
         alt_text: string | null;
+        /** Always filled: alt_text, or the product name numbered in gallery order. */
+        alt: string;
     }[];
     related_products: RawProductCard[];
     seo: {
@@ -212,7 +214,7 @@ export function mapProductDetail(raw: RawProductDetail): ProductDetail {
             type: m.type,
             url: m.url,
             isMain: m.is_main,
-            altText: m.alt_text,
+            altText: m.alt,
         })),
         relatedProducts: (raw.related_products ?? []).map(mapProductCard),
         seo: {
