@@ -990,23 +990,28 @@
     .page-heading {
         font-size: 33px;
     }
+    /* Compact two-up cards: same content, tighter spacing and a shorter photo. */
     .product-body {
-        padding: 13px;
+        padding: 10px;
     }
     .product-title {
         font-size: 12px;
-        min-height: 38px;
+        line-height: 1.35;
+        min-height: 33px;
+        margin-top: 4px;
     }
     .product-spec {
         font-size: 10px;
-        min-height: 49px;
-        -webkit-line-clamp: 3;
+        line-height: 1.5;
+        min-height: 30px;
+        margin-top: 4px;
+        -webkit-line-clamp: 2;
     }
     .product-price {
         font-size: 13px;
     }
     .product-photo {
-        aspect-ratio: 1;
+        aspect-ratio: 1.35;
     }
     .product-card .detail-link {
         font-size: 10px;

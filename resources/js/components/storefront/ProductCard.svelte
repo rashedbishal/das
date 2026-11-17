@@ -62,12 +62,12 @@
         </ProductLink>
         <p class="product-spec">{p.shortDescription}</p>
         {#if p.showStock && p.stockQuantity !== null}
-            <p class="mt-2 text-[10px] text-muted-foreground">
+            <p class="mt-1.5 text-[10px] text-muted-foreground md:mt-2">
                 Stock: {p.stockQuantity}
             </p>
         {/if}
         <div
-            class="mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-4"
+            class="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t pt-2 md:gap-y-2 md:pt-4"
         >
             {#if p.showPrice}
                 <div>
@@ -92,6 +92,23 @@
             {#if phone}
                 <a
                     href="tel:{phone.tel}"
+                    class="mt-1.5 inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary md:mt-3"
+                >
+                    <Phone class="size-3" />
+                    Call for Price
+                </a>
+            {:else}
+                <Link
+                    href={`${contact.url({ query: { quote: 1 } })}#enquiry`}
+                    class="mt-1.5 inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary md:mt-3"
+                >
+                    Ask for Price
+                </Link>
+            {/if}
+
+            {#if phone}
+                <a
+                    href="tel:{phone.tel}"
                     class="mt-3 inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary"
                 >
                     <Phone class="size-3" />
@@ -105,6 +122,15 @@
                     Ask for Price
                 </Link>
             {/if}
+=======
+            <a
+                href="tel:{phone.tel}"
+                class="mt-1.5 inline-flex items-center gap-1.5 text-[10px] md:mt-3 text-muted-foreground hover:text-primary"
+            >
+                <Phone class="size-3" />
+                Call for Price
+            </a>
+>>>>>>> 3e95afe (ui improve: made the card design more compact)
         {/if}
     </div>
 </article>
