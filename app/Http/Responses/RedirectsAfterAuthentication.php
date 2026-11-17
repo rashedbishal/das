@@ -3,6 +3,7 @@
 namespace App\Http\Responses;
 
 use App\Models\User;
+use App\Services\EmailVerificationCodeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -40,8 +41,11 @@ trait RedirectsAfterAuthentication
         // the destination is kept so they continue there once verified.
         if (! $user->hasVerifiedEmail()) {
             $request->session()->put('url.intended', $destination);
+            $redirect = redirect()->route('verification.notice');
 
-            return redirect()->route('verification.notice');
+            return app(EmailVerificationCodeService::class)->lastSendFailed()
+                ? $redirect->with('status', EmailVerificationNotificationSentResponse::SEND_FAILED)
+                : $redirect;
         }
 
         return redirect()->to($destination);

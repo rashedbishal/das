@@ -41,12 +41,22 @@
 
 <AppHead title="Verify your email" />
 
-<p class="mb-6 text-center text-sm text-muted-foreground">
-    We sent a code to <span class="font-medium text-foreground">{email}</span>.
-    It expires in 15 minutes.
-</p>
+{#if status !== 'verification-code-failed'}
+    <p class="mb-6 text-center text-sm text-muted-foreground">
+        We sent a code to <span class="font-medium text-foreground">{email}</span>.
+        It expires in 15 minutes.
+    </p>
+{/if}
 
-{#if status === 'verification-link-sent'}
+{#if status === 'verification-code-failed'}
+    <div
+        class="mb-5 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-center text-sm font-medium text-amber-900"
+        role="alert"
+    >
+        We couldn’t send your code just now. Please press “Send a new code” in a
+        moment.
+    </div>
+{:else if status === 'verification-link-sent'}
     <div
         class="mb-5 rounded-md bg-accent px-3 py-2 text-center text-sm font-medium text-primary"
         role="status"

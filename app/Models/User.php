@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * @property int $id
@@ -75,7 +77,16 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function sendPasswordResetNotification($token): void
     {
-        $this->notify(new ResetPasswordNotification($token));
+        try {
+            $this->notify(new ResetPasswordNotification($token));
+        } catch (Throwable $exception) {
+            // A mail failure (e.g. SMTP down) becomes a form error instead of a 500.
+            report($exception);
+
+            throw ValidationException::withMessages([
+                'email' => 'We couldn’t send the reset email just now. Please try again in a few minutes.',
+            ]);
+        }
     }
 
     protected function activityType(): string

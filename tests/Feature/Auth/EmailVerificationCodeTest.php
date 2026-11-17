@@ -6,8 +6,11 @@ use App\Models\User;
 use App\Notifications\VerifyEmailCodeNotification;
 use App\Services\EmailVerificationCodeService;
 use App\Services\SettingsService;
+use Illuminate\Contracts\Notifications\Dispatcher as NotificationDispatcher;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Symfony\Component\Mailer\Exception\TransportException;
 
 /**
  * Send a fresh code to the user and return it (read from the faked notification).
@@ -179,4 +182,59 @@ test('the API can verify the e-mail with the code and blocks product details unt
     $this->actingAs($user->fresh())
         ->getJson(route('api.v1.products.show', $product->slug))
         ->assertOk();
+});
+
+/**
+ * Make every notification fail the way a broken SMTP server does.
+ */
+function breakTheMailServer(): void
+{
+    Exceptions::fake();
+    test()->mock(NotificationDispatcher::class)
+        ->shouldReceive('send')
+        ->andThrow(new TransportException('Connection to smtp.example.com refused'));
+}
+
+test('registration still completes when the code e-mail cannot be sent, and says so', function () {
+    app(SettingsService::class)->set('auth', 'registration_enabled', true);
+    breakTheMailServer();
+
+    $this->post(route('register.store'), [
+        'name' => 'Rafiq Ahmed',
+        'email' => 'rafiq@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ])
+        ->assertRedirect(route('verification.notice'))
+        ->assertSessionHas('status', 'verification-code-failed');
+
+    $this->assertAuthenticated();
+    Exceptions::assertReported(TransportException::class);
+});
+
+test('"send a new code" reports a mail failure instead of claiming the code was sent', function () {
+    $user = User::factory()->unverified()->create();
+    breakTheMailServer();
+
+    $this->actingAs($user)
+        ->from(route('verification.notice'))
+        ->post(route('verification.send'))
+        ->assertRedirect(route('verification.notice'))
+        ->assertSessionHas('status', 'verification-code-failed');
+
+    $this->actingAs($user)
+        ->postJson(route('api.v1.auth.email.resend'))
+        ->assertStatus(503);
+});
+
+test('a password reset e-mail that cannot be sent shows a form error instead of crashing', function () {
+    $user = User::factory()->create();
+    breakTheMailServer();
+
+    $this->from(route('password.request'))
+        ->post(route('password.email'), ['email' => $user->email])
+        ->assertRedirect(route('password.request'))
+        ->assertSessionHasErrors(['email' => 'We couldn’t send the reset email just now. Please try again in a few minutes.']);
+
+    Exceptions::assertReported(TransportException::class);
 });

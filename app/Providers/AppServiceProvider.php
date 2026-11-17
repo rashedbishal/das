@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\AuthActivityLogger;
+use App\Services\EmailVerificationCodeService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // One instance per request, so responses can ask whether the code e-mail failed.
+        $this->app->scoped(EmailVerificationCodeService::class);
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Notifications\VerifyEmailCodeNotification;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * Six-digit e-mail verification codes for new customer accounts.
@@ -15,6 +16,9 @@ use Illuminate\Validation\ValidationException;
  * Each user has at most one pending code, stored hashed. A code expires after
  * CODE_LIFETIME_MINUTES and stops working after MAX_ATTEMPTS wrong guesses;
  * the customer then asks for a new one (resending replaces the old code).
+ *
+ * Bound as a scoped service (one instance per request), so the responses
+ * after registration and "send a new code" can ask whether sending failed.
  */
 class EmailVerificationCodeService
 {
@@ -22,13 +26,21 @@ class EmailVerificationCodeService
 
     public const MAX_ATTEMPTS = 5;
 
+    private bool $lastSendFailed = false;
+
     /**
      * Create a fresh code for the user (replacing any pending one) and e-mail it.
+     * A mail failure (e.g. SMTP down) is reported to the logs instead of breaking
+     * registration; the customer can press "Send a new code" once it works again.
+     *
+     * @return bool whether the e-mail was handed to the mailer
      */
-    public function send(User $user): void
+    public function send(User $user): bool
     {
+        $this->lastSendFailed = false;
+
         if ($user->hasVerifiedEmail() || $user->email === null) {
-            return;
+            return false;
         }
 
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -42,7 +54,24 @@ class EmailVerificationCodeService
             ],
         );
 
-        $user->notify(new VerifyEmailCodeNotification($code, self::CODE_LIFETIME_MINUTES));
+        try {
+            $user->notify(new VerifyEmailCodeNotification($code, self::CODE_LIFETIME_MINUTES));
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->lastSendFailed = true;
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Whether the most recent send() in this request could not e-mail the code.
+     */
+    public function lastSendFailed(): bool
+    {
+        return $this->lastSendFailed;
     }
 
     /**

@@ -39,7 +39,10 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return response()->json(['data' => $user], 201);
+        return response()->json([
+            'data' => $user,
+            'verification_code_sent' => ! $this->verificationCodes->lastSendFailed(),
+        ], 201);
     }
 
     public function login(Request $request): JsonResponse
@@ -112,6 +115,10 @@ class AuthController extends Controller
         }
 
         $user->sendEmailVerificationNotification();
+
+        if ($this->verificationCodes->lastSendFailed()) {
+            return response()->json(['message' => 'We couldn’t send the code just now. Please try again in a few minutes.'], 503);
+        }
 
         return response()->json(['message' => 'A new verification code has been sent.'], 202);
     }
