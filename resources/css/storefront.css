@@ -870,9 +870,16 @@
     opacity: 1;
     transition: none;
 }
+/* The logo link hugs the image (no extra line-box space around it). */
+.footer .footer-brand-link {
+    display: inline-flex;
+    vertical-align: top;
+}
 .footer-links {
     display: flex;
     flex-direction: column;
+    /* Each link only as wide as its text, so the space beside it isn't clickable. */
+    align-items: flex-start;
     gap: 12px;
     font-size: 12px;
 }
