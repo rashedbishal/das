@@ -89,7 +89,7 @@
                     {#if product.image}
                         <img
                             src={product.image}
-                            alt=""
+                            alt={product.name}
                             class="size-12 shrink-0 rounded-lg bg-background object-contain"
                         />
                     {/if}
