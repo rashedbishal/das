@@ -145,6 +145,8 @@
     let editAdminOpen = $state(false);
     let editingAdmin = $state<AdminUser | null>(null);
     let deleteAdminTarget = $state<AdminUser | null>(null);
+    let deleteCustomerTarget = $state<Customer | null>(null);
+    let deleteCustomerOpen = $state(false);
     let deleteAdminOpen = $state(false);
 
     let newAdmin = $state({ name: '', email: '', password: '', role_id: '' });
@@ -402,6 +404,26 @@
             await loadCustomers();
         } catch (e) {
             error = e instanceof ApiError ? e.message : 'Action failed';
+        }
+    }
+
+    function askDeleteCustomer(customer: Customer) {
+        deleteCustomerTarget = customer;
+        deleteCustomerOpen = true;
+    }
+
+    async function confirmDeleteCustomer() {
+        if (!deleteCustomerTarget) return;
+        error = null;
+        success = null;
+        try {
+            await apiFetch(customersApi.destroy.url(deleteCustomerTarget.id), { method: 'DELETE' });
+            success = `Deleted ${deleteCustomerTarget.name}.`;
+            selectedCustomerIds = selectedCustomerIds.filter((id) => id !== deleteCustomerTarget?.id);
+            deleteCustomerTarget = null;
+            await loadCustomers();
+        } catch (e) {
+            error = e instanceof ApiError ? e.message : 'Failed to delete customer';
         }
     }
 
@@ -664,6 +686,7 @@
                 {#snippet children()}
                     <Button size="sm" onclick={() => runBulkAction('customers', 'deactivate')}>Deactivate</Button>
                     <Button size="sm" variant="outline" onclick={() => runBulkAction('customers', 'reactivate')}>Reactivate</Button>
+                    <Button size="sm" variant="destructive" onclick={() => runBulkAction('customers', 'delete')}>Delete</Button>
                 {/snippet}
             </BulkActions>
         {/if}
@@ -704,6 +727,15 @@
 {#snippet customerActions(customer: Customer)}
     <Button variant="ghost" size="sm" onclick={() => toggleCustomerActive(customer)}>
         {customer.is_active ? 'Deactivate' : 'Reactivate'}
+    </Button>
+    <Button
+        variant="ghost"
+        size="sm"
+        class="text-destructive hover:text-destructive"
+        aria-label="Delete {customer.name}"
+        onclick={() => askDeleteCustomer(customer)}
+    >
+        <Trash2 class="size-4" />
     </Button>
 {/snippet}
 
@@ -934,9 +966,24 @@
 
 <ConfirmDialog
     bind:open={bulkDeleteOpen}
-    title={pendingBulkAction?.type === 'roles' ? 'Delete selected roles?' : 'Delete selected admins?'}
-    description={`This will permanently delete the selected ${pendingBulkAction?.type === 'roles' ? 'roles' : 'administrators'}. Assigned roles and protected administrator accounts cannot be deleted.`}
+    title={pendingBulkAction?.type === 'roles'
+        ? 'Delete selected roles?'
+        : pendingBulkAction?.type === 'customers'
+          ? 'Delete selected customers?'
+          : 'Delete selected admins?'}
+    description={pendingBulkAction?.type === 'customers'
+        ? 'This will permanently delete the selected customer accounts and sign them out. This cannot be undone. To block an account but keep it, use Deactivate instead.'
+        : `This will permanently delete the selected ${pendingBulkAction?.type === 'roles' ? 'roles' : 'administrators'}. Assigned roles and protected administrator accounts cannot be deleted.`}
     onConfirm={() => confirmBulkAction()}
+/>
+
+<ConfirmDialog
+    bind:open={deleteCustomerOpen}
+    title="Delete customer?"
+    description={deleteCustomerTarget
+        ? `This will permanently delete "${deleteCustomerTarget.name}" (${deleteCustomerTarget.email ?? 'no email'}) and sign them out. This cannot be undone. To block the account but keep it, use Deactivate instead.`
+        : ''}
+    onConfirm={confirmDeleteCustomer}
 />
 
 <ConfirmDialog

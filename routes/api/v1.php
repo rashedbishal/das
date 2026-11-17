@@ -74,6 +74,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->name('admin.')->g
     Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
     Route::post('customers/{customer}/deactivate', [CustomerController::class, 'deactivate'])->name('customers.deactivate');
     Route::post('customers/{customer}/reactivate', [CustomerController::class, 'reactivate'])->name('customers.reactivate');
+    Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
 
     Route::get('settings', [AdminSettingsController::class, 'show'])->name('settings.show');
     Route::put('settings/general', [AdminSettingsController::class, 'updateGeneral'])->name('settings.general.update');

@@ -171,6 +171,64 @@ test('an admin can deactivate customers in bulk through the api', function () {
     expect(User::query()->whereKey($customers->modelKeys())->where('is_active', true)->count())->toBe(0);
 });
 
+test('an admin with customers.manage can permanently delete a customer, signing them out', function () {
+    $admin = adminUser(['customers.manage']);
+    $customer = User::factory()->create(['email' => 'leaving@example.com']);
+    DB::table('sessions')->insert([
+        'id' => 'customer-session', 'user_id' => $customer->id, 'ip_address' => '127.0.0.1',
+        'user_agent' => 'test', 'payload' => '', 'last_activity' => now()->timestamp,
+    ]);
+    DB::table('password_reset_tokens')->insert(['email' => 'leaving@example.com', 'token' => 'hash', 'created_at' => now()]);
+
+    $this->actingAs($admin)
+        ->deleteJson(route('api.v1.admin.customers.destroy', $customer))
+        ->assertNoContent();
+
+    expect(User::query()->find($customer->id))->toBeNull()
+        ->and(DB::table('sessions')->where('user_id', $customer->id)->exists())->toBeFalse()
+        ->and(DB::table('password_reset_tokens')->where('email', 'leaving@example.com')->exists())->toBeFalse();
+});
+
+test('deleting a customer needs customers.manage', function () {
+    $customer = User::factory()->create();
+
+    $this->actingAs(adminUser(['customers.view']))
+        ->deleteJson(route('api.v1.admin.customers.destroy', $customer))
+        ->assertForbidden();
+
+    expect(User::query()->find($customer->id))->not->toBeNull();
+});
+
+test('the customer delete endpoint cannot delete an admin account', function () {
+    $target = User::factory()->admin(Role::factory()->create())->create();
+
+    $this->actingAs(adminUser(['customers.manage', 'admins.manage']))
+        ->deleteJson(route('api.v1.admin.customers.destroy', $target))
+        ->assertNotFound();
+
+    expect(User::query()->find($target->id))->not->toBeNull();
+});
+
+test('an admin can delete customers in bulk, but not when an admin account is among them', function () {
+    $admin = adminUser(['customers.manage', 'admins.manage']);
+    $customers = User::factory()->count(2)->create();
+    $otherAdmin = User::factory()->admin(Role::factory()->create())->create();
+
+    $this->actingAs($admin)->postJson(route('api.v1.admin.customers.bulk'), [
+        'ids' => [...$customers->modelKeys(), $otherAdmin->id],
+        'action' => 'delete',
+    ])->assertStatus(422);
+
+    expect(User::query()->whereKey($customers->modelKeys())->count())->toBe(2);
+
+    $this->actingAs($admin)->postJson(route('api.v1.admin.customers.bulk'), [
+        'ids' => $customers->modelKeys(),
+        'action' => 'delete',
+    ])->assertOk()->assertJsonPath('message', '2 customers deleted.');
+
+    expect(User::query()->whereKey($customers->modelKeys())->count())->toBe(0);
+});
+
 test('bulk admin deletion refuses to delete the current administrator', function () {
     $admin = adminUser(['admins.manage']);
     $target = User::factory()->admin(Role::factory()->create())->create();
