@@ -50,6 +50,47 @@ export function orderedHours(
     );
 }
 
+/**
+ * The week as short lines, with consecutive days that share the same hours
+ * merged: "Saturday to Thursday: 10:00 AM – 7:00 PM", "Friday: Closed".
+ * Built from the CMS settings, so it stays right when the hours change.
+ * Days left unset in the CMS are skipped and break a run.
+ */
+export function groupedHours(
+    hours: OpeningHoursDay[] | null | undefined,
+): string[] {
+    const groups: { first: OpeningHoursDay['day']; last: OpeningHoursDay['day']; count: number; time: string }[] = [];
+    let previousIndex = -2;
+
+    for (const entry of orderedHours(hours)) {
+        const index = WEEKDAYS.indexOf(entry.day);
+        const time = entry.closed
+            ? 'Closed'
+            : `${formatTime(entry.opens)} – ${formatTime(entry.closes)}`;
+        const current = groups.at(-1);
+
+        if (current && current.time === time && index === previousIndex + 1) {
+            current.last = entry.day;
+            current.count++;
+        } else {
+            groups.push({ first: entry.day, last: entry.day, count: 1, time });
+        }
+
+        previousIndex = index;
+    }
+
+    return groups.map(({ first, last, count, time }) => {
+        const days =
+            count === 1
+                ? dayLabel(first)
+                : count === 2
+                  ? `${dayLabel(first)} & ${dayLabel(last)}`
+                  : `${dayLabel(first)} to ${dayLabel(last)}`;
+
+        return `${days}: ${time}`;
+    });
+}
+
 /** schema.org OpeningHoursSpecification entries for open days. */
 export function openingHoursSpecification(
     hours: OpeningHoursDay[] | null | undefined,

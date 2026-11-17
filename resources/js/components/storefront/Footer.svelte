@@ -3,7 +3,7 @@
     import Phone from '@lucide/svelte/icons/phone';
     import Plus from '@lucide/svelte/icons/plus';
     import { mapCategory, type RawCategory } from '@/data/catalogue';
-    import { dayLabel, formatTime, orderedHours } from '@/lib/business';
+    import { groupedHours } from '@/lib/business';
     import { resolvePhone } from '@/lib/contact';
     import { about, brands, catalogue, contact, home, privacy, terms } from '@/routes';
     import { show as categoryShow } from '@/routes/categories';
@@ -23,12 +23,8 @@
     const email = $derived(
         page.props.siteSettings.contactEmail || null,
     );
-    const hoursSummary = $derived(
-        orderedHours(page.props.siteSettings.openingHours)
-            .filter((entry) => !entry.closed)
-            .map((entry) => `${dayLabel(entry.day).slice(0, 3)} ${formatTime(entry.opens)}–${formatTime(entry.closes)}`)
-            .join(' · '),
-    );
+    // "Saturday to Thursday: 10:00 AM – 7:00 PM", "Friday: Closed" (from the CMS).
+    const hoursLines = $derived(groupedHours(page.props.siteSettings.openingHours));
 </script>
 
 <footer class="footer">
@@ -99,8 +95,12 @@
                                 .join(', ')}
                         </span>
                     {/if}
-                    {#if hoursSummary}
-                        <span class="leading-6 opacity-65">{hoursSummary}</span>
+                    {#if hoursLines.length}
+                        <span class="leading-6 opacity-65">
+                            {#each hoursLines as line (line)}
+                                <span class="block">{line}</span>
+                            {/each}
+                        </span>
                     {/if}
                 </div>
             </div>
