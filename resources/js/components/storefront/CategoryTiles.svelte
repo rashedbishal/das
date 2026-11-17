@@ -24,7 +24,7 @@
             href={categoryShow.url(c.slug)}
             class="category-card"
         >
-            <div class="category-card-media">
+            <div class="category-card-media" class:has-image={!!c.image}>
                 {#if c.image}
                     <img
                         src={c.image}
