@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Storage;
 class PublicDiskImage implements CastsAttributes
 {
     /** Directories on the public disk that hold uploaded catalogue images. */
-    public const DIRECTORIES = ['categories', 'subcategories'];
+    public const DIRECTORIES = ['categories', 'subcategories', 'brands'];
 
     /**
      * @param  array<string, mixed>  $attributes

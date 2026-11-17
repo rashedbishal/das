@@ -24,6 +24,7 @@ class BrandController extends Controller
 
         return Inertia::render('admin/brands/Index', [
             'brands' => Brand::query()->withCount('products')->orderBy('name')->get(),
+            'logoLimits' => BrandService::logoLimits(),
         ]);
     }
 

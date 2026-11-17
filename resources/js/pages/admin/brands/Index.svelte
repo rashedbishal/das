@@ -15,6 +15,7 @@
     import AppHead from '@/components/AppHead.svelte';
     import BulkActions from '@/components/dashboard/BulkActions.svelte';
     import ConfirmDialog from '@/components/ConfirmDialog.svelte';
+    import ImageFileInput from '@/components/dashboard/ImageFileInput.svelte';
     import ResponsiveTable from '@/components/dashboard/ResponsiveTable.svelte';
     import InputError from '@/components/InputError.svelte';
     import { Badge } from '@/components/ui/badge';
@@ -41,7 +42,9 @@
         products_count: number;
     };
 
-    let { brands }: { brands: BrandRow[] } = $props();
+    type LogoLimits = { maxSizeKb: number; targetSizeKb: number; maxWidth: number; maxHeight: number };
+
+    let { brands, logoLimits }: { brands: BrandRow[]; logoLimits: LogoLimits } = $props();
 
     let search = $state('');
     const filteredBrands = $derived(brands.filter((brand) => brand.name.toLowerCase().includes(search.toLowerCase())));
@@ -164,6 +167,14 @@
     </ResponsiveTable>
 </div>
 
+{#snippet logoHint()}
+    <p class="text-xs text-muted-foreground">
+        WebP, PNG or JPG up to {logoLimits.maxSizeKb} KB, saved as WebP. Recommended: {logoLimits.targetSizeKb} KB or less
+        on a transparent background. Larger files are compressed by the server, which may reduce quality, and logos
+        are scaled to fit {logoLimits.maxWidth}×{logoLimits.maxHeight}px.
+    </p>
+{/snippet}
+
 <Dialog bind:open={createOpen}>
     <DialogContent class="max-h-[85vh] overflow-y-auto">
         <DialogTitle>Create brand</DialogTitle>
@@ -195,9 +206,16 @@
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="create_brand_logo">Logo URL</Label>
-                    <LimitedInput id="create_brand_logo" name="logo" type="url" limit={fieldLimits.brand.logo} value={''} />
-                    <InputError message={errors.logo} />
+                    <Label for="create_brand_logo">Logo</Label>
+                    <ImageFileInput
+                        id="create_brand_logo"
+                        name="logo_file"
+                        accept="image/webp,image/png,image/jpeg"
+                        maxSizeKb={logoLimits.maxSizeKb}
+                        recommendedSizeKb={logoLimits.targetSizeKb}
+                    />
+                    {@render logoHint()}
+                    <InputError message={errors.logo_file} />
                 </div>
 
                 <label class="flex items-center gap-2 text-sm">
@@ -262,9 +280,19 @@
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="edit_brand_logo">Logo URL</Label>
-                        <LimitedInput id="edit_brand_logo" name="logo" type="url" limit={fieldLimits.brand.logo} value={brand.logo ?? ''} />
-                        <InputError message={errors.logo} />
+                        <Label for="edit_brand_logo">Logo</Label>
+                        <ImageFileInput
+                            id="edit_brand_logo"
+                            name="logo_file"
+                            accept="image/webp,image/png,image/jpeg"
+                            currentImage={brand.logo}
+                            alt="{brand.name} logo"
+                            maxSizeKb={logoLimits.maxSizeKb}
+                            recommendedSizeKb={logoLimits.targetSizeKb}
+                            removeName="remove_logo"
+                        />
+                        {@render logoHint()}
+                        <InputError message={errors.logo_file} />
                     </div>
 
                     <label class="flex items-center gap-2 text-sm">

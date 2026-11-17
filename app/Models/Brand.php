@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\LogsModelActivity;
+use App\Support\PublicDiskImage;
 use Database\Factories\BrandFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -39,6 +40,7 @@ class Brand extends Model
     {
         return [
             'is_active' => 'boolean',
+            'logo' => PublicDiskImage::class,
         ];
     }
 

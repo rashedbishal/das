@@ -225,14 +225,30 @@
         </Link>
     </div>
     <div
-        class="sf-reveal grid grid-cols-2 items-center gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-6"
+        class="sf-reveal grid grid-cols-2 items-center gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-6 lg:gap-x-10"
     >
         {#each $brands as b (b.id)}
+            <!-- The logo alone when there is one (its alt text names the
+                 brand); otherwise the name in small text. -->
             <Link
                 href={catalogue.url({ query: { brand: b.slug } })}
-                class="brand-word text-center"
+                class="flex h-16 min-w-0 items-center justify-center text-center opacity-85 transition-opacity hover:opacity-100 lg:h-20"
             >
-                {b.name}
+                {#if b.logo}
+                    <img
+                        src={b.logo}
+                        alt={b.name}
+                        loading="lazy"
+                        decoding="async"
+                        class="size-full object-contain"
+                    />
+                {:else}
+                    <span
+                        class="w-full truncate text-xs font-semibold text-muted-foreground"
+                    >
+                        {b.name}
+                    </span>
+                {/if}
             </Link>
         {/each}
     </div>
