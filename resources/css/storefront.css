@@ -597,11 +597,11 @@
     font-size: 15px;
 }
 /*
- * Whole-card product links (ProductCard linkWholeCard): the title link is
+ * Whole-card product links (ProductCard): the title link is
  * stretched over the card, so a click anywhere opens the product. Links
  * inside the card (Call for Price) sit above it (no link inside a link).
  */
-.product-card.is-whole-link {
+.product-card {
     position: relative;
     cursor: pointer;
 }
@@ -614,11 +614,11 @@
 .product-card .stretched-link:focus-visible {
     outline: none;
 }
-.product-card.is-whole-link:has(.stretched-link:focus-visible) {
+.product-card:has(.stretched-link:focus-visible) {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
-.product-card.is-whole-link:hover .product-title {
+.product-card:hover .product-title {
     color: var(--primary);
 }
 /* Home page category cards: a centred, wrapping row of fixed-width cards. */
@@ -1173,9 +1173,6 @@
     }
     .product-photo {
         aspect-ratio: 1.35;
-    }
-    .product-card .detail-link {
-        font-size: 10px;
     }
     .editorial-banner {
         min-height: 420px;

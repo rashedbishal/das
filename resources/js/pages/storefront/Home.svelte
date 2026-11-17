@@ -158,7 +158,7 @@
             description="Explore carefully selected equipment for modern dental practices."
             href={catalogue.url()}
         />
-        <ProductGrid items={featuredProducts.slice(0, 8)} linkWholeCard />
+        <ProductGrid items={featuredProducts.slice(0, 8)} />
         <div class="mt-9 text-center">
             <Link
                 href={catalogue.url()}

@@ -1,6 +1,5 @@
 <script lang="ts">
     import { Link, page } from '@inertiajs/svelte';
-    import ArrowRight from '@lucide/svelte/icons/arrow-right';
     import Phone from '@lucide/svelte/icons/phone';
     import { formatPrice } from '@/data/catalogue';
     import type { ProductCard as ProductCardType } from '@/data/catalogue';
@@ -11,14 +10,12 @@
     import ProductLink from './ProductLink.svelte';
 
     /**
-     * `linkWholeCard`: the whole card opens the product (its title link is
-     * stretched over the card) and there's no "View Details" link. Used by the
-     * home page's featured list; other grids keep the standard card.
+     * The storefront's one product card. The whole card opens the product: the
+     * title link is stretched over the card (storefront.css, "Whole-card product
+     * links"), and "Call for Price" sits above it as its own link, so there is
+     * never a link inside a link.
      */
-    let {
-        product: p,
-        linkWholeCard = false,
-    }: { product: ProductCardType; linkWholeCard?: boolean } = $props();
+    let { product: p }: { product: ProductCardType } = $props();
 
     const href = $derived(show.url(p.slug));
     // Clicking through to the product morphs this photo into the product page
@@ -42,81 +39,20 @@
             page.props.siteSettings.contactPhone,
         ),
     );
+    const priceContactClass = $derived(
+        `relative z-[2] inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary ${
+            p.showPrice ? 'mt-1.5 md:mt-3' : ''
+        }`,
+    );
 </script>
 
-{#snippet priceContact(className: string)}
-    {#if phone}
-        <a href="tel:{phone.tel}" class={className}>
-            <Phone class="size-3" />
-            Call for Price
-        </a>
-    {:else}
-        <Link href={`${contact.url({ query: { quote: 1 } })}#enquiry`} class={className}>
-            Ask for Price
-        </Link>
-    {/if}
-{/snippet}
-
-{#if linkWholeCard}
-    <article class="product-card is-whole-link">
-        <div
-            class="product-photo"
-            data-morph={motion.morphSlug === p.slug ? '' : undefined}
-        >
-            <img src={p.image} alt="" loading="lazy" width={384} height={512} />
-            {#if p.featured}
-                <span
-                    class="absolute top-3 left-3 bg-background/95 px-2 py-1 text-[8px] font-semibold tracking-[1px] text-primary"
-                >
-                    FEATURED
-                </span>
-            {/if}
-        </div>
-        <div class="product-body">
-            <div class="flex items-center gap-2 text-[9px] text-muted-foreground">
-                <span class="font-semibold tracking-[1px] text-primary uppercase"
-                    >{p.brand?.name}</span
-                >
-            </div>
-            <ProductLink {href} product={promptProduct} onclick={morph} class="stretched-link">
-                <h3 class="product-title" title={p.name}>{p.name}</h3>
-            </ProductLink>
-            <p class="product-spec">{p.shortDescription}</p>
-            {#if p.showStock && p.stockQuantity !== null}
-                <p class="mt-1.5 text-[10px] text-muted-foreground md:mt-2">
-                    Stock: {p.stockQuantity}
-                </p>
-            {/if}
-            <div class="mt-auto border-t pt-2 md:pt-4">
-                {#if p.showPrice}
-                    <div class="product-price">{priceLabel}</div>
-                {:else if p.priceLoginRequired}
-                    <span class="text-[10px] font-medium text-muted-foreground">
-                        Sign in to see price
-                    </span>
-                {/if}
-                {#if showsPriceContact}
-                    <!-- Above the stretched card link, so it still calls. -->
-                    {@render priceContact(
-                        `relative z-[2] inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary ${
-                            p.showPrice ? 'mt-1.5 md:mt-3' : ''
-                        }`,
-                    )}
-                {/if}
-            </div>
-        </div>
-    </article>
-{:else}
 <article class="product-card">
-    <ProductLink
-        {href}
-        product={promptProduct}
-        onclick={morph}
+    <div
         class="product-photo"
-        aria-label="View {p.name}"
         data-morph={motion.morphSlug === p.slug ? '' : undefined}
     >
-        <img src={p.image} alt={p.name} loading="lazy" width={384} height={512} />
+        <!-- The title link names the card, so the photo itself is decorative. -->
+        <img src={p.image} alt="" loading="lazy" width={384} height={512} />
         {#if p.featured}
             <span
                 class="absolute top-3 left-3 bg-background/95 px-2 py-1 text-[8px] font-semibold tracking-[1px] text-primary"
@@ -124,14 +60,14 @@
                 FEATURED
             </span>
         {/if}
-    </ProductLink>
+    </div>
     <div class="product-body">
         <div class="flex items-center gap-2 text-[9px] text-muted-foreground">
             <span class="font-semibold tracking-[1px] text-primary uppercase"
                 >{p.brand?.name}</span
             >
         </div>
-        <ProductLink {href} product={promptProduct} onclick={morph}>
+        <ProductLink {href} product={promptProduct} onclick={morph} class="stretched-link">
             <h3 class="product-title" title={p.name}>{p.name}</h3>
         </ProductLink>
         <p class="product-spec">{p.shortDescription}</p>
@@ -140,33 +76,27 @@
                 Stock: {p.stockQuantity}
             </p>
         {/if}
-        <div
-            class="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t pt-2 md:gap-y-2 md:pt-4"
-        >
+        <div class="mt-auto border-t pt-2 md:pt-4">
             {#if p.showPrice}
-                <div>
-                    <div class="product-price">{priceLabel}</div>
-                </div>
+                <div class="product-price">{priceLabel}</div>
             {:else if p.priceLoginRequired}
-                <ProductLink {href} product={promptProduct} onclick={morph} class="text-[10px] font-medium text-muted-foreground hover:text-primary">
+                <span class="text-[10px] font-medium text-muted-foreground">
                     Sign in to see price
-                </ProductLink>
+                </span>
             {/if}
-            <ProductLink
-                {href}
-                product={promptProduct}
-                onclick={morph}
-                class="detail-link flex items-center gap-1.5 text-[10px] font-semibold text-primary"
-            >
-                View Details
-                <ArrowRight class="size-3.5" />
-            </ProductLink>
+            {#if showsPriceContact}
+                <!-- Above the stretched card link, so it still calls. -->
+                {#if phone}
+                    <a href="tel:{phone.tel}" class={priceContactClass}>
+                        <Phone class="size-3" />
+                        Call for Price
+                    </a>
+                {:else}
+                    <Link href={`${contact.url({ query: { quote: 1 } })}#enquiry`} class={priceContactClass}>
+                        Ask for Price
+                    </Link>
+                {/if}
+            {/if}
         </div>
-        {#if showsPriceContact}
-            {@render priceContact(
-                'mt-1.5 inline-flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-primary md:mt-3',
-            )}
-        {/if}
     </div>
 </article>
-{/if}
