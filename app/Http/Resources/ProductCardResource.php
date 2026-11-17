@@ -20,7 +20,7 @@ class ProductCardResource extends JsonResource
     public function toArray(Request $request): array
     {
         // Prices are for signed-in customers only; guests are asked to sign in.
-        $priceVisible = $this->show_price && $request->user() !== null;
+        $priceVisible = $this->show_price && $request->user()?->canSeePrices() === true;
 
         return [
             'id' => $this->id,
@@ -33,7 +33,7 @@ class ProductCardResource extends JsonResource
             ] : null),
             'main_image' => $this->mainImage()?->resolvedUrl(),
             'show_price' => $priceVisible,
-            'price_login_required' => $this->show_price && $request->user() === null,
+            'price_login_required' => $this->show_price && $request->user()?->canSeePrices() !== true,
             'show_stock' => $this->show_stock,
             'regular_price' => $priceVisible && $this->regular_price !== null ? (string) $this->regular_price : null,
             'sale_price' => $priceVisible && $this->sale_price !== null ? (string) $this->sale_price : null,

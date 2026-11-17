@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\AuthenticationService;
+use App\Services\EmailVerificationCodeService;
 use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +19,7 @@ class AuthController extends Controller
     public function __construct(
         private readonly AuthenticationService $authentication,
         private readonly CreateNewUser $createNewUser,
+        private readonly EmailVerificationCodeService $verificationCodes,
     ) {}
 
     /**
@@ -28,6 +32,9 @@ class AuthController extends Controller
         $this->ensureStateful($request);
 
         $user = $this->createNewUser->create($request->all());
+
+        // Same as the web form: e-mails the 6-digit verification code.
+        event(new Registered($user));
 
         Auth::login($user);
         $request->session()->regenerate();
@@ -75,6 +82,38 @@ class AuthController extends Controller
     public function user(Request $request): JsonResponse
     {
         return response()->json(['data' => $request->user()]);
+    }
+
+    /**
+     * Confirm the signed-in customer's e-mail with the 6-digit code they were sent.
+     */
+    public function verifyEmail(Request $request): JsonResponse
+    {
+        $request->validate(['code' => ['required', 'string', 'max:20']]);
+
+        /** @var User $user */
+        $user = $request->user();
+
+        $this->verificationCodes->verify($user, $request->string('code')->toString());
+
+        return response()->json(['data' => $user->refresh()]);
+    }
+
+    /**
+     * E-mail a new verification code (replacing the previous one).
+     */
+    public function resendVerificationCode(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Your email address is already verified.']);
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        return response()->json(['message' => 'A new verification code has been sent.'], 202);
     }
 
     /**

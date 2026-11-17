@@ -52,8 +52,6 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $this->permissionsFor($request->user()),
             ],
             'googleSignIn' => app(GoogleSignInService::class)->isEnabled(),
-            // Labels the storefront login modal's identifier field (email, phone or both).
-            'loginMode' => $settings->loginMode(),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'contactWidgets' => [
                 'whatsapp' => $settings->whatsappWidget(),

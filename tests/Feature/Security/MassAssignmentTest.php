@@ -3,11 +3,8 @@
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
-use App\Services\SettingsService;
 
-test('a registering customer cannot self-promote to admin via extra form fields', function () {
-    app(SettingsService::class)->set('auth', 'login_mode', 'both');
-
+test('a registering customer cannot self-promote to admin or self-verify via extra form fields', function () {
     $this->post(route('register.store'), [
         'name' => 'Attacker',
         'email' => 'attacker@example.com',
@@ -16,13 +13,15 @@ test('a registering customer cannot self-promote to admin via extra form fields'
         'user_type' => 'admin',
         'role_id' => 1,
         'is_active' => true,
+        'email_verified_at' => now()->toDateTimeString(),
     ]);
 
     $user = User::query()->where('email', 'attacker@example.com')->firstOrFail();
 
     expect($user->user_type)->toBe('customer')
         ->and($user->role_id)->toBeNull()
-        ->and($user->isAdmin())->toBeFalse();
+        ->and($user->isAdmin())->toBeFalse()
+        ->and($user->hasVerifiedEmail())->toBeFalse();
 });
 
 test('an admin cannot inject role_id through the category creation payload', function () {

@@ -24,7 +24,6 @@ declare module '@inertiajs/core' {
             auth: Auth;
             sidebarOpen: boolean;
             googleSignIn: boolean;
-            loginMode: 'email' | 'phone' | 'both';
             contactWidgets: ContactWidgets;
             siteSettings: {
                 name: string;

@@ -85,7 +85,7 @@ quantity visibility and storefront display are currently product-level.
 ## 6. Configuration and developer operations
 
 Important settings are managed in **Admin → Settings**: site identity/contact,
-currency/timezone, login mode and registration, WhatsApp/Messenger, catalog
+currency/timezone, registration on/off, WhatsApp/Messenger, catalog
 page size/featured limit/delivery note, SEO defaults, and tracking snippets.
 Runtime secrets and infrastructure settings belong in `.env`, not source
 control. Production Sanctum stateful domains must include the deployed

@@ -87,7 +87,7 @@ All settings live in one `settings` table (`group`, `key`, `value` as JSON) behi
 | Group       | Keys                                                                                                                                                        |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `general`   | site_name, logo, favicon, contact_email, contact_phone, address, currency, timezone, social_links                                                           |
-| `auth`      | login_mode (`email`\|`phone`\|`both`), registration_enabled                                                                                                 |
+| `auth`      | registration_enabled (sign-in and registration are by email only; new customers confirm their email with a 6-digit code)                                   |
 | `whatsapp`  | enabled, phone, message                                                                                                                                     |
 | `messenger` | enabled, page_url                                                                                                                                           |
 | `catalog`   | page_size, featured_limit, delivery_note (shown on all product detail pages)                                                                                |
@@ -149,7 +149,7 @@ npm run check                       # svelte-check + eslint, if configured
 npm run build                       # production asset build
 ```
 
-The suite covers: Mother Admin bootstrap/idempotency, role/permission anti-escalation, all three customer login modes with Bangladeshi phone validation and duplicate-normalization, the product access rules (product details for signed-in users only, prices for signed-in users only, admin draft preview) on both Inertia and API routes, full catalog CRUD + media upload + search/filter/sort/pagination, settings/homepage-section management, contact-widget exposure, and targeted mass-assignment/IDOR checks.
+The suite covers: Mother Admin bootstrap/idempotency, role/permission anti-escalation, email-only registration/sign-in with 6-digit email verification codes (expiry, attempt limit, resend), Bangladeshi phone validation on enquiries, the product access rules (product details and prices for signed-in users with a verified email only, admin draft preview) on both Inertia and API routes, full catalog CRUD + media upload + search/filter/sort/pagination, settings/homepage-section management, contact-widget exposure, and targeted mass-assignment/IDOR checks.
 
 ## Deployment Notes
 

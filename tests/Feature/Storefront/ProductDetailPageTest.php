@@ -34,7 +34,6 @@ test('a signed-in customer sees the full product page, server-rendered', functio
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('storefront/Product')
-            ->where('loginMode', 'both')
             ->where('isPreview', false)
             ->where('product.name', 'Curing Light X')
             ->where('product.full_description', 'A cordless LED curing light.')

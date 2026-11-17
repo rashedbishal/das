@@ -8,7 +8,6 @@
     import { Form, page } from '@inertiajs/svelte';
     import SettingsController from '@/actions/App/Http/Controllers/Admin/SettingsController';
     import AppHead from '@/components/AppHead.svelte';
-    import FormSelect from '@/components/dashboard/FormSelect.svelte';
     import InputError from '@/components/InputError.svelte';
     import { Button } from '@/components/ui/button';
     import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,7 +46,7 @@
             opening_hours?: OpeningHoursDay[] | null;
             social_links?: Record<string, string | null> | null;
         };
-        authSettings: { login_mode?: string; registration_enabled?: boolean };
+        authSettings: { registration_enabled?: boolean };
         whatsapp: { enabled?: boolean; phone?: string; message?: string };
         messenger: { enabled?: boolean; page_url?: string };
         catalog: { page_size?: number; featured_limit?: number; delivery_note?: string };
@@ -197,20 +196,10 @@
                 <Form {...SettingsController.updateAuth.form()} class="space-y-4">
                     {#snippet children({ errors, processing })}
                         <fieldset class="space-y-4" disabled={!canManageSettings} inert={!canManageSettings}>
-                            <div class="grid gap-2">
-                                <Label for="login_mode">Login mode</Label>
-                                <FormSelect
-                                    id="login_mode"
-                                    name="login_mode"
-                                    value={authSettings.login_mode ?? 'both'}
-                                    options={[
-                                        { value: 'email', label: 'Email only' },
-                                        { value: 'phone', label: 'Phone only' },
-                                        { value: 'both', label: 'Email or phone' },
-                                    ]}
-                                />
-                                <InputError message={errors.login_mode} />
-                            </div>
+                            <p class="text-sm text-muted-foreground">
+                                Customers register and sign in with their email address. New accounts
+                                confirm it with a 6-digit code before they can see product details and prices.
+                            </p>
                             <label class="flex items-center gap-2 text-sm">
                                 <input type="hidden" name="registration_enabled" value="0" />
                                 <input type="checkbox" name="registration_enabled" value="1" checked={authSettings.registration_enabled ?? true} />

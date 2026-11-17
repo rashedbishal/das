@@ -26,9 +26,11 @@ Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttl
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
     Route::get('auth/user', [AuthController::class, 'user'])->name('auth.user');
+    Route::post('auth/email/verify', [AuthController::class, 'verifyEmail'])->middleware('throttle:10,1')->name('auth.email.verify');
+    Route::post('auth/email/resend', [AuthController::class, 'resendVerificationCode'])->middleware('throttle:6,1')->name('auth.email.resend');
 
-    // Like the product page, full product details need a signed-in user.
-    Route::get('products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
+    // Like the product page, full product details need a signed-in user with a verified e-mail.
+    Route::get('products/{product:slug}', [ProductController::class, 'show'])->middleware('verified')->name('products.show');
 });
 
 Route::get('products', [ProductController::class, 'index'])->name('products.index');

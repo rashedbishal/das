@@ -21,16 +21,11 @@
 
     let {
         passwordRules,
-        loginMode = 'both',
         registrationEnabled = true,
     }: {
         passwordRules: string;
-        loginMode?: 'email' | 'phone' | 'both';
         registrationEnabled?: boolean;
     } = $props();
-
-    const showEmail = $derived(loginMode === 'email' || loginMode === 'both');
-    const showPhone = $derived(loginMode === 'phone' || loginMode === 'both');
 </script>
 
 <AppHead title="Register" />
@@ -66,47 +61,22 @@
                 <InputError message={errors.name} />
             </div>
 
-            {#if showEmail}
-                <div class="grid gap-2">
-                    <Label for="email" class="text-[13px]">
-                        Email address
-                    </Label>
-                    <Input
-                        id="email"
-                        type="email"
-                        required={loginMode === 'email'}
-                        autocomplete="email"
-                        name="email"
-                        placeholder="you@example.com"
-                        class="h-10"
-                    />
-                    <InputError message={errors.email} />
-                </div>
-            {/if}
-
-            {#if showPhone}
-                <div class="grid gap-2">
-                    <Label for="phone" class="text-[13px]">
-                        Phone number
-                    </Label>
-                    <Input
-                        id="phone"
-                        type="text"
-                        required={loginMode === 'phone'}
-                        autocomplete="tel"
-                        name="phone"
-                        placeholder="01XXXXXXXXX"
-                        class="h-10"
-                    />
-                    <InputError message={errors.phone} />
-                </div>
-            {/if}
-
-            {#if loginMode === 'both'}
-                <p class="-mt-2 text-xs text-muted-foreground">
-                    Enter an email, a phone number, or both.
+            <div class="grid gap-2">
+                <Label for="email" class="text-[13px]">Email address</Label>
+                <Input
+                    id="email"
+                    type="email"
+                    required
+                    autocomplete="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    class="h-10"
+                />
+                <InputError message={errors.email} />
+                <p class="text-xs text-muted-foreground">
+                    We’ll email you a 6-digit code to confirm it.
                 </p>
-            {/if}
+            </div>
 
             <div class="grid gap-2">
                 <Label for="password" class="text-[13px]">Password</Label>

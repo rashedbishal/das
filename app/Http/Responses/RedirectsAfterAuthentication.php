@@ -7,7 +7,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
- * Admins land in the dashboard and customers on the storefront. The intended URL
+ * Admins land in the dashboard and customers on the storefront (after entering
+ * their e-mail verification code, if they have not yet). The intended URL
  * (e.g. the product page that opened the login modal) wins only when it belongs
  * to the side of the app the user is allowed into. The login modal sends it as an
  * `intended` field; a page that required sign-in leaves it in the session.
@@ -33,7 +34,17 @@ trait RedirectsAfterAuthentication
             return redirect()->to($intendedPath !== null && $isAdminArea ? $intended : route('dashboard'));
         }
 
-        return redirect()->to($intendedPath !== null && ! $isAdminArea ? $intended : route('home'));
+        $destination = $intendedPath !== null && ! $isAdminArea ? $intended : route('home');
+
+        // A customer who has not confirmed their e-mail enters the 6-digit code first;
+        // the destination is kept so they continue there once verified.
+        if (! $user->hasVerifiedEmail()) {
+            $request->session()->put('url.intended', $destination);
+
+            return redirect()->route('verification.notice');
+        }
+
+        return redirect()->to($destination);
     }
 
     /**

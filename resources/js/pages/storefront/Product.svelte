@@ -35,11 +35,9 @@
     let {
         product,
         isPreview = false,
-        loginMode = 'both',
     }: {
         product: RawProductDetail;
         isPreview?: boolean;
-        loginMode?: 'email' | 'phone' | 'both';
     } = $props();
 
     const p = $derived(mapProductDetail(product));
@@ -404,4 +402,4 @@
         />
     </Modal>
 
-<LoginModal bind:open={loginModalOpen} {loginMode} />
+<LoginModal bind:open={loginModalOpen} />

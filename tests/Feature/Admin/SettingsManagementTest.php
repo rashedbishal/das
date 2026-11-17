@@ -47,15 +47,16 @@ test('an admin without settings.manage cannot update settings', function () {
     $response->assertForbidden();
 });
 
-test('updating the login mode changes the configured auth setting', function () {
+test('an admin can turn customer registration off, and there is no login-mode setting any more', function () {
     $admin = adminUser(['settings.manage']);
 
     $this->actingAs($admin)->put(route('admin.settings.auth.update'), [
         'login_mode' => 'phone',
-        'registration_enabled' => true,
-    ]);
+        'registration_enabled' => false,
+    ])->assertSessionHasNoErrors();
 
-    expect(app(SettingsService::class)->loginMode())->toBe('phone');
+    expect(app(SettingsService::class)->registrationEnabled())->toBeFalse()
+        ->and(app(SettingsService::class)->get('auth', 'login_mode'))->toBeNull();
 });
 
 test('whatsapp settings normalize the phone number before saving', function () {

@@ -50,11 +50,6 @@ class SettingsService
         return collect($settings);
     }
 
-    public function loginMode(): string
-    {
-        return (string) $this->get('auth', 'login_mode', 'both');
-    }
-
     public function registrationEnabled(): bool
     {
         return (bool) $this->get('auth', 'registration_enabled', true);

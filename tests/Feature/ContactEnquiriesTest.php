@@ -41,6 +41,19 @@ test('invalid enquiries are not stored', function () {
     expect(ContactEnquiry::query()->count())->toBe(0);
 });
 
+test('an enquiry phone number must be a valid Bangladeshi mobile number', function (string $phone) {
+    $this->from(route('contact'))->post(route('contact.enquiries.store'), [
+        'name' => 'Customer',
+        'phone' => $phone,
+        'message' => 'Please call me.',
+    ])->assertSessionHasErrors('phone');
+
+    expect(ContactEnquiry::query()->count())->toBe(0);
+})->with([
+    'not 11 digits' => ['0171234567'],
+    'disallowed prefix' => ['01212345678'],
+]);
+
 test('public enquiry submissions are rate limited', function () {
     $payload = ['name' => 'Customer', 'phone' => '01712345678', 'message' => 'Please call me.'];
 

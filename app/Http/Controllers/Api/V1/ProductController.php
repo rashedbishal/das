@@ -19,7 +19,7 @@ class ProductController extends Controller
     {
         $products = $this->products->paginate(ProductService::withoutPriceFiltersForGuests($request->only([
             'search', 'category', 'subcategory', 'brand', 'min_price', 'max_price', 'stock_status', 'sort', 'per_page',
-        ]), $request->user() !== null));
+        ]), $request->user()?->canSeePrices() === true));
 
         return response()->json(ProductCardResource::collection($products)->response()->getData(true));
     }

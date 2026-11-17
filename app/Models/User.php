@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\LogsModelActivity;
 use App\Notifications\ResetPasswordNotification;
+use App\Services\EmailVerificationCodeService;
 use App\Support\PhoneNumber;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -49,6 +50,23 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /** @var array<int, string> */
     protected array $activityLogExcept = ['password'];
+
+    /**
+     * Prices (and price filters) are for signed-in users whose e-mail is verified.
+     */
+    public function canSeePrices(): bool
+    {
+        return $this->hasVerifiedEmail();
+    }
+
+    /**
+     * E-mail a 6-digit verification code (instead of Laravel's link). Called on
+     * registration and by the "resend code" button.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        app(EmailVerificationCodeService::class)->send($this);
+    }
 
     /**
      * Send the DAS-branded "forgot password" email.

@@ -381,3 +381,17 @@ p {
         padding: 28px 22px !important;
     }
 }
+
+/* Verification code (VerifyEmailCodeNotification) */
+.verification-code {
+    background-color: #eef1ff;
+    border: 1px solid #e6e8f7;
+    border-radius: 12px;
+    color: #2f3190;
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: 8px;
+    margin: 26px 0;
+    padding: 18px 12px;
+    text-align: center;
+}

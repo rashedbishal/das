@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\EmailVerificationCodeController;
 use App\Http\Controllers\Auth\GoogleSignInController;
 use App\Http\Controllers\ContactEnquirySubmissionController;
 use App\Http\Controllers\DashboardController;
@@ -21,12 +22,18 @@ Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
 
 // Product details are for signed-in visitors only; guests are sent to sign in and brought back.
-Route::get('products/{slug}', StorefrontProductController::class)->middleware('auth')->name('products.show');
+Route::get('products/{slug}', StorefrontProductController::class)->middleware(['auth', 'verified'])->name('products.show');
 
 Route::get('brands', [StorefrontCatalogueController::class, 'brands'])->name('brands');
 Route::get('brands/{brand}', [StorefrontCatalogueController::class, 'brand'])->name('brands.show');
 Route::inertia('about', 'storefront/About')->name('about');
 Route::inertia('contact', 'storefront/Contact')->name('contact');
+
+// 6-digit e-mail verification code (sent on registration; "resend" uses Fortify's
+// verification.send route, which calls User::sendEmailVerificationNotification()).
+Route::post('email/verify-code', EmailVerificationCodeController::class)
+    ->middleware(['auth', 'throttle:10,1'])
+    ->name('verification.code');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');

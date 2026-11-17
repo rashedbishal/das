@@ -3,43 +3,30 @@
 namespace App\Services;
 
 use App\Models\User;
-use App\Support\PhoneNumber;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthenticationService
 {
-    public function __construct(private readonly SettingsService $settings) {}
-
     /**
-     * Find the account an identifier and password belong to, or null when they don't match.
+     * Find the account an e-mail address and password belong to, or null when they don't
+     * match. Sign-in is by e-mail only (customers and admins alike).
      * A deactivated account is still returned, so callers can tell the user why they can't
      * sign in (only once the password is correct) via rejectIfDeactivated().
      */
     public function resolveUser(string $identifier, string $password): ?User
     {
-        $identifier = trim($identifier);
-        $looksLikeEmail = str_contains($identifier, '@');
+        $email = trim($identifier);
 
-        $user = $looksLikeEmail
-            ? User::query()->where('email', $identifier)->first()
-            : User::query()->where('phone', PhoneNumber::normalizeBangladeshi($identifier))->first();
-
-        if (! $user || ! Hash::check($password, (string) $user->password)) {
+        if (! str_contains($email, '@')) {
             return null;
         }
 
-        if ($user->isCustomer()) {
-            $mode = $this->settings->loginMode();
+        $user = User::query()->where('email', $email)->first();
 
-            if ($looksLikeEmail && ! in_array($mode, ['email', 'both'], true)) {
-                return null;
-            }
-
-            if (! $looksLikeEmail && ! in_array($mode, ['phone', 'both'], true)) {
-                return null;
-            }
+        if (! $user || ! Hash::check($password, (string) $user->password)) {
+            return null;
         }
 
         return $user;

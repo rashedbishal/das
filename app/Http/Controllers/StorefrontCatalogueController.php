@@ -160,7 +160,7 @@ class StorefrontCatalogueController extends Controller
             'sort' => self::SORTS[$text('sort') ?? 'featured'] ?? 'newest',
             'per_page' => self::PER_PAGE,
             ...$fixed,
-        ], $request->user() !== null);
+        ], $request->user()?->canSeePrices() === true);
 
         return ProductCardResource::collection($this->products->paginate($filters))->response()->getData(true);
     }

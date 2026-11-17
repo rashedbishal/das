@@ -16,35 +16,17 @@
 
     let {
         open = $bindable(false),
-        loginMode,
         description = 'Sign in to view full product details.',
         intended = null,
         product = null,
     }: {
         open?: boolean;
-        loginMode?: 'email' | 'phone' | 'both';
         description?: string;
         /** Path to go to after signing in (otherwise the server decides). */
         intended?: string | null;
         /** The product the visitor clicked, previewed at the top of the modal. */
         product?: LoginPromptProduct | null;
     } = $props();
-
-    const mode = $derived(loginMode ?? page.props.loginMode ?? 'both');
-    const identifierLabel = $derived(
-        mode === 'email'
-            ? 'Email address'
-            : mode === 'phone'
-              ? 'Phone number'
-              : 'Email or phone',
-    );
-    const identifierPlaceholder = $derived(
-        mode === 'email'
-            ? 'you@example.com'
-            : mode === 'phone'
-              ? '01XXXXXXXXX'
-              : 'you@example.com or 01XXXXXXXXX',
-    );
 
     /** Staggers each block's entrance: `style={rise(n)}`. */
     const rise = (index: number) => `--rise-index: ${index}`;
@@ -116,15 +98,15 @@
 
             <div class="rise grid gap-2" style={rise(5)}>
                 <Label for="modal_email" class="text-[13px]">
-                    {identifierLabel}
+                    Email address
                 </Label>
                 <Input
                     id="modal_email"
-                    type="text"
+                    type="email"
                     name="email"
                     required
-                    autocomplete="username"
-                    placeholder={identifierPlaceholder}
+                    autocomplete="email"
+                    placeholder="you@example.com"
                     class="h-10"
                 />
                 <InputError message={errors.email} />

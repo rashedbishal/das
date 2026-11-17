@@ -5,7 +5,6 @@ namespace App\Http\Requests\Admin\Settings;
 use App\Models\Setting;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateAuthSettingsRequest extends FormRequest
 {
@@ -20,7 +19,6 @@ class UpdateAuthSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'login_mode' => ['required', Rule::in(['email', 'phone', 'both'])],
             'registration_enabled' => ['required', 'boolean'],
         ];
     }
