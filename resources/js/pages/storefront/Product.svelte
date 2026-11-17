@@ -12,6 +12,7 @@
     import ContactBanner from '@/components/storefront/ContactBanner.svelte';
     import Modal from '@/components/storefront/Modal.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
+    import CollapsibleText from '@/components/storefront/CollapsibleText.svelte';
     import ProductGrid from '@/components/storefront/ProductGrid.svelte';
     import QuoteDialog from '@/components/storefront/QuoteDialog.svelte';
     import SectionHeading from '@/components/storefront/SectionHeading.svelte';
@@ -344,7 +345,14 @@
             <div>
                 <p class="eyebrow mb-3">Considered in every detail</p>
                 <h2 class="text-2xl">Product overview</h2>
-                <p class="section-intro text-sm leading-8">{p.fullDescription}</p>
+                {#if p.fullDescription}
+                    {#key p.slug}
+                        <CollapsibleText
+                            text={p.fullDescription}
+                            class="section-intro text-sm leading-8"
+                        />
+                    {/key}
+                {/if}
                 <h3 class="mt-8 mb-5 text-lg">Key features</h3>
                 {#each p.highlights as f (f)}
                     <div class="flex gap-3 border-b py-3 text-sm">
