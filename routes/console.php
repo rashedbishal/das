@@ -24,7 +24,16 @@ Schedule::command('backup:monitor')->dailyAt('03:00');
 Schedule::command('inertia:check-ssr')
     ->everyFiveMinutes()
     ->environments(['production'])
+    ->when(fn (): bool => (bool) config('inertia.ssr.enabled'))
     ->onFailure(fn () => Log::critical('The Inertia SSR server is not responding; pages are being served without server-rendered meta tags.'));
+
+// Shared hosting has no supervised queue worker: start a short-lived one every minute
+// that drains waiting jobs (e.g. enquiry notification mail) and exits before the next run.
+Schedule::command('queue:work --stop-when-empty --max-time=50 --tries=3')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->when(fn (): bool => (bool) config('queue.work_from_scheduler'));
 
 // Activity log entries older than config('activitylog.delete_records_older_than_days') (365).
 Schedule::command('activitylog:clean --force')->dailyAt('02:00')->withoutOverlapping();

@@ -1,0 +1,175 @@
+name: deploy
+
+# Deploys to Hostinger shared hosting over SSH, in place (no atomic releases):
+# build on GitHub -> maintenance mode on -> rsync files -> migrate + cache -> maintenance off.
+#
+# Runs automatically after the "tests" workflow passes on main, or by hand from the
+# Actions tab ("Run workflow"). One-time server setup and the secrets it needs are in
+# docs/deployment.md, "Hostinger shared hosting".
+
+on:
+  workflow_run:
+    workflows: [tests]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never run two deploys at once; a newer one waits for the current one to finish.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      PHP_BIN: ${{ vars.PHP_BIN || 'php' }}
+
+    steps:
+      - name: Checkout the tested commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+
+      # The Vite build runs `php artisan wayfinder:generate`, so the app must boot here.
+      - name: Build frontend assets
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate
+          npm ci
+          npm run build
+
+      - name: Install production PHP dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-progress
+          rm -f .env public/hot
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          for name in SSH_HOST SSH_USER DEPLOY_PATH SSH_PRIVATE_KEY SSH_KNOWN_HOSTS; do
+              if [ -z "${!name}" ]; then
+                  echo "::error::Secret $name is not set (Settings > Environments > production)."
+                  exit 1
+              fi
+          done
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host deploy-target
+            HostName ${SSH_HOST}
+            Port ${SSH_PORT:-65002}
+            User ${SSH_USER}
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ServerAliveInterval 30
+          EOF
+
+      - name: Put the site in maintenance mode
+        run: |
+          ssh deploy-target "bash -s" -- "$DEPLOY_PATH" "$PHP_BIN" <<'EOF'
+          set -euo pipefail
+          # rsync --delete will empty anything else in this folder, so only ever
+          # deploy into an empty folder or an existing copy of this app.
+          case "$1" in
+              "" | "/" | "$HOME" | "$HOME/" | */public_html | */public_html/)
+                  echo "::error::DEPLOY_PATH '$1' is not a dedicated app folder."
+                  exit 1 ;;
+          esac
+          mkdir -p "$1"
+          cd "$1"
+          if [ -n "$(ls -A)" ] && [ ! -f artisan ]; then
+              echo "::error::$1 is not empty and does not contain this app; refusing to overwrite it."
+              exit 1
+          fi
+          if [ -f artisan ] && [ -f vendor/autoload.php ]; then
+              "$2" artisan down --retry=15 --render="errors::503" || true
+          fi
+          EOF
+
+      # Server-owned paths (.env, storage, the public/storage link, Hostinger's own
+      # files) are excluded, which also protects them from --delete.
+      - name: Upload files
+        run: |
+          rsync -az --delete --human-readable --stats \
+            --exclude='/.git/' \
+            --exclude='/.github/' \
+            --exclude='/node_modules/' \
+            --exclude='/tests/' \
+            --exclude='/docs/' \
+            --exclude='/.env' \
+            --exclude='/.env.*' \
+            --exclude='/storage/' \
+            --exclude='/public/storage' \
+            --exclude='/public/hot' \
+            --exclude='/public/.user.ini' \
+            --exclude='/public/.well-known/' \
+            --exclude='/.user.ini' \
+            --exclude='/.claude/' \
+            --exclude='/.agents/' \
+            --exclude='/.codex/' \
+            --exclude='/.idea/' \
+            --exclude='/*.md' \
+            ./ "deploy-target:${DEPLOY_PATH}/"
+
+      - name: Migrate, cache and go live
+        run: |
+          ssh deploy-target "bash -s" -- "$DEPLOY_PATH" "$PHP_BIN" <<'EOF'
+          set -euo pipefail
+          cd "$1"
+          PHP="$2"
+
+          mkdir -p storage/app/public storage/app/private storage/logs \
+              storage/framework/cache/data storage/framework/sessions storage/framework/views \
+              bootstrap/cache
+
+          if [ ! -f .env ]; then
+              echo "::error::$1/.env is missing. Create it from .env.production.example (see docs/deployment.md)."
+              exit 1
+          fi
+
+          "$PHP" artisan migrate --force
+          [ -L public/storage ] || "$PHP" artisan storage:link
+          "$PHP" artisan optimize:clear
+          "$PHP" artisan optimize
+          "$PHP" artisan queue:restart
+          "$PHP" artisan up
+          EOF
+
+      - name: Leave a note if the deploy failed
+        if: failure()
+        run: |
+          echo "::warning::The deploy failed. If it got past maintenance mode, the site is still showing the 503 page on purpose (new code may not match the database). Fix the problem and run the workflow again, or run 'php artisan up' on the server to reopen the old state."

@@ -126,4 +126,18 @@ return [
         'table' => 'failed_jobs',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Work the Queue From the Scheduler
+    |--------------------------------------------------------------------------
+    |
+    | Shared hosting cannot keep a supervised `queue:work` process alive. When
+    | this is on, the scheduler (cron, every minute) starts a short-lived
+    | worker that processes waiting jobs and exits. Leave it off on servers
+    | that run a supervised worker (see docs/deployment.md).
+    |
+    */
+
+    'work_from_scheduler' => (bool) env('QUEUE_WORK_FROM_SCHEDULER', false),
+
 ];
