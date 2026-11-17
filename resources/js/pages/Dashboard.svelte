@@ -246,7 +246,7 @@
                 </CardHeader>
                 <CardContent class="flex flex-col gap-1.5">
                     {#if permissions?.products}
-                        <Link href={adminProducts().url} class={buttonVariants({ variant: 'outline', class: 'justify-start' })}>
+                        <Link href={adminProducts().url} class={buttonVariants({ variant: 'ghost', class: 'justify-start' })}>
                             <PackageSearch class="size-4" /> Manage products
                         </Link>
                     {/if}
