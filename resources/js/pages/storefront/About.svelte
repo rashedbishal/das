@@ -31,7 +31,7 @@
 </script>
 
 <PageMeta
-    title="About DAS"
+    title="About Us"
     description="Learn about DAS and our approach to helping dental professionals find suitable products."
 />
 

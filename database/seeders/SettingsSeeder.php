@@ -41,7 +41,7 @@ class SettingsSeeder extends Seeder
             'delivery_note' => 'Through courier all over Bangladesh',
         ],
         'seo' => [
-            'default_title' => 'DAS — Dental Equipment & Supplies',
+            'default_title' => 'DAS - Dental Machine & Accessories Source',
             'default_description' => 'Browse our catalog of dental equipment, instruments, and supplies.',
         ],
     ];

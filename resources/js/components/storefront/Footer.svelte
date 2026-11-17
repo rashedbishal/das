@@ -108,6 +108,17 @@
                 © {new Date().getFullYear()}
                 {page.props.siteSettings.name}. All rights reserved.
             </span>
+            <span>
+                Developed by
+                <a
+                    href="https://opticoresolutionsltd.com"
+                    target="_blank"
+                    rel="noopener"
+                    class="underline-offset-2 hover:underline"
+                >
+                    Opticore Solutions Limited
+                </a>
+            </span>
             <span>Dental products and product guidance</span>
         </div>
     </div>

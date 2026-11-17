@@ -10,7 +10,7 @@
     } = $props();
 
     const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
-    const fullTitle = $derived(title ? `${title} - ${appName}` : appName);
+    const fullTitle = $derived(title ? `${title} | ${appName}` : appName);
 </script>
 
 <!-- Used by the CMS and sign-in/account pages, none of which belong in search results. -->
