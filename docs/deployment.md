@@ -182,7 +182,7 @@ Needs a plan with SSH access (Premium or higher).
     ssh-keygen -t ed25519 -f das_deploy -N "" -C "github-deploy"
     ```
     Add `das_deploy.pub` in **hPanel → SSH Access → SSH keys**. The pipeline does not check the server's host key (`StrictHostKeyChecking no`): from GitHub's network Hostinger presents a different host key than from other networks, so a pinned key never matched. This is an accepted risk.
-4. **The app goes into the site's `public_html`**, e.g. `/home/u123456789/websites/<site>/public_html`. The repo's root `.htaccess` sends every request into `public/`, so `.env`, `storage/`, `vendor/` and the source code cannot be fetched from the web (and if `mod_rewrite` is off, it refuses every request). The deploy empties that folder of anything that is not part of the app, and refuses to start if the folder holds other files, so clear Hostinger's placeholder first. Over SSH:
+4. **The app goes into the site's `public_html`**, e.g. `/home/u123456789/websites/<site>/public_html`. Hostinger's web server ignores `.htaccess`, so in hPanel set the website's **root directory to `public_html/public`** (as the ShoppyDrive site on the same account is set up); otherwise `/` returns 403 and `composer.json`, `artisan` and `vendor/` can be downloaded. The deploy empties that folder of anything that is not part of the app, and refuses to start if the folder holds other files, so clear Hostinger's placeholder first. Over SSH:
     ```bash
     cd ~/websites/<site>
     mv public_html public_html.bak && mkdir public_html   # keep the placeholder until the site works
