@@ -163,7 +163,7 @@ The application itself sends `X-Content-Type-Options`, `X-Frame-Options`, `Refer
 
 ## 10. Hostinger shared hosting (GitHub Actions)
 
-`.github/workflows/deploy.yml` deploys in place (no atomic releases) every time the **tests** workflow passes on `main`, and can be run by hand from **Actions → deploy → Run workflow**. It builds the frontend and `vendor/` on GitHub (shared hosting has no Node), then over SSH: maintenance mode on → `rsync --delete` the code → `migrate --force` → `storage:link` → `optimize` → `queue:restart` → maintenance mode off. `.env`, `storage/` and `public/storage` on the server are never touched. If a step fails after maintenance mode is on, the site deliberately stays on the 503 page; fix and re-run (or `php artisan up`).
+`.github/workflows/deploy.yml` deploys in place (no atomic releases) every time the **tests** workflow passes on `main`, and can be run by hand from **Actions → deploy → Run workflow**. It builds the frontend and `vendor/` on GitHub (shared hosting has no Node), then over SSH: maintenance mode on → `rsync --delete` the code → `migrate --force` → link `public/storage` (with `ln -s`: Hostinger disables PHP's `symlink()`, so `artisan storage:link` fails) → `optimize` → `queue:restart` → maintenance mode off. `.env`, `storage/` and `public/storage` on the server are never touched. If a step fails after maintenance mode is on, the site deliberately stays on the 503 page; fix and re-run (or `php artisan up`).
 
 What shared hosting changes compared with sections 1–9:
 

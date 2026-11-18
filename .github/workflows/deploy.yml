@@ -167,7 +167,8 @@ jobs:
           fi
 
           "$PHP" artisan migrate --force
-          [ -L public/storage ] || "$PHP" artisan storage:link
+          # Hostinger disables PHP's symlink(), so artisan storage:link fails there.
+          [ -L public/storage ] || ln -s ../storage/app/public public/storage
           "$PHP" artisan optimize:clear
           "$PHP" artisan optimize
           "$PHP" artisan queue:restart
