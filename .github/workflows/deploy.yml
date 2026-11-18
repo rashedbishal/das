@@ -113,7 +113,9 @@ jobs:
           esac
           mkdir -p "$1"
           cd "$1"
-          if [ -n "$(ls -A)" ] && [ ! -f artisan ]; then
+          # Files the upload never touches (.env, Hostinger's .user.ini/.well-known)
+          # don't count, so .env can be put in place before the first deploy.
+          if [ -n "$(ls -A | grep -vxE '\.env(\..*)?|\.user\.ini|\.well-known')" ] && [ ! -f artisan ]; then
               echo "::error::$1 is not empty and does not contain this app; refusing to overwrite it."
               exit 1
           fi
