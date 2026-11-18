@@ -182,14 +182,12 @@ Needs a plan with SSH access (Premium or higher).
     ssh-keygen -t ed25519 -f das_deploy -N "" -C "github-deploy"
     ```
     Add `das_deploy.pub` in **hPanel → SSH Access → SSH keys**. The pipeline does not check the server's host key (`StrictHostKeyChecking no`): from GitHub's network Hostinger presents a different host key than from other networks, so a pinned key never matched. This is an accepted risk.
-4. **Pick the app folder** (outside `public_html`), e.g. `/home/u123456789/domains/<your-domain>/das`, and point the website at its `public/` folder. Over SSH:
+4. **The app goes into the site's `public_html`**, e.g. `/home/u123456789/websites/<site>/public_html`. The repo's root `.htaccess` sends every request into `public/`, so `.env`, `storage/`, `vendor/` and the source code cannot be fetched from the web (and if `mod_rewrite` is off, it refuses every request). The deploy empties that folder of anything that is not part of the app, and refuses to start if the folder holds other files, so clear Hostinger's placeholder first. Over SSH:
     ```bash
-    cd ~/domains/<your-domain>
-    mv public_html public_html.bak         # keep Hostinger's placeholder until the site works
-    mkdir das && ln -s das/public public_html
-    php -v                                 # must say 8.3; if not, use e.g. /opt/alt/php83/usr/bin/php as PHP_BIN
+    cd ~/websites/<site>
+    mv public_html public_html.bak && mkdir public_html   # keep the placeholder until the site works
+    php -v                                                # must say 8.3; if not, use e.g. /opt/alt/php83/usr/bin/php as PHP_BIN
     ```
-    Until you buy a domain, use the temporary domain Hostinger assigns (shown in hPanel) — `<your-domain>` is its folder name.
 5. **GitHub → Settings → Environments → New environment `production`.** Add these **environment secrets**:
 
     | Secret            | Value                                                                              |
@@ -198,7 +196,7 @@ Needs a plan with SSH access (Premium or higher).
     | `SSH_PORT`        | `65002`                                                                            |
     | `SSH_USER`        | `u123456789`                                                                       |
     | `SSH_PRIVATE_KEY` | full contents of `das_deploy` (the private key)                                    |
-    | `DEPLOY_PATH`     | absolute app folder from step 4, e.g. `/home/u123456789/domains/<your-domain>/das` |
+    | `DEPLOY_PATH`     | absolute `public_html` path from step 4, e.g. `/home/u123456789/websites/<site>/public_html` |
 
     Optional **environment variable** `PHP_BIN` if plain `php` over SSH is not 8.3. Optionally add yourself as a _required reviewer_ on the environment to approve each deploy.
 
@@ -214,4 +212,4 @@ Needs a plan with SSH access (Premium or higher).
 8. **Run the workflow again**; it should finish green and the site is live.
    Sign in at `/admin/login` and fill in **Admin → Settings** — business details are not seeded, so the storefront shows none until they are saved there.
 9. **hPanel → Advanced → Cron Jobs:** every minute, `cd <DEPLOY_PATH> && php artisan schedule:run >> /dev/null 2>&1` (use `PHP_BIN`'s path if different).
-10. When you buy the domain: add it in hPanel, repeat step 4's `public_html` link in its folder (or move the app), update `APP_URL` and `SANCTUM_STATEFUL_DOMAINS` in `.env`, enable SSL in hPanel, then `php artisan optimize`.
+10. When you buy the domain: add it in hPanel (pointing at the same site, or deploy into the new site's `public_html`), update `APP_URL` and `SANCTUM_STATEFUL_DOMAINS` in `.env`, enable SSL in hPanel, then `php artisan optimize`.

@@ -107,7 +107,7 @@ jobs:
           # rsync --delete will empty anything else in this folder, so only ever
           # deploy into an empty folder or an existing copy of this app.
           case "$1" in
-              "" | "/" | "$HOME" | "$HOME/" | */public_html | */public_html/)
+              "" | "/" | "$HOME" | "$HOME/")
                   echo "::error::DEPLOY_PATH '$1' is not a dedicated app folder."
                   exit 1 ;;
           esac
@@ -139,6 +139,7 @@ jobs:
             --exclude='/public/hot' \
             --exclude='/public/.user.ini' \
             --exclude='/public/.well-known/' \
+            --exclude='/.well-known/' \
             --exclude='/.user.ini' \
             --exclude='/.claude/' \
             --exclude='/.agents/' \

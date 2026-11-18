@@ -1,0 +1,18 @@
+# On Hostinger the whole app is deployed into public_html, the web root. This file
+# sends every request into public/, so nothing else in the app folder (.env,
+# storage, vendor, source code) can be fetched directly. public/.htaccess then
+# routes the request to Laravel as usual.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # SSL certificate checks (Let's Encrypt) may use a .well-known folder here.
+    RewriteRule ^\.well-known/ - [L]
+
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Without mod_rewrite the rules above do nothing, so refuse every request rather
+# than serve the app's own files.
+<IfModule !mod_rewrite.c>
+    Require all denied
+</IfModule>
