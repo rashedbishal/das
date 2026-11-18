@@ -190,12 +190,12 @@ Needs a plan with SSH access (Premium or higher).
     ```
 5. **GitHub → Settings → Environments → New environment `production`.** Add these **environment secrets**:
 
-    | Secret            | Value                                                                              |
-    | ----------------- | ---------------------------------------------------------------------------------- |
-    | `SSH_HOST`        | server IP from step 2                                                              |
-    | `SSH_PORT`        | `65002`                                                                            |
-    | `SSH_USER`        | `u123456789`                                                                       |
-    | `SSH_PRIVATE_KEY` | full contents of `das_deploy` (the private key)                                    |
+    | Secret            | Value                                                                                        |
+    | ----------------- | -------------------------------------------------------------------------------------------- |
+    | `SSH_HOST`        | server IP from step 2                                                                        |
+    | `SSH_PORT`        | `65002`                                                                                      |
+    | `SSH_USER`        | `u123456789`                                                                                 |
+    | `SSH_PRIVATE_KEY` | full contents of `das_deploy` (the private key)                                              |
     | `DEPLOY_PATH`     | absolute `public_html` path from step 4, e.g. `/home/u123456789/websites/<site>/public_html` |
 
     Optional **environment variable** `PHP_BIN` if plain `php` over SSH is not 8.3. Optionally add yourself as a _required reviewer_ on the environment to approve each deploy.
