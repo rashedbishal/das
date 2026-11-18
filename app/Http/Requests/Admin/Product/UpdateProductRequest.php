@@ -10,6 +10,7 @@ use Illuminate\Validation\Rule;
 class UpdateProductRequest extends FormRequest
 {
     use ChecksPublishPermission;
+    use PreparesProductLists;
 
     public function authorize(): bool
     {
@@ -31,8 +32,6 @@ class UpdateProductRequest extends FormRequest
             'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
             'short_description' => ['nullable', 'string', FieldLimits::max('product.short_description')],
             'full_description' => ['nullable', 'string', FieldLimits::max('product.full_description')],
-            'highlights' => ['nullable', 'array'],
-            'highlights.*' => ['string', FieldLimits::max('product.highlight')],
             'status' => ['required', Rule::in(['draft', 'published', 'archived'])],
             'is_featured' => ['boolean'],
             'show_price' => ['sometimes', 'boolean'],
@@ -52,10 +51,7 @@ class UpdateProductRequest extends FormRequest
             'tag_ids.*' => ['integer', 'exists:tags,id'],
             'related_product_ids' => ['nullable', 'array'],
             'related_product_ids.*' => ['integer', 'exists:products,id'],
-            'specifications' => ['nullable', 'array'],
-            'specifications.*.name' => ['required_with:specifications', 'string', FieldLimits::max('product.spec_name')],
-            'specifications.*.value' => ['required_with:specifications', 'string', FieldLimits::max('product.spec_value')],
-            'specifications.*.sort_order' => ['nullable', 'integer', 'min:0', 'max:'.FieldLimits::get('number.sort_order')],
+            ...$this->listRules($product),
         ];
     }
 
@@ -88,6 +84,7 @@ class UpdateProductRequest extends FormRequest
             'sale_price' => 'sale price',
             'seo_title' => 'SEO title',
             'seo_description' => 'SEO description',
+            ...$this->listAttributes(),
         ];
     }
 }

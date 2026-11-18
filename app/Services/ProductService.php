@@ -95,7 +95,11 @@ class ProductService
         // The admin list shows every relation; public product cards only need the
         // brand and images (see ProductCardResource).
         $query = $includeAllStatuses
-            ? Product::query()->with(['brand', 'category', 'subcategory', 'tags', 'media'])
+            ? Product::query()->with([
+                'brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'variants',
+                // The edit form only needs which products are picked.
+                'relatedProducts' => fn ($related) => $related->select('products.id'),
+            ])
             : Product::query()->with(['brand', 'media' => fn ($media) => $media->where('type', 'image')]);
 
         if ($includeAllStatuses) {
@@ -218,13 +222,14 @@ class ProductService
      */
     public function create(User $actor, array $data): Product
     {
+        $data = $this->normalizeLists($data);
         $data['slug'] = ! empty($data['slug'])
             ? SlugGenerator::unique('products', $data['slug'])
             : SlugGenerator::unique('products', $data['name']);
 
         return DB::transaction(function () use ($actor, $data) {
             $product = Product::query()->create([
-                ...Arr::except($data, ['tag_ids', 'related_product_ids', 'specifications']),
+                ...Arr::except($data, ['tag_ids', 'related_product_ids', 'specifications', 'variants']),
                 'created_by' => $actor->id,
                 'updated_by' => $actor->id,
                 'published_at' => ($data['status'] ?? null) === 'published' ? now() : null,
@@ -232,7 +237,7 @@ class ProductService
 
             $this->syncRelations($product, $data);
 
-            return $product->fresh(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications']);
+            return $product->fresh(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'variants']);
         });
     }
 
@@ -241,6 +246,7 @@ class ProductService
      */
     public function update(User $actor, Product $product, array $data): Product
     {
+        $data = $this->normalizeLists($data);
         if (! empty($data['slug'])) {
             $data['slug'] = SlugGenerator::unique('products', $data['slug'], $product->id);
         } else {
@@ -251,7 +257,7 @@ class ProductService
             $becomingPublished = ($data['status'] ?? null) === 'published' && $product->status !== 'published';
 
             $fillData = [
-                ...Arr::except($data, ['tag_ids', 'related_product_ids', 'specifications']),
+                ...Arr::except($data, ['tag_ids', 'related_product_ids', 'specifications', 'variants']),
                 'updated_by' => $actor->id,
             ];
 
@@ -273,8 +279,26 @@ class ProductService
                 );
             }
 
-            return $product->fresh(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications']);
+            return $product->fresh(['brand', 'category', 'subcategory', 'tags', 'media', 'specifications', 'variants']);
         });
+    }
+
+    /**
+     * Validation drops blank rows but keeps the keys (so errors match the form's rows);
+     * re-index highlights so they're stored as a JSON list, and store none as null.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function normalizeLists(array $data): array
+    {
+        if (array_key_exists('highlights', $data)) {
+            $data['highlights'] = is_array($data['highlights']) && $data['highlights'] !== []
+                ? array_values($data['highlights'])
+                : null;
+        }
+
+        return $data;
     }
 
     /**
@@ -357,6 +381,50 @@ class ProductService
             }
         }
 
+        if (array_key_exists('variants', $data) && $this->syncVariants($product, array_values($data['variants'] ?? []))) {
+            $changed[] = 'options';
+        }
+
         return $changed;
+    }
+
+    /**
+     * Updates the product's variants to match the submitted rows, in order: rows with
+     * an id update that variant, rows without one create a new variant, and variants
+     * missing from the list are deleted. Stock quantity isn't edited here.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return bool whether anything changed
+     */
+    private function syncVariants(Product $product, array $rows): bool
+    {
+        $snapshot = fn () => $product->variants()->get()
+            ->map(fn ($variant) => [$variant->id, $variant->name, $variant->sku, $variant->price, $variant->stock_status, $variant->is_active])
+            ->all();
+        $before = $snapshot();
+
+        $keptIds = array_values(array_filter(array_map(fn ($row) => isset($row['id']) ? (int) $row['id'] : null, $rows)));
+        $product->variants()->whereNotIn('id', $keptIds)->delete();
+        // Clear kept SKUs first so two rows can swap SKUs without tripping the unique index.
+        $product->variants()->whereIn('id', $keptIds)->update(['sku' => null]);
+
+        foreach ($rows as $sortOrder => $row) {
+            $attributes = [
+                'name' => $row['name'],
+                'sku' => $row['sku'] ?? null,
+                'price' => $row['price'] ?? null,
+                'stock_status' => $row['stock_status'],
+                'is_active' => (bool) ($row['is_active'] ?? true),
+                'sort_order' => $sortOrder,
+            ];
+
+            if (isset($row['id'])) {
+                $product->variants()->whereKey($row['id'])->firstOrFail()->update($attributes);
+            } else {
+                $product->variants()->create($attributes);
+            }
+        }
+
+        return $snapshot() !== $before;
     }
 }

@@ -33,6 +33,7 @@
         update,
     } from '@/routes/admin/products';
     import FormFields from './FormFields.svelte';
+    import type { VariantDetail } from './VariantsEditor.svelte';
     import FormErrorSummary from '@/components/dashboard/FormErrorSummary.svelte';
     import CreateImagePicker from './CreateImagePicker.svelte';
     import MediaManager from './MediaManager.svelte';
@@ -85,10 +86,15 @@
         seo_title: string | null;
         seo_description: string | null;
         seo_keywords: string | null;
+        canonical_url: string | null;
+        highlights: string[] | null;
         category_id: number;
         subcategory_id: number | null;
         tags: { id: number }[];
         media: MediaItem[];
+        specifications: { name: string; value: string }[];
+        variants: VariantDetail[];
+        related_products: { id: number }[];
     };
 
     type Paginated<T> = {
@@ -106,6 +112,7 @@
         categories,
         subcategories,
         tags,
+        productOptions,
         mediaLimits,
     }: {
         products: Paginated<ProductRow>;
@@ -114,6 +121,7 @@
         categories: Option[];
         subcategories: SubcategoryOption[];
         tags: Option[];
+        productOptions: { id: number; name: string; sku: string }[];
         mediaLimits: MediaLimits;
     } = $props();
 
@@ -369,7 +377,7 @@
             {#snippet children({ errors, processing })}
                 <div class="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-6">
                     <FormErrorSummary {errors} />
-                    <FormFields {brands} {categories} {subcategories} {tags} {errors} />
+                    <FormFields {brands} {categories} {subcategories} {tags} {productOptions} {errors} />
 
                     <CreateImagePicker limits={mediaLimits.image} {errors} />
                 </div>
@@ -407,7 +415,7 @@
                 >
                     {#snippet children({ errors })}
                         <FormErrorSummary {errors} />
-                        <FormFields {product} {brands} {categories} {subcategories} {tags} {errors} />
+                        <FormFields {product} {brands} {categories} {subcategories} {tags} {productOptions} {errors} />
                     {/snippet}
                 </Form>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { untrack } from 'svelte';
+    import { SvelteSet } from 'svelte/reactivity';
     import FormSelect from '@/components/dashboard/FormSelect.svelte';
     import InputError from '@/components/InputError.svelte';
     import RequiredMark from '@/components/dashboard/RequiredMark.svelte';
@@ -9,9 +10,14 @@
     import { Input } from '@/components/ui/input';
     import { fieldLimits } from '@/lib/field-limits';
     import { Label } from '@/components/ui/label';
+    import HighlightsEditor from './HighlightsEditor.svelte';
+    import RelatedProductsPicker from './RelatedProductsPicker.svelte';
+    import SpecificationsEditor from './SpecificationsEditor.svelte';
+    import VariantsEditor, { type VariantDetail } from './VariantsEditor.svelte';
 
     type Option = { id: number; name: string };
     type SubcategoryOption = { id: number; name: string; category_id: number };
+    type ProductOption = { id: number; name: string; sku: string };
 
     type ProductDetail = {
         id: number;
@@ -34,10 +40,15 @@
         seo_title: string | null;
         seo_description: string | null;
         seo_keywords: string | null;
+        canonical_url: string | null;
+        highlights: string[] | null;
         category_id: number;
         subcategory_id: number | null;
         tags: { id: number }[];
         media?: { type: string }[];
+        specifications?: { name: string; value: string }[];
+        variants?: VariantDetail[];
+        related_products?: { id: number }[];
     };
 
     let {
@@ -46,6 +57,7 @@
         categories,
         subcategories,
         tags,
+        productOptions,
         errors,
     }: {
         product?: ProductDetail;
@@ -53,6 +65,7 @@
         categories: Option[];
         subcategories: SubcategoryOption[];
         tags: Option[];
+        productOptions: ProductOption[];
         errors: Record<string, string>;
     } = $props();
 
@@ -71,7 +84,9 @@
             : [],
     );
 
-    const selectedTagIds = untrack(() => new Set(product?.tags.map((t) => t.id) ?? []));
+    // Tracked so an empty "tag_ids" can be sent when every tag is unticked; otherwise
+    // the field would be missing and the server would keep the old tags.
+    const selectedTagIds = new SvelteSet<number>(untrack(() => product?.tags.map((t) => t.id) ?? []));
 
     const toOptions = (items: Option[]) =>
         items.map((item) => ({ value: String(item.id), label: item.name }));
@@ -224,6 +239,16 @@
     <InputError message={errors.full_description} />
 </div>
 
+<HighlightsEditor initial={product?.highlights ?? []} {errors} />
+
+<SpecificationsEditor initial={product?.specifications ?? []} {errors} />
+
+<VariantsEditor
+    initial={product?.variants ?? []}
+    stockStatusOptions={labelled(['in_stock', 'out_of_stock', 'backorder', 'on_order'])}
+    {errors}
+/>
+
 <div class="grid items-start gap-4 sm:grid-cols-3">
     <div class="grid gap-2">
         <Label for="regular_price">Regular price</Label>
@@ -356,12 +381,29 @@
     <div class="grid max-h-48 gap-1 overflow-y-auto rounded-md border p-3 text-sm sm:grid-cols-2">
         {#each tags as tag (tag.id)}
             <label class="flex items-center gap-2">
-                <input type="checkbox" name="tag_ids[]" value={tag.id} checked={selectedTagIds.has(tag.id)} />
+                <input
+                    type="checkbox"
+                    name="tag_ids[]"
+                    value={tag.id}
+                    checked={selectedTagIds.has(tag.id)}
+                    onchange={(event) =>
+                        event.currentTarget.checked ? selectedTagIds.add(tag.id) : selectedTagIds.delete(tag.id)}
+                />
                 {tag.name}
             </label>
         {/each}
     </div>
+    {#if selectedTagIds.size === 0}
+        <input type="hidden" name="tag_ids" value="" />
+    {/if}
 </fieldset>
+
+<RelatedProductsPicker
+    products={productOptions}
+    currentId={product?.id}
+    initial={product?.related_products?.map((related) => related.id) ?? []}
+    {errors}
+/>
 
 <div class="grid gap-2">
     <Label for="seo_title">SEO title</Label>
@@ -390,6 +432,21 @@
         placeholder="e.g. curing light, dental LED"
     />
     <InputError message={errors.seo_keywords} />
+</div>
+<div class="grid gap-2">
+    <Label for="canonical_url">Canonical URL</Label>
+    <LimitedInput
+        id="canonical_url"
+        name="canonical_url"
+        type="url"
+        limit={fieldLimits.product.canonical_url}
+        value={product?.canonical_url ?? ''}
+        placeholder="Leave blank to use this product's own page"
+    />
+    <p class="text-xs text-muted-foreground">
+        Only set this if the same product is published at another address you want search engines to prefer.
+    </p>
+    <InputError message={errors.canonical_url} />
 </div>
 <SeoFields
     withInputs={false}

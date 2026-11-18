@@ -559,3 +559,254 @@ test('an admin can set and clear a product\'s SEO title, description and keyword
         ->seo_description->toBeNull()
         ->seo_keywords->toBeNull();
 });
+
+test('an admin can replace, reorder and clear a product\'s specifications from the edit form', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+    $product->specifications()->create(['name' => 'Material', 'value' => 'Steel', 'sort_order' => 0]);
+
+    $payload = fn (array $specs) => [
+        'name' => $product->name,
+        'sku' => $product->sku,
+        'stock_status' => $product->stock_status,
+        'status' => $product->status,
+        'category_id' => $product->category_id,
+        ...$specs,
+    ];
+
+    // A blank row (the form always shows one) is ignored rather than rejected.
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), $payload(['specifications' => [
+            ['name' => 'Place of Origin', 'value' => 'China'],
+            ['name' => '', 'value' => ''],
+            ['name' => 'Material', 'value' => 'Ceramic'],
+        ]]))
+        ->assertSessionHasNoErrors();
+
+    expect($product->fresh()->specifications->map(fn ($spec) => [$spec->name, $spec->value])->all())
+        ->toBe([['Place of Origin', 'China'], ['Material', 'Ceramic']]);
+
+    // The form sends an empty "specifications" field once every row is removed.
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), $payload(['specifications' => '']))
+        ->assertSessionHasNoErrors();
+
+    expect($product->fresh()->specifications)->toBeEmpty();
+});
+
+test('a specification row with only a name or only a value is rejected on that row', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), [
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'stock_status' => $product->stock_status,
+            'status' => $product->status,
+            'category_id' => $product->category_id,
+            'specifications' => [
+                ['name' => '', 'value' => ''],
+                ['name' => 'Warranty', 'value' => ''],
+            ],
+        ])
+        ->assertSessionHasErrors('specifications.1.value');
+});
+
+test('the admin product listing includes each product\'s specifications for the edit form', function () {
+    $admin = adminUser(['products.view']);
+    $product = Product::factory()->create();
+    $product->specifications()->create(['name' => 'Material', 'value' => 'Ceramic', 'sort_order' => 0]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.products.index'))
+        ->assertInertia(fn ($page) => $page
+            ->where('products.data.0.specifications.0.name', 'Material')
+            ->where('products.data.0.specifications.0.value', 'Ceramic'));
+});
+
+/**
+ * The minimum fields the edit form always sends, for tests that change one list.
+ *
+ * @param  array<string, mixed>  $fields
+ * @return array<string, mixed>
+ */
+function productFormPayload(Product $product, array $fields = []): array
+{
+    return [
+        'name' => $product->name,
+        'sku' => $product->sku,
+        'stock_status' => $product->stock_status,
+        'status' => $product->status,
+        'category_id' => $product->category_id,
+        ...$fields,
+    ];
+}
+
+test('an admin can set, reorder and clear a product\'s highlights', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create(['highlights' => ['Old point']]);
+
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), productFormPayload($product, [
+            'highlights' => ['Second-hand safe', '', 'Autoclavable'],
+        ]))
+        ->assertSessionHasNoErrors();
+
+    expect($product->fresh()->highlights)->toBe(['Second-hand safe', 'Autoclavable']);
+
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), productFormPayload($product, ['highlights' => '']))
+        ->assertSessionHasNoErrors();
+
+    expect($product->fresh()->highlights)->toBeNull();
+});
+
+test('an admin can set and clear a product\'s canonical url', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), productFormPayload($product, [
+            'canonical_url' => 'https://example.com/crucibles',
+        ]))
+        ->assertSessionHasNoErrors();
+
+    expect($product->fresh()->canonical_url)->toBe('https://example.com/crucibles');
+
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), productFormPayload($product, ['canonical_url' => '']))
+        ->assertSessionHasNoErrors();
+
+    expect($product->fresh()->canonical_url)->toBeNull();
+});
+
+test('an admin can pick and clear related products, and a product is never related to itself', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+    [$first, $second] = Product::factory()->count(2)->create();
+
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), productFormPayload($product, [
+            'related_product_ids' => [$first->id, $second->id, $product->id],
+        ]))
+        ->assertSessionHasNoErrors();
+
+    expect($product->fresh()->relatedProducts->pluck('id')->sort()->values()->all())
+        ->toBe(collect([$first->id, $second->id])->sort()->values()->all());
+
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), productFormPayload($product, ['related_product_ids' => '']))
+        ->assertSessionHasNoErrors();
+
+    expect($product->fresh()->relatedProducts)->toBeEmpty();
+});
+
+test('unticking every tag removes the product\'s tags', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+    $product->tags()->attach(Tag::factory()->create());
+
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), productFormPayload($product, ['tag_ids' => '']))
+        ->assertSessionHasNoErrors();
+
+    expect($product->fresh()->tags)->toBeEmpty();
+});
+
+test('an admin can create a product with options', function () {
+    $admin = adminUser(['products.create']);
+    $category = Category::factory()->create();
+
+    $this->actingAs($admin)->post(route('admin.products.store'), [
+        'name' => 'Ortho Pins',
+        'sku' => 'SKU-PINS',
+        'status' => 'draft',
+        'stock_status' => 'on_order',
+        'category_id' => $category->id,
+        'variants' => [
+            ['name' => 'SS Pins', 'sku' => 'PIN-SS', 'price' => '120', 'stock_status' => 'in_stock', 'is_active' => '1'],
+            ['name' => '', 'sku' => '', 'price' => '', 'stock_status' => 'on_order', 'is_active' => '1'],
+            ['name' => 'Brass Pins', 'sku' => '', 'price' => '', 'stock_status' => 'on_order', 'is_active' => '0'],
+        ],
+    ])->assertSessionHasNoErrors();
+
+    $variants = Product::query()->where('sku', 'SKU-PINS')->firstOrFail()->variants;
+
+    expect($variants->map(fn ($v) => [$v->name, $v->sku, $v->price, $v->stock_status, $v->is_active, $v->sort_order])->all())
+        ->toBe([
+            ['SS Pins', 'PIN-SS', '120.00', 'in_stock', true, 0],
+            ['Brass Pins', null, null, 'on_order', false, 1],
+        ]);
+});
+
+test('editing options updates existing rows in place, adds new ones and deletes removed ones', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+    $kept = $product->variants()->create(['name' => 'Small', 'sku' => 'V-S', 'sort_order' => 0]);
+    $swapped = $product->variants()->create(['name' => 'Large', 'sku' => 'V-L', 'sort_order' => 1]);
+    $removed = $product->variants()->create(['name' => 'Medium', 'sort_order' => 2]);
+
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), productFormPayload($product, [
+            'variants' => [
+                // Reordered, and the two SKUs swapped between rows.
+                ['id' => $swapped->id, 'name' => 'Large', 'sku' => 'V-S', 'price' => '', 'stock_status' => 'in_stock'],
+                ['id' => $kept->id, 'name' => 'Small', 'sku' => 'V-L', 'price' => '50', 'stock_status' => 'on_order'],
+                ['name' => 'Extra large', 'sku' => '', 'price' => '', 'stock_status' => 'backorder'],
+            ],
+        ]))
+        ->assertSessionHasNoErrors();
+
+    $variants = $product->fresh()->variants;
+
+    expect($variants->pluck('name')->all())->toBe(['Large', 'Small', 'Extra large'])
+        ->and($variants[0]->id)->toBe($swapped->id)
+        ->and($variants[0]->sku)->toBe('V-S')
+        ->and($variants[1]->id)->toBe($kept->id)
+        ->and($variants[1]->price)->toBe('50.00')
+        ->and($product->variants()->whereKey($removed->id)->exists())->toBeFalse();
+
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), productFormPayload($product, ['variants' => '']))
+        ->assertSessionHasNoErrors();
+
+    expect($product->fresh()->variants)->toBeEmpty();
+});
+
+test('options reject another product\'s variant id, a taken sku and a duplicate sku in the same form', function () {
+    $admin = adminUser(['products.update']);
+    $product = Product::factory()->create();
+    $other = Product::factory()->create();
+    $foreign = $other->variants()->create(['name' => 'Theirs', 'sku' => 'TAKEN']);
+
+    $this->actingAs($admin)
+        ->put(route('admin.products.update', $product), productFormPayload($product, [
+            'variants' => [
+                ['id' => $foreign->id, 'name' => 'Stolen', 'stock_status' => 'on_order'],
+                ['name' => 'A', 'sku' => 'TAKEN', 'stock_status' => 'on_order'],
+                ['name' => 'B', 'sku' => 'dup', 'stock_status' => 'on_order'],
+                ['name' => 'C', 'sku' => 'DUP', 'stock_status' => 'on_order'],
+                ['name' => '', 'sku' => 'NO-NAME', 'stock_status' => 'on_order'],
+            ],
+        ]))
+        ->assertSessionHasErrors(['variants.0.id', 'variants.1.sku', 'variants.2.sku', 'variants.4.name']);
+
+    expect($foreign->fresh()->name)->toBe('Theirs');
+});
+
+test('the admin product listing includes options and related product ids for the edit form', function () {
+    $admin = adminUser(['products.view']);
+    $product = Product::factory()->create(['name' => 'AAA product']);
+    $related = Product::factory()->create(['name' => 'ZZZ product']);
+    $product->relatedProducts()->attach($related);
+    $product->variants()->create(['name' => 'SS Pins']);
+
+    $this->actingAs($admin)
+        ->get(route('admin.products.index', ['sort' => 'name']))
+        ->assertInertia(fn ($page) => $page
+            ->where('productOptions.0.name', 'AAA product')
+            ->has('products.data', 2)
+            ->where('products.data', fn ($rows) => collect($rows)->firstWhere('id', $product->id)['variants'][0]['name'] === 'SS Pins'
+                && collect($rows)->firstWhere('id', $product->id)['related_products'][0]['id'] === $related->id));
+});

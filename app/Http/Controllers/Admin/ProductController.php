@@ -197,7 +197,7 @@ class ProductController extends Controller
     }
 
     /**
-     * @return array{brands: Collection<int, Brand>, categories: Collection<int, Category>, subcategories: Collection<int, Subcategory>, tags: Collection<int, Tag>}
+     * @return array{brands: Collection<int, Brand>, categories: Collection<int, Category>, subcategories: Collection<int, Subcategory>, tags: Collection<int, Tag>, productOptions: Collection<int, Product>}
      */
     private function formOptions(): array
     {
@@ -206,6 +206,8 @@ class ProductController extends Controller
             'categories' => Category::query()->active()->orderBy('name')->get(['id', 'name']),
             'subcategories' => Subcategory::query()->active()->orderBy('name')->get(['id', 'name', 'category_id']),
             'tags' => Tag::query()->orderBy('name')->get(['id', 'name']),
+            // Candidates for "related products" (trashed products are excluded by the query).
+            'productOptions' => Product::query()->orderBy('name')->get(['id', 'name', 'sku']),
         ];
     }
 }

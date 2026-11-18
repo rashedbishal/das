@@ -12,7 +12,8 @@
         "seo_keywords": 255,
         "canonical_url": 500,
         "spec_name": 80,
-        "spec_value": 200
+        "spec_value": 200,
+        "variant_name": 80
     },
     "media": {
         "url": 1000,
