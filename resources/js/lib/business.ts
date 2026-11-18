@@ -63,7 +63,12 @@ export type HoursGroup = { days: string; time: string };
 export function groupedHours(
     hours: OpeningHoursDay[] | null | undefined,
 ): HoursGroup[] {
-    const groups: { first: OpeningHoursDay['day']; last: OpeningHoursDay['day']; count: number; time: string }[] = [];
+    const groups: {
+        first: OpeningHoursDay['day'];
+        last: OpeningHoursDay['day'];
+        count: number;
+        time: string;
+    }[] = [];
     let previousIndex = -2;
 
     for (const entry of orderedHours(hours)) {
