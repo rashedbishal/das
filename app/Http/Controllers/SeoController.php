@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Brand;
 use App\Models\Category;
+use App\Support\RobotsTxt;
 use Illuminate\Http\Response;
 
 class SeoController extends Controller
@@ -62,16 +63,6 @@ class SeoController extends Controller
 
     public function robots(): Response
     {
-        $body = implode("\n", [
-            'User-agent: *',
-            'Disallow: /admin',
-            'Disallow: /dashboard',
-            'Disallow: /api/',
-            '',
-            'Sitemap: '.route('sitemap'),
-            '',
-        ]);
-
-        return response($body, 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+        return response(RobotsTxt::contents(), 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
 }

@@ -139,6 +139,7 @@ jobs:
             --exclude='/storage/' \
             --exclude='/public/storage' \
             --exclude='/public/hot' \
+            --exclude='/public/robots.txt' \
             --exclude='/public/.user.ini' \
             --exclude='/public/.well-known/' \
             --exclude='/.well-known/' \
@@ -171,6 +172,7 @@ jobs:
           [ -L public/storage ] || ln -s ../storage/app/public public/storage
           "$PHP" artisan optimize:clear
           "$PHP" artisan optimize
+          "$PHP" artisan das:write-robots-txt
           "$PHP" artisan queue:restart
           "$PHP" artisan up
           EOF

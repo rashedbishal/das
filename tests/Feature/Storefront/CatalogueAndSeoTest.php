@@ -84,3 +84,17 @@ test('robots.txt points crawlers at the sitemap and away from the admin area', f
         ->assertSee('Sitemap: '.route('sitemap'), escape: false)
         ->assertSee('Disallow: /admin', escape: false);
 });
+
+test('the deploy command writes the same robots.txt to the public folder', function () {
+    $publicPath = sys_get_temp_dir().'/das-robots-'.uniqid();
+    mkdir($publicPath);
+    app()->usePublicPath($publicPath);
+
+    $this->artisan('das:write-robots-txt')->assertSuccessful();
+
+    expect(file_get_contents($publicPath.'/robots.txt'))
+        ->toBe($this->get('/robots.txt')->getContent());
+
+    unlink($publicPath.'/robots.txt');
+    rmdir($publicPath);
+});
