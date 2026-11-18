@@ -181,10 +181,7 @@ Needs a plan with SSH access (Premium or higher).
     ```bash
     ssh-keygen -t ed25519 -f das_deploy -N "" -C "github-deploy"
     ```
-    Add `das_deploy.pub` in **hPanel → SSH Access → SSH keys**. Record the server's host key for the pipeline:
-    ```bash
-    ssh-keyscan -p 65002 <host-ip>      # copy all of the output
-    ```
+    Add `das_deploy.pub` in **hPanel → SSH Access → SSH keys**. The pipeline does not check the server's host key (`StrictHostKeyChecking no`): from GitHub's network Hostinger presents a different host key than from other networks, so a pinned key never matched. This is an accepted risk.
 4. **Pick the app folder** (outside `public_html`), e.g. `/home/u123456789/domains/<your-domain>/das`, and point the website at its `public/` folder. Over SSH:
     ```bash
     cd ~/domains/<your-domain>
@@ -201,7 +198,6 @@ Needs a plan with SSH access (Premium or higher).
     | `SSH_PORT`        | `65002`                                                                            |
     | `SSH_USER`        | `u123456789`                                                                       |
     | `SSH_PRIVATE_KEY` | full contents of `das_deploy` (the private key)                                    |
-    | `SSH_KNOWN_HOSTS` | output of `ssh-keyscan` from step 3                                                |
     | `DEPLOY_PATH`     | absolute app folder from step 4, e.g. `/home/u123456789/domains/<your-domain>/das` |
 
     Optional **environment variable** `PHP_BIN` if plain `php` over SSH is not 8.3. Optionally add yourself as a _required reviewer_ on the environment to approve each deploy.

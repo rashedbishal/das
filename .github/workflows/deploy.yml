@@ -74,9 +74,8 @@ jobs:
       - name: Configure SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
-          for name in SSH_HOST SSH_USER DEPLOY_PATH SSH_PRIVATE_KEY SSH_KNOWN_HOSTS; do
+          for name in SSH_HOST SSH_USER DEPLOY_PATH SSH_PRIVATE_KEY; do
               if [ -z "${!name}" ]; then
                   echo "::error::Secret $name is not set (Settings > Environments > production)."
                   exit 1
@@ -85,8 +84,6 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
           cat > ~/.ssh/config <<EOF
           Host deploy-target
             HostName ${SSH_HOST}
@@ -94,7 +91,12 @@ jobs:
             User ${SSH_USER}
             IdentityFile ~/.ssh/deploy_key
             IdentitiesOnly yes
-            StrictHostKeyChecking yes
+            # Host key checking is off by choice: from GitHub's network Hostinger
+            # presents a different host key than from other networks, so a pinned
+            # known_hosts entry never matches. Accepted risk, same as ShoppyDrive.
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            LogLevel ERROR
             ServerAliveInterval 30
           EOF
 
