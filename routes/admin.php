@@ -15,16 +15,13 @@ use App\Http\Controllers\Admin\TagController;
 use App\Http\Controllers\Admin\UserManagementController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use Laravel\Fortify\Features;
 use Laravel\Fortify\Http\Controllers\AuthenticatedSessionController;
 
 // Admins sign in here rather than at the customer /login. The POST reuses Fortify's
 // login pipeline (throttling, session regeneration); FortifyServiceProvider only
 // accepts admin accounts on this route and LoginResponse sends them to the dashboard.
 Route::middleware('guest')->prefix('admin')->name('admin.')->group(function () {
-    Route::get('login', fn () => Inertia::render('auth/AdminLogin', [
-        'canResetPassword' => Features::enabled(Features::resetPasswords()),
-    ]))->name('login');
+    Route::get('login', fn () => Inertia::render('auth/AdminLogin'))->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store'])
         ->middleware('throttle:'.config('fortify.limiters.login'))

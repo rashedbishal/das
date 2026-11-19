@@ -71,12 +71,19 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Send the DAS-branded "forgot password" email.
+     * Send the DAS-branded "forgot password" email. Admins have no "forgot
+     * password" flow (another admin resets it, or the Mother Admin is reset
+     * with `das:reset-mother-admin`), so nothing is sent to them; the form
+     * still shows the usual "link sent" status so it doesn't reveal admin emails.
      *
      * @param  string  $token
      */
     public function sendPasswordResetNotification($token): void
     {
+        if ($this->user_type === 'admin') {
+            return;
+        }
+
         try {
             $this->notify(new ResetPasswordNotification($token));
         } catch (Throwable $exception) {

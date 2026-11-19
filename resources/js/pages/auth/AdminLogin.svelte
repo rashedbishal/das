@@ -12,15 +12,11 @@
     import PasswordInput from '@/components/PasswordInput.svelte';
     import Button from '@/components/storefront/Button.svelte';
     import TextLink from '@/components/TextLink.svelte';
-    import { Checkbox } from '@/components/ui/checkbox';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
     import { Spinner } from '@/components/ui/spinner';
     import { home } from '@/routes';
     import { store } from '@/routes/admin/login';
-    import { request } from '@/routes/password';
-
-    let { canResetPassword }: { canResetPassword: boolean } = $props();
 </script>
 
 <AppHead title="Admin sign in" />
@@ -42,14 +38,7 @@
         </div>
 
         <div class="grid gap-2">
-            <div class="flex items-center justify-between gap-3">
-                <Label for="password" class="text-[13px]">Password</Label>
-                {#if canResetPassword}
-                    <TextLink href={request()} class="text-xs">
-                        Forgot password?
-                    </TextLink>
-                {/if}
-            </div>
+            <Label for="password" class="text-[13px]">Password</Label>
             <PasswordInput
                 id="password"
                 name="password"
@@ -60,14 +49,6 @@
             />
             <InputError message={errors.password} />
         </div>
-
-        <Label
-            for="remember"
-            class="flex w-fit items-center gap-2.5 text-[13px] font-normal text-muted-foreground"
-        >
-            <Checkbox id="remember" name="remember" />
-            Remember me
-        </Label>
 
         <Button
             type="submit"

@@ -12,7 +12,6 @@
     import PasswordInput from '@/components/PasswordInput.svelte';
     import Button from '@/components/storefront/Button.svelte';
     import TextLink from '@/components/TextLink.svelte';
-    import { Checkbox } from '@/components/ui/checkbox';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
     import { Spinner } from '@/components/ui/spinner';
@@ -77,14 +76,6 @@
             />
             <InputError message={errors.password} />
         </div>
-
-        <Label
-            for="remember"
-            class="flex w-fit items-center gap-2.5 text-[13px] font-normal text-muted-foreground"
-        >
-            <Checkbox id="remember" name="remember" />
-            Remember me
-        </Label>
 
         <Button
             type="submit"

@@ -5,7 +5,6 @@
     import PasswordInput from '@/components/PasswordInput.svelte';
     import Button from '@/components/storefront/Button.svelte';
     import Modal from '@/components/storefront/Modal.svelte';
-    import { Checkbox } from '@/components/ui/checkbox';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
     import { Spinner } from '@/components/ui/spinner';
@@ -137,16 +136,6 @@
             </div>
 
             <div class="rise" style={rise(7)}>
-                <Label
-                    for="modal_remember"
-                    class="flex w-fit items-center gap-2.5 text-[13px] font-normal text-muted-foreground"
-                >
-                    <Checkbox id="modal_remember" name="remember" />
-                    Remember me
-                </Label>
-            </div>
-
-            <div class="rise" style={rise(8)}>
                 <Button
                     type="submit"
                     class="mt-1 h-10 w-full"
@@ -160,7 +149,7 @@
         {/snippet}
     </Form>
 
-    <p class="rise relative mt-6 border-t pt-5 text-center text-sm text-muted-foreground" style={rise(9)}>
+    <p class="rise relative mt-6 border-t pt-5 text-center text-sm text-muted-foreground" style={rise(8)}>
         New here?
         <Link
             href={register()}

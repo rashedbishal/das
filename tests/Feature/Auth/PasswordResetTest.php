@@ -2,7 +2,9 @@
 
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Password;
 use Laravel\Fortify\Features;
 
 beforeEach(function () {
@@ -89,4 +91,30 @@ test('the reset password email is DAS-branded and links to the reset page', func
         ->and($html)->toContain(asset('logo-email.png'))
         ->and($html)->toContain('Dental Machine &amp; Accessories Source')
         ->and($html)->toContain('#2f3190');
+});
+
+test('admins are not sent a reset link, but the form looks the same as for anyone else', function () {
+    Notification::fake();
+
+    $admin = User::factory()->motherAdmin()->create();
+
+    $this->post(route('password.email'), ['email' => $admin->email])
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('status');
+
+    Notification::assertNothingSent();
+});
+
+test('an admin password cannot be reset even with a valid token', function () {
+    $admin = User::factory()->motherAdmin()->create(['password' => 'original-password']);
+    $token = Password::broker()->createToken($admin);
+
+    $this->post(route('password.update'), [
+        'token' => $token,
+        'email' => $admin->email,
+        'password' => 'new-password-123',
+        'password_confirmation' => 'new-password-123',
+    ])->assertSessionHasErrors('email');
+
+    expect(Hash::check('original-password', $admin->fresh()->password))->toBeTrue();
 });
