@@ -270,7 +270,9 @@
             <!-- The slide is the moving "window"; the frame counter-moves so the
                  picture stays still while the window's edge sweeps across it. -->
             <div class="hero-banner-frame">
-                {#if ready.has(i)}
+                <!-- A slide without an image (the default one) shows the plain
+                     hero background behind its copy. -->
+                {#if ready.has(i) && banner.images.desktop}
                     <picture>
                         {#if banner.images.mobile}
                             <source

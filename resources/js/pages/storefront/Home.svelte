@@ -2,11 +2,9 @@
     import { Link, page } from '@inertiajs/svelte';
     import ArrowRight from '@lucide/svelte/icons/arrow-right';
     import ArrowUpRight from '@lucide/svelte/icons/arrow-up-right';
-    import Check from '@lucide/svelte/icons/check';
     import Headphones from '@lucide/svelte/icons/headphones';
     import Layers3 from '@lucide/svelte/icons/layers';
     import MessagesSquare from '@lucide/svelte/icons/messages-square';
-    import Phone from '@lucide/svelte/icons/phone';
     import Plus from '@lucide/svelte/icons/plus';
     import ScanLine from '@lucide/svelte/icons/scan-line';
     import hero from '@/assets/storefront/dental-suite.jpg';
@@ -22,13 +20,26 @@
     import TrustStrip from '@/components/storefront/TrustStrip.svelte';
     import { revealOnView } from '@/lib/motion.svelte';
     import { brands, loadBrands, mapProductCard, type RawProductCard } from '@/data/catalogue';
-    import { brands as brandsRoute, catalogue, contact, home } from '@/routes';
+    import { brands as brandsRoute, catalogue, home } from '@/routes';
     import { index as categoriesIndex } from '@/routes/categories';
 
     let {
         banners = [],
         featuredProducts: rawFeatured = [],
     }: { banners?: Banner[]; featuredProducts?: RawProductCard[] } = $props();
+
+    // With no banner set up in the CMS, the carousel shows one image-less
+    // slide, so the hero keeps the same layout on every device.
+    const defaultBanner: Banner = {
+        id: 0,
+        title: 'Precision Equipment. Better Dental Care.',
+        subtitle:
+            'Professional dental equipment and clinical essentials for modern practices.',
+        link_url: catalogue.url(),
+        link_label: 'Explore Equipment',
+        show_text: true,
+        images: { desktop: null, tablet: null, mobile: null },
+    };
 
     // Decorative sections: if these fail, they simply stay empty.
     loadBrands().catch(() => {});
@@ -69,63 +80,7 @@
     canonical={home.url()}
 />
 
-{#if banners.length > 0}
-    <HeroBanners {banners} />
-{:else}
-<section class="hero">
-    <img
-        class="hero-image"
-        src={hero}
-        alt="A mint dental treatment chair and precision equipment in a modern sunlit clinic"
-        width={1920}
-        height={1024}
-        fetchpriority="high"
-    />
-    <div class="container-wide">
-        <div class="hero-copy hero-entrance">
-            <div class="eyebrow mb-5 flex items-center gap-2">
-                <span class="w-6 border-t border-primary"></span>
-                Equipped for better care
-            </div>
-            <h1>
-                Precision Equipment.
-                <br />
-                <span>Better Dental Care.</span>
-            </h1>
-            <p class="section-intro">
-                Discover professional dental equipment and clinical essentials
-                for modern practices. Thoughtfully selected. Expertly supported.
-            </p>
-            <div class="hero-actions">
-                <Link
-                    href={catalogue.url()}
-                    class={buttonClass({ class: 'h-12 px-6 text-xs shadow-none' })}
-                >
-                    Explore Equipment
-                    <ArrowUpRight class="ml-3 size-4" />
-                </Link>
-                <Link
-                    href={contact.url()}
-                    class={buttonClass({
-                        variant: 'outline',
-                        class: 'h-12 border-foreground/15 bg-background/70 px-6 text-xs shadow-none',
-                    })}
-                >
-                    <Phone class="size-3.5" />
-                    Talk to Our Team
-                </Link>
-            </div>
-            <div class="hero-note">
-                <Check class="size-3.5 text-primary" />
-                Professional equipment<span class="mx-1 opacity-40">/</span
-                >Personal guidance
-                <span class="mx-1 opacity-40">/</span>No guesswork
-            </div>
-        </div>
-    </div>
-    <div class="hero-corner">DESIGNED AROUND YOUR PRACTICE</div>
-</section>
-{/if}
+<HeroBanners banners={banners.length > 0 ? banners : [defaultBanner]} />
 
 <TrustStrip />
 
