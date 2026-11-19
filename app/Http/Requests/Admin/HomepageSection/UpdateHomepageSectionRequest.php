@@ -27,7 +27,7 @@ class UpdateHomepageSectionRequest extends FormRequest
             // Raw uploads (e.g. straight from an image generator); BannerImageService crops
             // and converts them to the desktop, tablet and mobile WebP renditions.
             'landscape_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:20480', 'dimensions:min_width=1200,min_height=500,max_width='.BannerImageService::MAX_SOURCE_DIMENSION.',max_height='.BannerImageService::MAX_SOURCE_DIMENSION],
-            'portrait_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:20480', 'dimensions:min_width=800,min_height=1000,max_width='.BannerImageService::MAX_SOURCE_DIMENSION.',max_height='.BannerImageService::MAX_SOURCE_DIMENSION],
+            'portrait_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:20480', 'dimensions:min_width=800,min_height=600,max_width='.BannerImageService::MAX_SOURCE_DIMENSION.',max_height='.BannerImageService::MAX_SOURCE_DIMENSION],
             'link_url' => ['nullable', 'url:http,https', FieldLimits::max('banner.link_url')],
             'link_label' => ['nullable', 'string', FieldLimits::max('banner.link_label')],
             'show_text' => ['boolean'],

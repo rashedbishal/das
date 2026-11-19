@@ -27,7 +27,7 @@ class BannerImageService
     public const SIZES = [
         'desktop' => [1920, 640],
         'tablet' => [1536, 768],
-        'mobile' => [1080, 1350],
+        'mobile' => [1080, 810],
     ];
 
     /**
@@ -75,6 +75,27 @@ class BannerImageService
     public function render(UploadedFile $file, string $device, string $field): string
     {
         return $this->renderAll($file, [$device], $field)[$device];
+    }
+
+    /**
+     * Renders a new rendition from an already stored image, e.g. to re-cut
+     * existing banners after a device size changes. Returns the new path.
+     *
+     * @param  'desktop'|'tablet'|'mobile'  $device
+     */
+    public function rerender(string $path, string $device): string
+    {
+        $source = @imagecreatefromstring((string) Storage::disk(self::DISK)->get($path));
+
+        if (! $source instanceof GdImage) {
+            throw new \RuntimeException("Banner image [{$path}] could not be read.");
+        }
+
+        try {
+            return $this->renderFrom($source, $device);
+        } finally {
+            imagedestroy($source);
+        }
     }
 
     /**

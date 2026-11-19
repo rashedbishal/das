@@ -272,13 +272,13 @@
 
                         <div class="grid content-start gap-2">
                             <Label for="portrait_image">
-                                Portrait image
+                                Mobile image
                                 <span class="font-normal text-muted-foreground">
-                                    · mobile
+                                    · phones
                                 </span>
                             </Label>
                             <div
-                                class="mx-auto flex aspect-[4/5] w-1/2 items-center justify-center overflow-hidden rounded-md border bg-muted sm:w-[45%]"
+                                class="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-md border bg-muted"
                             >
                                 {#if portraitPreview ?? section?.images.mobile}
                                     <img
@@ -302,7 +302,7 @@
                                     preview(e, (url) => (portraitPreview = url))}
                             />
                             <p class="text-xs text-muted-foreground">
-                                Optional, at least 800×1000, e.g. 1024×1536. If
+                                Optional, at least 800×600, e.g. 1600×1200. If
                                 left empty, mobile is cut from the landscape
                                 image.
                             </p>

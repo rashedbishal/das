@@ -78,7 +78,7 @@ test('banner uploads are cropped and converted to desktop, tablet and mobile web
 
     $section = HomepageSection::query()->where('title', 'New suite')->firstOrFail();
 
-    foreach (['image' => [1920, 640], 'image_tablet' => [1536, 768], 'image_mobile' => [1080, 1350]] as $column => [$width, $height]) {
+    foreach (['image' => [1920, 640], 'image_tablet' => [1536, 768], 'image_mobile' => [1080, 810]] as $column => [$width, $height]) {
         $path = $section->{$column};
         expect($path)->toEndWith('.webp');
         Storage::disk('public')->assertExists($path);
@@ -101,6 +101,74 @@ test('mobile is cut from the landscape image when no portrait is uploaded', func
 
     expect($section->image_mobile)->not->toBeNull();
     Storage::disk('public')->assertExists($section->image_mobile);
+});
+
+test('a mobile image under 800×600 is rejected and 800×600 is accepted', function () {
+    Storage::fake('public');
+    $admin = adminUser(['content.manage']);
+
+    $this->actingAs($admin)->post(route('admin.homepage-sections.store'), [
+        'type' => 'banner',
+        'title' => 'Too small',
+        'portrait_image' => UploadedFile::fake()->image('small.jpg', 799, 600),
+    ])->assertSessionHasErrors('portrait_image');
+
+    $this->actingAs($admin)->post(route('admin.homepage-sections.store'), [
+        'type' => 'banner',
+        'title' => 'Big enough',
+        'portrait_image' => UploadedFile::fake()->image('ok.jpg', 800, 600),
+    ])->assertSessionHasNoErrors();
+});
+
+test('existing 4:5 mobile banners are re-cut to 4:3 by the migration', function () {
+    Storage::fake('public');
+    $disk = Storage::disk('public');
+    $put = function (string $path, int $width, int $height) use ($disk): string {
+        $disk->put($path, (string) UploadedFile::fake()->image('x.png', $width, $height)->getContent());
+
+        return $path;
+    };
+
+    $ownUpload = HomepageSection::query()->create([
+        'type' => 'banner',
+        'title' => 'Own mobile upload',
+        'image_tablet' => $put('banners/a-tablet.webp', 1536, 768),
+        'image_mobile' => $put('banners/a-mobile.webp', 1080, 1350),
+        'content' => ['mobile_source' => 'portrait'],
+        'sort_order' => 1,
+    ]);
+    $fromLandscape = HomepageSection::query()->create([
+        'type' => 'banner',
+        'title' => 'Cut from landscape',
+        'image_tablet' => $put('banners/b-tablet.webp', 1536, 768),
+        'image_mobile' => $put('banners/b-mobile.webp', 1080, 1350),
+        'content' => ['mobile_source' => 'landscape'],
+        'sort_order' => 2,
+    ]);
+
+    $broken = HomepageSection::query()->create([
+        'type' => 'banner',
+        'title' => 'Unreadable file',
+        'image_mobile' => 'banners/c-mobile.webp',
+        'sort_order' => 3,
+    ]);
+    $disk->put('banners/c-mobile.webp', 'not an image');
+
+    (require database_path('migrations/2026_11_19_000000_recut_mobile_banner_images.php'))->up();
+
+    // The unreadable one is left as it was rather than failing the migration.
+    expect($broken->refresh()->image_mobile)->toBe('banners/c-mobile.webp');
+    $disk->assertExists('banners/c-mobile.webp');
+
+    foreach ([$ownUpload, $fromLandscape] as $section) {
+        $old = $section->image_mobile;
+        $section->refresh();
+
+        expect($section->image_mobile)->not->toBe($old);
+        $disk->assertMissing($old);
+        expect(array_slice(getimagesizefromstring((string) $disk->get($section->image_mobile)), 0, 2))->toBe([1080, 810]);
+    }
+    $disk->assertExists($fromLandscape->image_tablet);
 });
 
 test('replacing and deleting a banner removes its old image files', function () {

@@ -166,7 +166,7 @@
     background: var(--primary);
 }
 /* Banner-mode hero: CMS images at a fixed ratio per device
-   (desktop 3:1, tablet 2:1, mobile 4:5; see BannerImageService::SIZES). */
+   (desktop 3:1, tablet 2:1, mobile 4:3; see BannerImageService::SIZES). */
 .hero-banners {
     position: relative;
     aspect-ratio: 3 / 1;
@@ -491,46 +491,46 @@
     }
 }
 @media (max-width: 767px) {
-    /* About half the screen; the 4:5 mobile image is cropped to fit, keeping
-       its upper-middle (where the subject sits) in view. Never taller than
-       the image itself would be at full width. */
+    /* About a third of the screen, close to the 4:3 mobile image, which is
+       cropped to fit. Never taller than the image itself at full width. */
     .hero-banners {
         aspect-ratio: auto;
-        height: 50svh;
-        min-height: 340px;
-        max-height: calc(100vw * 1.25);
+        height: 35svh;
+        min-height: 260px;
+        max-height: calc(100vw * 0.75);
     }
-    .hero-banner img {
-        object-position: center 35%;
-    }
+    /* Same layout as tablet (copy on the left, vertically centred, side scrim,
+       controls bottom-right), scaled down. The bottom padding lifts the copy
+       clear of the control bar. */
     .hero-banner-inner {
-        align-items: flex-end;
-        padding-bottom: 76px;
+        padding-bottom: 64px;
+    }
+    .hero-banner-copy {
+        max-width: 64%;
     }
     .hero-banner-title {
-        font-size: 24px;
+        font-size: clamp(20px, 5.6vw, 28px);
         line-height: 1.2;
     }
     .hero-banner-subtitle {
         display: -webkit-box;
         margin-top: 6px;
         overflow: hidden;
-        font-size: 12.5px;
-        line-height: 1.55;
+        font-size: 12px;
+        line-height: 1.5;
         -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 3;
     }
     .hero-banner-scrim {
         background: linear-gradient(
-            0deg,
-            oklch(0.98 0.003 170 / 0.96) 0%,
-            oklch(0.98 0.003 170 / 0.8) 38%,
-            transparent 64%
+            90deg,
+            oklch(0.98 0.003 170 / 0.94) 0%,
+            oklch(0.98 0.003 170 / 0.78) 45%,
+            transparent 80%
         );
     }
     .hero-controls-wrap {
         bottom: 14px;
-        justify-content: center;
     }
 }
 @media (prefers-reduced-motion: reduce) {

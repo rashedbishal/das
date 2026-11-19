@@ -40,8 +40,9 @@ class HomepageSectionService
 
     /**
      * The landscape upload produces the desktop (3:1) and tablet (2:1) renditions; the
-     * portrait upload produces the mobile (4:5) one. Without a portrait, mobile is cut
-     * from the landscape image, and re-cut whenever the landscape image changes.
+     * optional mobile upload (field `portrait_image`) produces the mobile (4:3) one.
+     * Without it, mobile is cut from the landscape image, and re-cut whenever the
+     * landscape image changes.
      *
      * @param  array<string, mixed>  $data
      */
