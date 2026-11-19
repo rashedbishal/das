@@ -97,7 +97,7 @@ Useful commands:
 composer setup
 php artisan migrate
 php artisan db:seed
-php artisan das:bootstrap-mother-admin
+php artisan das:reset-mother-admin
 php artisan catalog:import-client-data
 npm run build
 composer test

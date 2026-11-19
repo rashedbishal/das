@@ -24,11 +24,13 @@ npm run build:ssr                      # client bundle + SSR bundle (bootstrap/s
 php artisan migrate --force
 php artisan db:seed --class=RolePermissionSeeder --force
 php artisan storage:link               # product/category/banner images are served from here
-php artisan das:bootstrap-mother-admin # once; then remove MOTHER_ADMIN_* from .env
+php artisan das:reset-mother-admin     # creates the Mother Admin; then remove MOTHER_ADMIN_* from .env
 php artisan optimize                   # config, route, view and event caches
 ```
 
 Then sign in at `/admin/login` as the Mother Admin and fill in **Admin → Settings** (site name, contact phone/email, address, opening hours, SEO title/description, delivery note, WhatsApp/Messenger). Nothing is seeded: until a value is saved there, the storefront simply leaves it out.
+
+Admins have no "forgot password" link. If the Mother Admin's password is lost (or the account should go to someone else), run `php artisan das:reset-mother-admin` again on the server: after a confirmation (`--force` skips it) it replaces the existing Mother Admin's name, email and password and signs that account out everywhere. Other admins' passwords are reset by the Mother Admin in **Admin → Users**.
 
 Ownership: `chown -R www-data:www-data storage bootstrap/cache`.
 
@@ -207,7 +209,7 @@ Needs a plan with SSH access (Premium or higher).
     php artisan key:generate
     php artisan migrate --force
     php artisan db:seed --class=RolePermissionSeeder --force
-    php artisan das:bootstrap-mother-admin   # then remove MOTHER_ADMIN_* from .env
+    php artisan das:reset-mother-admin   # then remove MOTHER_ADMIN_* from .env
     ```
 8. **Run the workflow again**; it should finish green and the site is live.
    Sign in at `/admin/login` and fill in **Admin → Settings** — business details are not seeded, so the storefront shows none until they are saved there.

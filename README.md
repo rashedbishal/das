@@ -29,7 +29,7 @@ Configure your database in `.env` (defaults to MySQL; set `DB_CONNECTION=sqlite`
 php artisan migrate
 php artisan db:seed            # seeds the permission catalog, system roles, and default settings
 php artisan storage:link       # required for product media URLs to resolve
-php artisan das:bootstrap-mother-admin
+php artisan das:reset-mother-admin
 npm run build                  # or `npm run dev` / `composer run dev` during development
 ```
 
@@ -159,6 +159,6 @@ The full production runbook (supervised queue + SSR processes, cron, backups, mo
 
 - Set `APP_ENV=production`, `APP_DEBUG=false`, and a strong `APP_KEY`.
 - Run `php artisan storage:link` on first deploy (product media depends on it).
-- Run `php artisan das:bootstrap-mother-admin` once, with `MOTHER_ADMIN_*` env vars set non-interactively in your deploy pipeline — never commit real credentials.
+- Run `php artisan das:reset-mother-admin` to create the Mother Admin, with `MOTHER_ADMIN_*` env vars set non-interactively in your deploy pipeline (then remove them) — never commit real credentials. Run it again (with `--force` to skip the confirmation) to replace a lost Mother Admin login.
 - `SANCTUM_STATEFUL_DOMAINS` must include your production domain for `/api/v1` session auth to work from the deployed frontend.
 - No CORS policy is published (`config/cors.php` doesn't exist) because the frontend and API are same-origin by design; only publish and restrict it if you later add a genuinely cross-origin consumer.
