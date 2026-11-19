@@ -1,5 +1,8 @@
 <script lang="ts">
     import { Link, page } from '@inertiajs/svelte';
+    import Clock from '@lucide/svelte/icons/clock';
+    import Mail from '@lucide/svelte/icons/mail';
+    import MapPin from '@lucide/svelte/icons/map-pin';
     import Phone from '@lucide/svelte/icons/phone';
     import Plus from '@lucide/svelte/icons/plus';
     import { mapCategory, type RawCategory } from '@/data/catalogue';
@@ -23,6 +26,13 @@
     const email = $derived(
         page.props.siteSettings.contactEmail || null,
     );
+    const address = $derived(
+        [page.props.siteSettings.address, page.props.siteSettings.addressCity]
+            .filter(Boolean)
+            .join(', '),
+    );
+    // Google Maps link from the CMS (Settings → General), as on the contact page.
+    const mapUrl = $derived(page.props.siteSettings.mapUrl || null);
     // "Saturday to Thursday: 10:00 AM – 7:00 PM", "Friday: Closed" (from the CMS).
     const hoursLines = $derived(groupedHours(page.props.siteSettings.openingHours));
 </script>
@@ -86,20 +96,40 @@
                         </a>
                     {/if}
                     {#if email}
-                        <a href="mailto:{email}">{email}</a>
+                        <a
+                            href="mailto:{email}"
+                            class="flex items-center gap-2"
+                        >
+                            <Mail class="size-3.5 shrink-0" />
+                            {email}
+                        </a>
                     {/if}
-                    {#if page.props.siteSettings.address}
-                        <span class="leading-6 opacity-65">
-                            {[page.props.siteSettings.address, page.props.siteSettings.addressCity]
-                                .filter(Boolean)
-                                .join(', ')}
-                        </span>
+                    {#if address}
+                        {#if mapUrl}
+                            <a
+                                href={mapUrl}
+                                target="_blank"
+                                rel="noopener"
+                                class="flex items-start gap-2 leading-6"
+                            >
+                                <MapPin class="mt-[5px] size-3.5 shrink-0" />
+                                {address}
+                            </a>
+                        {:else}
+                            <span class="flex items-start gap-2 leading-6 opacity-65">
+                                <MapPin class="mt-[5px] size-3.5 shrink-0" />
+                                {address}
+                            </span>
+                        {/if}
                     {/if}
                     {#if hoursLines.length}
-                        <span class="leading-6 opacity-65">
-                            {#each hoursLines as { days, time } (days)}
-                                <span class="block">{days}: {time}</span>
-                            {/each}
+                        <span class="flex items-start gap-2 leading-6 opacity-65">
+                            <Clock class="mt-[5px] size-3.5 shrink-0" />
+                            <span>
+                                {#each hoursLines as { days, time } (days)}
+                                    <span class="block">{days}: {time}</span>
+                                {/each}
+                            </span>
                         </span>
                     {/if}
                 </div>
