@@ -148,7 +148,8 @@
     <ul class="grid gap-3 @xl:hidden">
         {#each items as item (key(item))}
             {@const [titleColumn, ...detailColumns] = columns}
-            <li class="rounded-lg border bg-card p-4 text-sm">
+            <!-- min-w-0: a long unbreakable title must not stretch the card past the screen. -->
+            <li class="min-w-0 rounded-lg border bg-card p-4 text-sm">
                 <div class="flex items-start gap-3">
                     {#if selectable}
                         <input

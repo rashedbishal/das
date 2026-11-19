@@ -173,7 +173,9 @@
                             <ImageIcon class="size-4 text-muted-foreground" />
                         {/if}
                     </div>
-                    <span class="min-w-0 truncate">{section.title}</span>
+                    <span class="line-clamp-2 min-w-0 break-words">
+                        {section.title}
+                    </span>
                 </div>
             {:else if column.key === 'status'}
                 <Badge variant={section.is_active ? 'default' : 'secondary'}>
@@ -215,18 +217,22 @@
 </div>
 
 <Dialog bind:open={formOpen}>
-    <DialogContent class="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+    <DialogContent
+        class="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto p-5 sm:max-w-2xl sm:p-6"
+    >
         <DialogTitle>{editing ? 'Edit banner' : 'Add banner'}</DialogTitle>
-        <DialogDescription>
-            JPG, PNG or WebP up to 20 MB. Keep the subject near the centre;
-            edges are cropped to fit each device.
-        </DialogDescription>
+        <div class="mt-2">
+            <DialogDescription>
+                JPG, PNG or WebP up to 20 MB. Keep the subject near the centre;
+                edges are cropped to fit each device.
+            </DialogDescription>
+        </div>
 
         {#key editing?.id ?? 'new'}
             {@const section = editing}
             <Form
                 {...section ? update.form(section.id) : store.form()}
-                class="grid gap-5"
+                class="mt-5 grid gap-5"
                 onSuccess={() => (formOpen = false)}
             >
                 {#snippet children({ errors, processing, progress })}
