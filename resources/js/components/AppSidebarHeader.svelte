@@ -14,8 +14,10 @@
     } = $props();
 </script>
 
+<!-- Sticky on mobile only, where the sidebar is off-canvas and the header
+     holds the only way to open it. -->
 <header
-    class="grid h-14 shrink-0 grid-cols-[2.5rem_1fr_2.5rem] items-center gap-2 border-b border-sidebar-border/70 px-3 transition-[width,height] ease-linear md:flex md:h-16 md:px-4 md:group-has-data-[collapsible=icon]/sidebar-wrapper:h-12"
+    class="grid h-14 shrink-0 grid-cols-[2.5rem_1fr_2.5rem] items-center gap-2 border-b border-sidebar-border/70 px-3 transition-[width,height] ease-linear max-md:sticky max-md:top-0 max-md:z-30 max-md:bg-background md:flex md:h-16 md:px-4 md:group-has-data-[collapsible=icon]/sidebar-wrapper:h-12"
 >
     <SidebarTrigger class="md:-ml-1" />
 
