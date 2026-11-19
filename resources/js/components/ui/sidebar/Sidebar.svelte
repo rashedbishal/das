@@ -49,7 +49,9 @@
                 data-slot="sidebar"
                 data-mobile="true"
                 class={cn(
-                    'fixed inset-y-0 bg-sidebar text-sidebar-foreground h-svh w-(--sidebar-width) p-0',
+                    // No fixed height: inset-y-0 pins it to the top and bottom of the
+                    // viewport, so it keeps up when the mobile address bar hides.
+                    'fixed inset-y-0 bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0',
                     side === 'left' ? 'left-0 border-r' : 'right-0 border-l',
                     className,
                 )}
