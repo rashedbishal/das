@@ -43,6 +43,8 @@ The import contains 15 products, 81 product options, and bundled photos under `p
 
 `php artisan das:bootstrap-mother-admin` creates the single highest-privilege account. It is idempotent — it refuses to run if a Mother Admin already exists. Credentials can be supplied via environment variables (`MOTHER_ADMIN_NAME`, `MOTHER_ADMIN_EMAIL`, `MOTHER_ADMIN_PASSWORD`) or entered interactively if left unset. The command also seeds the permission/role catalog automatically if it hasn't been seeded yet.
 
+`php artisan das:reset-mother-admin` creates the Mother Admin, or replaces the existing one: it asks for confirmation (skip with `--force`), then overwrites that account's name, email and password in place (same row, so records it created stay attributed), clears its Google link and signs it out everywhere. It reads the same `MOTHER_ADMIN_*` variables or prompts for them.
+
 ## Authentication Architecture
 
 - **One `users` table, one session (`web`) guard** for both admins and customers, distinguished by `user_type` (`admin`/`customer`). Public registration always creates a customer — admin accounts can only be created by another admin holding the `admins.manage` permission.
