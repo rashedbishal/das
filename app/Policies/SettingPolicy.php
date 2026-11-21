@@ -36,6 +36,11 @@ class SettingPolicy
         return $user->hasPermission('settings.manage');
     }
 
+    public function manageAbout(User $user): bool
+    {
+        return $user->hasPermission('settings.manage');
+    }
+
     public function manageCatalogSeo(User $user): bool
     {
         return $user->hasPermission('settings.manage') || $user->hasPermission('seo.manage');

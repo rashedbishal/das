@@ -10,6 +10,30 @@ class SettingsService
 {
     private const CACHE_KEY = 'settings.all';
 
+    /** Default About page copy, from the client's brief. */
+    private const ABOUT_DEFAULTS = [
+        'headline_line_1' => 'Only by focusing',
+        'headline_line_2' => 'can we become professional.',
+        'intro' => 'And only by being professional can we better assist you, from the first enquiry to after-sales service.',
+        'heading' => 'Supporting Bangladesh’s dental lab industry.',
+        'paragraph_1' => 'DAS (Dental Accessories Source), registered in 2023 and a member of the Bangladesh Dental Merchant Traders Association (BDMTA), is a leading supplier of dental materials and equipment, as well as after-sales service.',
+        'paragraph_2' => 'DAS has supported the development of Bangladesh’s dental lab industry with new, high-quality products and services in the prosthodontic field, especially crowns, bridges and dentures.',
+        'principles' => [
+            [
+                'title' => 'A high-quality supply chain',
+                'text' => 'Reliable materials and equipment for clinics and laboratories, sourced through a supply chain built on quality.',
+            ],
+            [
+                'title' => 'A professional sales team',
+                'text' => 'Convenient, knowledgeable pre-sales guidance, so you can choose the right product with confidence.',
+            ],
+            [
+                'title' => 'Dedicated after-sales service',
+                'text' => 'Faster, more convenient after-sales support that keeps your practice running long after delivery.',
+            ],
+        ],
+    ];
+
     public function get(string $group, string $key, mixed $default = null): mixed
     {
         return $this->all()->get("{$group}.{$key}", $default);
@@ -48,6 +72,42 @@ class SettingsService
         });
 
         return collect($settings);
+    }
+
+    /**
+     * The About page copy. Each field falls back to its default until an admin
+     * saves it, so the page always has complete text.
+     *
+     * @return array{headline_line_1: string, headline_line_2: string, intro: string, heading: string, paragraph_1: string, paragraph_2: string, principles: list<array{title: string, text: string}>}
+     */
+    public function aboutPage(): array
+    {
+        $saved = $this->group('about');
+        $defaults = self::ABOUT_DEFAULTS;
+
+        $content = [];
+        foreach ($defaults as $key => $default) {
+            if ($key === 'principles') {
+                continue;
+            }
+            $value = $saved[$key] ?? null;
+            $content[$key] = is_string($value) && trim($value) !== '' ? $value : $default;
+        }
+
+        $principles = $defaults['principles'];
+        if (is_array($saved['principles'] ?? null)) {
+            foreach ($principles as $i => $principle) {
+                foreach (['title', 'text'] as $field) {
+                    $value = $saved['principles'][$i][$field] ?? null;
+                    if (is_string($value) && trim($value) !== '') {
+                        $principles[$i][$field] = $value;
+                    }
+                }
+            }
+        }
+        $content['principles'] = $principles;
+
+        return $content;
     }
 
     public function registrationEnabled(): bool

@@ -6,6 +6,7 @@ use App\Http\Controllers\ContactEnquirySubmissionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PublicSettingsController;
 use App\Http\Controllers\SeoController;
+use App\Http\Controllers\StorefrontAboutController;
 use App\Http\Controllers\StorefrontCatalogueController;
 use App\Http\Controllers\StorefrontHomeController;
 use App\Http\Controllers\StorefrontProductController;
@@ -26,7 +27,7 @@ Route::get('products/{slug}', StorefrontProductController::class)->middleware(['
 
 Route::get('brands', [StorefrontCatalogueController::class, 'brands'])->name('brands');
 Route::get('brands/{brand}', [StorefrontCatalogueController::class, 'brand'])->name('brands.show');
-Route::inertia('about', 'storefront/About')->name('about');
+Route::get('about', StorefrontAboutController::class)->name('about');
 Route::inertia('contact', 'storefront/Contact')->name('contact');
 Route::inertia('privacy-policy', 'storefront/PrivacyPolicy')->name('privacy');
 Route::inertia('terms-and-conditions', 'storefront/Terms')->name('terms');

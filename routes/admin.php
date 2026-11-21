@@ -77,6 +77,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('settings/auth', [SettingsController::class, 'updateAuth'])->name('settings.auth.update');
     Route::put('settings/whatsapp', [SettingsController::class, 'updateWhatsapp'])->name('settings.whatsapp.update');
     Route::put('settings/messenger', [SettingsController::class, 'updateMessenger'])->name('settings.messenger.update');
+    Route::put('settings/about', [SettingsController::class, 'updateAbout'])->name('settings.about.update');
     Route::put('settings/catalog-seo', [SettingsController::class, 'updateCatalogSeo'])->name('settings.catalog-seo.update');
     Route::put('settings/tracking', [SettingsController::class, 'updateTracking'])->name('settings.tracking.update');
 

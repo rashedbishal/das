@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Settings\UpdateAboutSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateAuthSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateCatalogSeoSettingsRequest;
 use App\Http\Requests\Admin\Settings\UpdateGeneralSettingsRequest;
@@ -30,6 +31,7 @@ class SettingsController extends Controller
             'authSettings' => $this->settings->group('auth'),
             'whatsapp' => $this->settings->group('whatsapp'),
             'messenger' => $this->settings->group('messenger'),
+            'about' => $this->settings->aboutPage(),
             'catalog' => $this->settings->group('catalog'),
             'seo' => $this->settings->group('seo'),
             // Raw scripts are only sent to admins who may edit them (Mother Admin).
@@ -64,6 +66,19 @@ class SettingsController extends Controller
         $this->persist('messenger', $request->validated());
 
         return $this->backWithToast('Messenger settings saved.');
+    }
+
+    public function updateAbout(UpdateAboutSettingsRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
+        $data['principles'] = array_map(
+            fn (array $principle) => ['title' => $principle['title'], 'text' => $principle['text']],
+            array_values($data['principles']),
+        );
+
+        $this->persist('about', $data);
+
+        return $this->backWithToast('About page saved.');
     }
 
     public function updateCatalogSeo(UpdateCatalogSeoSettingsRequest $request): RedirectResponse

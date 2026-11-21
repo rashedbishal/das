@@ -10,31 +10,30 @@
     import ContactBanner from '@/components/storefront/ContactBanner.svelte';
     import PageMeta from '@/components/storefront/PageMeta.svelte';
     import { contact } from '@/routes';
+    import type { AboutPageContent } from '@/types';
+
+    let { about }: { about: AboutPageContent } = $props();
 
     /** Headline words, numbered across both lines so they animate in reading order. */
-    let headlineWordCount = 0;
-    const headlineLines = [
-        ['Better', 'equipment.'],
-        ['A', 'more', 'personal', 'approach.'],
-    ].map((words) => words.map((word) => ({ word, index: headlineWordCount++ })));
+    const headlineLines = $derived.by(() => {
+        let index = 0;
 
-    const principles = [
-        {
-            icon: Layers3,
-            title: 'A focused selection',
-            text: 'Clinical essentials and specialist technology, organised around the work you do.',
-        },
-        {
-            icon: ScanLine,
-            title: 'Clarity before commitment',
-            text: 'Useful details, understandable specifications and room to ask the important questions.',
-        },
-        {
-            icon: Headphones,
-            title: 'A human point of contact',
-            text: 'A direct conversation about your requirements, your workflow and your next step.',
-        },
-    ];
+        return [about.headline_line_1, about.headline_line_2].map((line) =>
+            line
+                .trim()
+                .split(/\s+/)
+                .map((word) => ({ word, index: index++ })),
+        );
+    });
+
+    /** Icons stay fixed per card position; the copy comes from the CMS. */
+    const icons = [Layers3, ScanLine, Headphones];
+    const principles = $derived(
+        about.principles.map((principle, i) => ({
+            ...principle,
+            icon: icons[i],
+        })),
+    );
 </script>
 
 <PageMeta
@@ -74,8 +73,7 @@
             {/each}
         </h1>
         <p class="about-hero-copy mt-6 max-w-md text-sm leading-7 sm:mt-7 sm:leading-8">
-            We believe choosing dental equipment should feel considered, clear
-            and human. Your practice deserves nothing less.
+            {about.intro}
         </p>
         <Link
             href={contact.url()}
@@ -93,25 +91,19 @@
     <div class="grid gap-10 md:grid-cols-2 lg:gap-24">
         <div class="sf-reveal">
             <p class="eyebrow mb-4">Our perspective</p>
-            <h2 class="section-heading">
-                Supporting the people
-                <br />
-                behind better dental care.
-            </h2>
+            <h2 class="section-heading">{about.heading}</h2>
         </div>
         <div class="sf-reveal" style:--sf-i={1}>
             <p class="text-sm leading-8 text-muted-foreground">
-                DAS helps dental professionals explore products for clinics,
-                laboratories and everyday practice needs.
+                {about.paragraph_1}
             </p>
             <p class="mt-5 text-sm leading-8 text-muted-foreground">
-                We focus on clear product information and direct assistance,
-                so each buying decision can start with the right conversation.
+                {about.paragraph_2}
             </p>
         </div>
     </div>
     <div class="mt-16 grid gap-8 md:grid-cols-3">
-        {#each principles as { icon: Icon, title, text }, i (title)}
+        {#each principles as { icon: Icon, title, text }, i (i)}
             <div class="sf-reveal border-t pt-7" style:--sf-i={i}>
                 <Icon class="mb-6 size-7 text-primary" strokeWidth={1.3} />
                 <h3 class="text-lg">{title}</h3>

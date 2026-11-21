@@ -161,3 +161,61 @@ test('settings.manage alone is enough to open the settings page and api', functi
         ->get(route('dashboard'))
         ->assertInertia(fn ($page) => $page->where('permissions.settings', true));
 });
+
+function aboutPayload(array $overrides = []): array
+{
+    return array_replace([
+        'headline_line_1' => 'Focused on',
+        'headline_line_2' => 'dental excellence.',
+        'intro' => 'New intro.',
+        'heading' => 'New heading.',
+        'paragraph_1' => 'First paragraph.',
+        'paragraph_2' => 'Second paragraph.',
+        'principles' => [
+            ['title' => 'One', 'text' => 'Card one.'],
+            ['title' => 'Two', 'text' => 'Card two.'],
+            ['title' => 'Three', 'text' => 'Card three.'],
+        ],
+    ], $overrides);
+}
+
+test('the about page shows the default copy until an admin edits it', function () {
+    $this->get(route('about'))
+        ->assertInertia(fn ($page) => $page
+            ->component('storefront/About')
+            ->where('about.headline_line_1', 'Only by focusing')
+            ->has('about.principles', 3));
+});
+
+test('an admin with settings.manage can edit the about page copy', function () {
+    $admin = adminUser(['settings.manage']);
+
+    $this->actingAs($admin)
+        ->put(route('admin.settings.about.update'), aboutPayload())
+        ->assertSessionHasNoErrors()
+        ->assertRedirect();
+
+    $this->get(route('about'))
+        ->assertInertia(fn ($page) => $page
+            ->where('about.headline_line_2', 'dental excellence.')
+            ->where('about.paragraph_1', 'First paragraph.')
+            ->where('about.principles.2.title', 'Three'));
+});
+
+test('about page fields are required and capped at their character limits', function () {
+    $admin = adminUser(['settings.manage']);
+
+    $this->actingAs($admin)
+        ->put(route('admin.settings.about.update'), aboutPayload([
+            'headline_line_1' => str_repeat('a', 31),
+            'intro' => '',
+            'principles' => [['title' => 'Only one', 'text' => 'Card.']],
+        ]))
+        ->assertSessionHasErrors(['headline_line_1', 'intro', 'principles']);
+});
+
+test('an admin without settings.manage cannot edit the about page', function () {
+    $this->actingAs(adminUser(['settings.view']))
+        ->put(route('admin.settings.about.update'), aboutPayload())
+        ->assertForbidden();
+});

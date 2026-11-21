@@ -85,6 +85,14 @@
         "site_verification": 120,
         "scripts": 20000
     },
+    "about": {
+        "headline_line": 30,
+        "intro": 180,
+        "heading": 70,
+        "paragraph": 400,
+        "principle_title": 40,
+        "principle_text": 140
+    },
     "stock": {
         "note": 255
     },

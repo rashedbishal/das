@@ -17,6 +17,7 @@
     import { fieldLimits } from '@/lib/field-limits';
     import { Label } from '@/components/ui/label';
     import type { OpeningHoursDay } from '@/lib/business';
+    import type { AboutPageContent } from '@/types';
     import BusinessFields from './BusinessFields.svelte';
     import { can } from '@/lib/permissions.svelte';
 
@@ -25,6 +26,7 @@
         authSettings,
         whatsapp,
         messenger,
+        about,
         catalog,
         seo,
         tracking,
@@ -49,6 +51,7 @@
         authSettings: { registration_enabled?: boolean };
         whatsapp: { enabled?: boolean; phone?: string; message?: string };
         messenger: { enabled?: boolean; page_url?: string };
+        about: AboutPageContent;
         catalog: { page_size?: number; featured_limit?: number; delivery_note?: string };
         seo: {
             default_title?: string;
@@ -68,6 +71,7 @@
         { value: 'auth', label: 'Authentication' },
         { value: 'whatsapp', label: 'WhatsApp' },
         { value: 'messenger', label: 'Messenger' },
+        { value: 'about', label: 'About page' },
         { value: 'catalog', label: 'Catalog & SEO' },
         { value: 'tracking', label: 'Google Tag Manager' },
     ] as const;
@@ -293,6 +297,136 @@
                         </fieldset>
                         {#if canManageSettings}
                             <Button type="submit" disabled={processing}>Save Messenger settings</Button>
+                        {:else}
+                            <p class="text-sm text-muted-foreground">You can view these settings but not change them.</p>
+                        {/if}
+                    {/snippet}
+                </Form>
+            </CardContent>
+        </Card>
+    {:else if tab === 'about'}
+        <Card>
+            <CardHeader>
+                <CardTitle>About page</CardTitle>
+                <CardDescription>The text on the public About page. The layout is fixed; character limits keep it looking right on every screen size.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...SettingsController.updateAbout.form()} class="space-y-4">
+                    {#snippet children({ errors, processing })}
+                        <fieldset class="space-y-6" disabled={!canManageSettings} inert={!canManageSettings}>
+                            <fieldset class="grid gap-4 rounded-md border p-4">
+                                <legend class="px-1 text-sm font-medium">Hero</legend>
+                                <p class="text-xs text-muted-foreground">The large animated headline is shown as two lines.</p>
+                                <div class="grid items-start gap-4 sm:grid-cols-2">
+                                    <div class="grid gap-2">
+                                        <Label for="headline_line_1">Headline line 1</Label>
+                                        <LimitedInput
+                                            id="headline_line_1"
+                                            name="headline_line_1"
+                                            required
+                                            limit={fieldLimits.about.headline_line}
+                                            value={about.headline_line_1}
+                                        />
+                                        <InputError message={errors.headline_line_1} />
+                                    </div>
+                                    <div class="grid gap-2">
+                                        <Label for="headline_line_2">Headline line 2</Label>
+                                        <LimitedInput
+                                            id="headline_line_2"
+                                            name="headline_line_2"
+                                            required
+                                            limit={fieldLimits.about.headline_line}
+                                            value={about.headline_line_2}
+                                        />
+                                        <InputError message={errors.headline_line_2} />
+                                    </div>
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label for="about_intro">Text under the headline</Label>
+                                    <LimitedTextarea
+                                        id="about_intro"
+                                        name="intro"
+                                        required
+                                        rows={2}
+                                        class="min-h-16"
+                                        limit={fieldLimits.about.intro}
+                                        value={about.intro}
+                                    />
+                                    <InputError message={errors.intro} />
+                                </div>
+                            </fieldset>
+
+                            <fieldset class="grid gap-4 rounded-md border p-4">
+                                <legend class="px-1 text-sm font-medium">Our perspective</legend>
+                                <div class="grid gap-2">
+                                    <Label for="about_heading">Heading</Label>
+                                    <LimitedInput
+                                        id="about_heading"
+                                        name="heading"
+                                        required
+                                        limit={fieldLimits.about.heading}
+                                        value={about.heading}
+                                    />
+                                    <InputError message={errors.heading} />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label for="about_paragraph_1">Paragraph 1</Label>
+                                    <LimitedTextarea
+                                        id="about_paragraph_1"
+                                        name="paragraph_1"
+                                        required
+                                        rows={4}
+                                        limit={fieldLimits.about.paragraph}
+                                        value={about.paragraph_1}
+                                    />
+                                    <InputError message={errors.paragraph_1} />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label for="about_paragraph_2">Paragraph 2</Label>
+                                    <LimitedTextarea
+                                        id="about_paragraph_2"
+                                        name="paragraph_2"
+                                        required
+                                        rows={4}
+                                        limit={fieldLimits.about.paragraph}
+                                        value={about.paragraph_2}
+                                    />
+                                    <InputError message={errors.paragraph_2} />
+                                </div>
+                            </fieldset>
+
+                            {#each about.principles as principle, i (i)}
+                                <fieldset class="grid gap-4 rounded-md border p-4">
+                                    <legend class="px-1 text-sm font-medium">Card {i + 1}</legend>
+                                    <div class="grid gap-2">
+                                        <Label for="principle_{i}_title">Title</Label>
+                                        <LimitedInput
+                                            id="principle_{i}_title"
+                                            name="principles[{i}][title]"
+                                            required
+                                            limit={fieldLimits.about.principle_title}
+                                            value={principle.title}
+                                        />
+                                        <InputError message={errors[`principles.${i}.title`]} />
+                                    </div>
+                                    <div class="grid gap-2">
+                                        <Label for="principle_{i}_text">Text</Label>
+                                        <LimitedTextarea
+                                            id="principle_{i}_text"
+                                            name="principles[{i}][text]"
+                                            required
+                                            rows={2}
+                                            class="min-h-16"
+                                            limit={fieldLimits.about.principle_text}
+                                            value={principle.text}
+                                        />
+                                        <InputError message={errors[`principles.${i}.text`]} />
+                                    </div>
+                                </fieldset>
+                            {/each}
+                        </fieldset>
+                        {#if canManageSettings}
+                            <Button type="submit" disabled={processing}>Save About page</Button>
                         {:else}
                             <p class="text-sm text-muted-foreground">You can view these settings but not change them.</p>
                         {/if}
